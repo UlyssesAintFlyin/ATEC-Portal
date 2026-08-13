@@ -29,11 +29,11 @@ function App() {
               and deserving students.
             </Typography>
             <Typography variant="body1" className="about-paragraph">
-              ATEC offers Strands, Vocational and Technical Educational Programmes such as Accountancy,
-              Business and Management (ABM), Humanities and Social Sciences (HUMSS), General Academic Strand
-              (GAS), Home Economics (HE), Information and Communication Technology (ICT), Industrial Arts (IA)
-              and other short courses such Visual Graphics and Design (VGD), Bookkeeping, Welding, Massage Therapy,
-              Beauty Care, Fork Lift, Dressmaking etc.
+              ATEC offers Strands, Vocational and Technical Educational Programmes such as Science, Technology
+              and Mathematics (STEM), Business and Entreprenueurship (BE), Arst, Social Sciences, and Humanities 
+              (ASSH), Home Economics (HE), Information and Communication Technology (ICT), Industrial Arts 
+              (IA) and other short courses such Visual Graphics and Design (VGD), Bookkeeping, Welding, 
+              Massage Therapy, Beauty Care, Fork Lift, Dressmaking etc.
             </Typography>
             <Typography variant="body1" className="about-paragraph">
               Accredited by government institutions - Department of Education (DepEd),

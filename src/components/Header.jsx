@@ -214,7 +214,7 @@ export const Header = () => {
               fullWidth
               onClick={() => console.log("Sign Out clicked")}
             >
-              Sign Out
+              Sign-Out
             </Button>
           </Box>
         </Box>
