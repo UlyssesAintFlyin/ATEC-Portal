@@ -1,38 +1,604 @@
-.App {
+/* ===== Layout ===== */
+.app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.app-main {
+  flex: 1;
+}
+
+/* Thin navy divider bar under the carousel */
+.divider-bar {
+  background-color: #242c54;
+  height: 30px;
+  width: 100%;
+}
+
+/* ===== About Section ===== */
+.about-section {
+  background-color: #e8edf2;
+  background-image: linear-gradient(180deg, #e8edf2 50%, #242c54);
+  min-height: auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  padding-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
+
+@media (min-width: 600px) {
+  .about-section {
+    min-height: 500px;
+    padding: 32px;
+  }
+}
+
+@media (min-width: 900px) {
+  .about-section {
+    min-height: 700px;
+    flex-direction: row;
+    gap: 120px;
+    padding-bottom: 64px;
+  }
+
+  .divider-bar {
+    height: 60px;
+  }
+}
+
+.about-text {
+  flex: 1 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (min-width: 600px) {
+  .about-text {
+    max-width: 400px;
+    gap: 24px;
+  }
+}
+
+@media (min-width: 900px) {
+  .about-text {
+    flex: 0 1 500px;
+    max-width: 500px;
+  }
+}
+
+.app-root .about-title {
+  color: #242c54;
+  font-weight: bold;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  font-size: 18px;
+}
+
+@media (min-width: 600px) {
+  .app-root .about-title {
+    margin-top: 48px;
+    margin-bottom: 32px;
+    font-size: 21px;
+  }
+}
+
+@media (min-width: 900px) {
+  .app-root .about-title {
+    font-size: 25px;
+  }
+}
+
+.app-root .about-paragraph {
+  color: #000000;
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+@media (min-width: 600px) {
+  .app-root .about-paragraph {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 900px) {
+  .app-root .about-paragraph {
+    font-size: 15px;
+  }
+}
+
+.about-image-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .about-image-wrap {
+    flex: 0 1 400px;
+  }
+}
+
+.about-image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  object-fit: cover;
+  max-width: 200px;
+}
+
+@media (min-width: 600px) {
+  .about-image {
+    max-width: 300px;
+  }
+}
+
+@media (min-width: 900px) {
+  .about-image {
+    max-width: 400px;
+  }
+}
+
+/* ===== Advocate Section ===== */
+.advocate-section {
+  background-color: #242c54;
+  min-height: auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+@media (min-width: 600px) {
+  .advocate-section {
+    min-height: 200px;
+  }
+}
+
+@media (min-width: 900px) {
+  .advocate-section {
+    min-height: 300px;
+  }
+}
+
+.app-root .advocate-eyebrow {
+  color: #ffffff;
+  margin-top: 16px;
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+@media (min-width: 600px) {
+  .app-root .advocate-eyebrow {
+    margin-top: 24px;
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 900px) {
+  .app-root .advocate-eyebrow {
+    margin-top: 32px;
+    font-size: 15px;
+  }
+}
+
+.app-root .advocate-title {
+  color: #ffffff;
+  font-weight: bold;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+@media (min-width: 600px) {
+  .app-root .advocate-title {
+    margin-bottom: 16px;
+    font-size: 21px;
+  }
+}
+
+@media (min-width: 900px) {
+  .app-root .advocate-title {
+    font-size: 25px;
+  }
+}
+
+.advocate-text {
+  max-width: 400px;
+  min-width: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+}
+
+@media (min-width: 600px) {
+  .advocate-text {
+    max-width: 500px;
+  }
+}
+
+@media (min-width: 900px) {
+  .advocate-text {
+    max-width: 700px;
+  }
+}
+
+.app-root .advocate-paragraph {
+  color: #ffffff;
+  line-height: 1.6;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 600px) {
+  .app-root .advocate-paragraph {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+}
+
+@media (min-width: 900px) {
+  .app-root .advocate-paragraph {
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+}
+
+.app-root .advocate-paragraph-last {
+  color: #ffffff;
+  line-height: 1.6;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 600px) {
+  .app-root .advocate-paragraph-last {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+}
+
+@media (min-width: 900px) {
+  .app-root .advocate-paragraph-last {
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+}
+
+.app-root .enroll-button {
+  background-color: #fff;
+  color: #242c54;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  text-transform: none;
+}
+
+@media (min-width: 600px) {
+  .app-root .enroll-button {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+}
+
+@media (min-width: 900px) {
+  .app-root .enroll-button {
+    font-size: 15px;
+    margin-bottom: 32px;
+  }
+}
+
+.app-root .enroll-button:hover {
+  background-color: #8790c0;
+}
+
+.studentLife-section {
+  background-color: #e8edf2;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  padding-bottom: 30px;
+  gap: 32px;
+}
+
+.app-root .studentLife-title {
+  color: #242c54;
+  font-weight: bold;
+  font-size: 28px;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.studentLife-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+  gap: 12px;
+  max-width: 100%;
+}
+
+.studentLife-image-wrap {
+  flex: 0 0 auto;
+  display: flex;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
 }
 
-.App-link {
-  color: #61dafb;
+.studentLife-image {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.app-root .studentLife-item-title {
+  color: #242c54;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.app-root .studentLife-item-description {
+  color: #000;
+  line-height: 1.6;
+  font-size: 14px;
+  max-width: 400px;
+}
+
+@media (min-width: 900px) {
+  .studentLife-items {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 64px;
+    width: 100%;
   }
-  to {
-    transform: rotate(360deg);
+
+  .studentLife-item {
+    flex: 0 1 400px;
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .studentLife-image {
+    max-width: 400px;
+  }
+
+  .studentLife-item-description {
+    max-width: 300px;
+  }
+}
+
+.program-section {
+  width: 100%;
+  height: 700px;
+  position: relative;
+}
+
+.bg-image-wrapper {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bg-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(2, 8, 44, 0.752);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+}
+
+.program-items {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 100px;
+}
+
+.atec-logo {
+  width: 100%;
+  max-width: 350px;
+  height: auto;
+  object-fit: cover;
+}
+
+.app-root .program-title {
+  color: #ffffff;
+  font-weight: bold;
+  margin-bottom: 40px;
+  font-size: 26px;
+}
+
+.app-root .program-item-title {
+  color: #ffffff;
+  font-weight: bold;
+  margin-top: 16px;
+  margin-bottom: 2px;
+  font-size: 25px;
+}
+
+.app-root .program-item-description {
+  color: #ffffff;
+  line-height: 1.6;
+  font-size: 14px;
+  max-width: 300px;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .app-root .program-title {
+    margin-bottom: 10px;
+    font-size: 20px;
+  }
+
+  .program-items {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  }
+  .atec-logo {
+    width: 100%;
+    max-width: 150px;
+  }
+
+  .app-root .program-item-title {
+    margin-top: 10px;
+    margin-bottom: 2px;
+    font-size: 18 px;
+  }
+}
+
+.pmvgo-section {
+  background-color: #e8edf2;
+  width: 100%;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.app-root .pmvgo-title {
+  color: #242c54;
+  font-weight: bold;
+  margin-bottom: 50px;
+  font-size: 35;
+  text-align: center;
+}
+
+.pmvgo-items {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 120px;
+}
+
+.pmvgo-item {
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.pmvgo-item-core {
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  list-style-type: none;
+}
+
+.app-root .pvgo-item-descrip {
+  color: #242c54;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.app-root .pvgo-item-title {
+  color: #242c54;
+  font-size: 30px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.app-root .pvgo-item-title-core {
+  color: #242c54;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.app-root .pvgo-item-descrip-core {
+  color: #242c54;
+  line-height: 1.6;
+  font-size: 20px;
+}
+
+.pmvgo-item-core ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .pmvgo-section {
+    height: 700px;
+  }
+
+  .app-root .pmvgo-title {
+    margin-bottom: 25px;
+    font-size: 24px;
+  }
+
+  .pmvgo-items {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+  }
+
+  .pmvgo-item {
+    max-width: 280px;
+  }
+
+  .pmvgo-item-core {
+    max-width: 280px;
+  }
+
+  .app-root .pvgo-item-descrip {
+    font-size: 12px;
+  }
+
+  .app-root .pvgo-item-title {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .app-root .pvgo-item-title-core {
+    font-size: 20px;
+  }
+
+  .app-root .pvgo-item-descrip-core {
+    font-size: 18px;
   }
 }
