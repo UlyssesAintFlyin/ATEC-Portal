@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import CarouselComponent from './components/CarouselFolder/Carousel';
 import GradeReport from './pages/GradeReport';
+import Admin from './pages/Admin';
 
 function App() {
   return (
@@ -221,6 +222,7 @@ function App() {
             } />
 
             <Route path="/grades" element={<GradeReport />} />
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         </main>
         <Footer />
