@@ -12,10 +12,11 @@ import {
   Box,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import { Link, useLocation } from "react-router-dom";
 
 export const Header = () => {
   const [open, setOpen] = useState(false);
-
+  const location = useLocation();
   const toggleDrawer = (state) => () => {
     setOpen(state);
   };
@@ -95,64 +96,78 @@ export const Header = () => {
           </Box>
         </Box>
 
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            gap: { xs: 0.5, sm: 2, md: 3 },
-            ml: { xs: 1, sm: 2, md: 3 },
-            mr: { xs: 1, sm: 2, md: 3 },
-          }}
-        >
-          <Button
+        {location.pathname === "/" && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: { xs: 0.5, sm: 2, md: 3 },
+              ml: { xs: 1, sm: 2, md: 3 },
+              mr: { xs: 1, sm: 2, md: 3 },
+            }}
+          >
+            <Button
+              color="inherit"
+              sx={{
+                fontSize: { xs: "10px", sm: "12px", md: "15px" },
+                textTransform: "none",
+              }}
+              onClick={() => {
+                document
+                  .getElementById("about")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              About
+            </Button>
+            <Button
+              color="inherit"
+              sx={{
+                fontSize: { xs: "10px", sm: "12px", md: "15px" },
+                textTransform: "none",
+              }}
+              onClick={() => {
+                document
+                  .getElementById("offers")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              Offers
+            </Button>
+            <Button
+              color="inherit"
+              sx={{
+                fontSize: { xs: "10px", sm: "12px", md: "15px" },
+                textTransform: "none",
+              }}
+              onClick={() => {
+                document
+                  .getElementById("contact")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              Contact
+            </Button>
+          </Box>
+        )}
+
+        {location.pathname === "/grades" && (
+          <Button 
             color="inherit"
             sx={{
               fontSize: { xs: "10px", sm: "12px", md: "15px" },
               textTransform: "none",
               minWidth: "auto",
+              ml: { xs: 1, sm: 2, md: 3 },
+              mr: { xs: 1, sm: 2, md: 3 },
               p: 0.5,
             }}
-            onClick={() => {
-              document
-                .getElementById("about")
-                ?.scrollIntoView({ behavior: "smooth" });
-            }}
+            component={Link}
+            to="/" 
           >
-            About
+            Home
           </Button>
-          <Button
-            color="inherit"
-            sx={{
-              fontSize: { xs: "10px", sm: "12px", md: "15px" },
-              textTransform: "none",
-              minWidth: "auto",
-              p: 0.5,
-            }}
-            onClick={() => {
-              document
-                .getElementById("offers")
-                ?.scrollIntoView({ behavior: "smooth" });
-            }}
-          >
-            Offers
-          </Button>
-          <Button
-            color="inherit"
-            sx={{
-              fontSize: { xs: "10px", sm: "12px", md: "15px" },
-              textTransform: "none",
-              minWidth: "auto",
-              p: 0.5,
-            }}
-            onClick={() => {
-              document
-                .getElementById("contact")
-                ?.scrollIntoView({ behavior: "smooth" });
-            }}
-          >
-            Contact
-          </Button>
-        </Box>
+        )}
 
         <Box
           component="img"
@@ -196,13 +211,13 @@ export const Header = () => {
           </Box>
 
           <List>
-            <ListItem button component="a" href="/">
+            <ListItem button component={Link} to="/">
               <ListItemText primary="Enrollment" />
             </ListItem>
-            <ListItem button component="a" href="/about">
+            <ListItem button component={Link} to="/about">
               <ListItemText primary="Evaluation" />
             </ListItem>
-            <ListItem button component="a" href="/attendance">
+            <ListItem button component={Link} to="/grades">
               <ListItemText primary="Grades" />
             </ListItem>
           </List>
