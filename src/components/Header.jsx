@@ -29,7 +29,7 @@ export const Header = () => {
         backgroundImage: "linear-gradient(180deg, #242C54 25%, #171B2E 75%)",
       }}
     >
-      <Toolbar>
+      <Toolbar sx={{ px: { xs: 1, sm: 2 }, minWidth: 0}}>
         <IconButton
           edge="start"
           color="inherit"
@@ -45,7 +45,7 @@ export const Header = () => {
           src="/resources/ATECLogo.svg"
           alt="Logo"
           sx={{
-            width: { xs: 35, md: 50 },
+            width: { xs: 28, md: 50 },
             height: "auto",
           }}
         />
@@ -65,7 +65,7 @@ export const Header = () => {
             component="div"
             sx={{
               fontFamily: '"Alfa Slab One", serif',
-              fontSize: { xs: "2rem", md: "3rem" },
+              fontSize: { xs: "1.3rem", md: "3rem" },
               fontWeight: 400,
               backgroundImage: "linear-gradient(180deg, #DBDFF1, #515880)",
               WebkitBackgroundClip: "text",
@@ -174,7 +174,7 @@ export const Header = () => {
           src="/resources/BulsuLogo.svg"
           alt="Logo"
           sx={{
-            width: { xs: 35, sm: 44, md: 50 },
+            width: { xs: 28, sm: 44, md: 50 },
             height: "auto",
           }}
         />
