@@ -1,5 +1,4 @@
 import React from "react";
-import { Header } from "../components/Header";
 import { Typography, Box, Button } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -125,7 +124,6 @@ function GradeReport() {
 
         <Box
           sx={{
-            backgroundColor: "#3c2121",
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
             height: { xs: "600px", md: "420px" },
