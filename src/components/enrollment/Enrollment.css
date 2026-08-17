@@ -1,0 +1,461 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Quattrocento:wght@400;700&display=swap');
+
+*{
+    box-sizing: border-box;
+}
+
+.parent{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px;
+    min-height: 91vh;
+}
+
+.cont{
+    display: flex;
+    flex-direction: row;
+    width: 60%;
+    max-width: 900px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.leftTop{
+    width: 50%;
+}
+
+.rightTop{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
+    margin-top: 10px;
+}
+
+.rightTop p{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid #242C54;
+    background-color: transparent;
+    color: #242C54;
+    font-family: quattrocento;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.rightTop p.stepActive,
+.rightTop p.stepDone{
+    background-color: #242C54;
+    color: aliceblue;
+}
+
+.load{
+    width: 18%;
+    height: 1px;
+    border: 1px solid black;
+}
+
+.leftTop h6{
+    margin: 0;
+    font-family: fraunces;
+    color: #242C54;
+    font-size: 36px;
+    text-shadow: 1px 1px 1px gray;
+}
+
+.leftTop p{
+    margin: 8px 0 0 0;
+    font-family: quattrocento;
+    color: #242C54;
+    font-size: 15px;
+    text-shadow: 1px 1px 5px rgb(177, 177, 177);
+}
+
+.child{
+    position: relative;
+    width: 60%;
+    max-width: 1000px;;
+    padding: 30px 40px 40px 40px;
+    border: 1px solid rgb(163, 163, 163);
+    border-radius: 20px;
+    box-shadow: 1px 1px 10px rgb(184, 183, 183);
+}
+
+.child h6{
+    font-family: fraunces;
+    font-weight: 400;
+    font-size: 30px;
+    color: #242C54;
+    text-shadow: 1px 1px 2px rgb(207, 205, 205);
+    margin: 0;
+}
+
+.child p{
+    font-family: quattrocento;
+    font-weight: 300;
+    font-size: 15px;
+    color: #242C54;
+    text-shadow: 1px 1px 2px rgb(197, 197, 197);
+    margin: 6px 0 0 0;
+}
+
+.first h6{
+    font-family: fraunces;
+    font-weight: 400;
+    font-size: 30px;
+    color: #242C54;
+    text-shadow: 1px 1px 2px rgb(207, 205, 205);
+    margin: 0;
+}
+.first p{
+    font-family: quattrocento;
+    font-weight: 300;
+    font-size: 15px;
+    color: #242C54;
+    text-shadow: 1px 1px 2px rgb(197, 197, 197);
+    margin: 6px 0 0 0;
+}
+
+.stepLabel{
+    font-size: 12px ;
+    margin-bottom: 0 ;
+}
+
+.typeTag{
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    margin: 0;
+}
+
+.studentForm{
+    width: 100%;
+    margin-top: 30px;
+    color: black;
+}
+
+.studentForm form{
+    width: 100%;
+}
+
+.formRow{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.formGroup{
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 150px;
+}
+
+.formGroup.small{
+    flex: 0 0 80px;
+    min-width: 80px;
+}
+
+.formGroup.wide{
+    flex: 1 1 100%;
+    margin-bottom: 20px;
+}
+
+.studentForm label{
+    font-family: quattrocento;
+    font-size: 12px;
+    color: black;
+    margin-bottom: 6px;
+}
+
+.studentForm input,
+.studentForm select{
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid rgb(163, 163, 163);
+    border-radius: 6px;
+    font-family: quattrocento;
+    font-size: 14px;
+    color: black;
+    width: 100%;
+}
+
+.studentForm input[readOnly]{
+    background-color: rgb(243, 245, 249);
+    color: rgb(90, 90, 90);
+}
+
+.divider{
+    border: none;
+    border-top: 1px solid rgb(210, 210, 210);
+    margin: 10px 0 20px 0;
+}
+
+.btnRow{
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.continueBtn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: #242C54;
+    color: aliceblue;
+    border: none;
+    border-radius: 8px;
+    font-family: quattrocento;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.continueBtn:hover{
+    background-color: #1a2040;
+}
+
+.backBtn{
+    padding: 10px 20px;
+    background-color: transparent;
+    color: #242C54;
+    border: 1px solid #242C54;
+    border-radius: 8px;
+    font-family: quattrocento;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.backBtn:hover{
+    background-color: rgb(243, 245, 249);
+}
+
+.first{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 60%;
+    max-width: 1000px;
+    padding: 70px 40px 130px 40px;
+    border: 1px solid rgb(163, 163, 163);
+    border-radius: 20px;
+    box-shadow: 1px 1px 10px rgb(184, 183, 183);
+}
+
+.typeCards{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 30px;
+}
+
+.typeCard{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 220px;
+    max-width: 100%;
+    height: 100px;
+    border: 1px solid rgb(163, 163, 163);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.typeCard:hover{
+    border-color: #242C54;
+    box-shadow: 1px 1px 8px rgb(197, 197, 197);
+}
+
+.typeCard p{
+    margin: 0 ;
+    font-family: quattrocento;
+    color: #242C54;
+    text-shadow: none ;
+}
+
+.reviewGrid{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.reviewLeft{
+    flex: 1 1 300px;
+}
+
+.reviewRight{
+    flex: 1 1 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.reviewDivider{
+    width: 1px;
+    background-color: rgb(210, 210, 210);
+    align-self: stretch;
+}
+
+@media (max-width: 1024px){
+    .cont,
+    .child,
+    .first{
+        width: 80%;
+    }
+}
+
+
+@media (max-width: 768px){
+    .parent{
+        padding: 40px 16px;
+    }
+
+    .cont,
+    .child,
+    .first{
+        width: 100%;
+    }
+
+    .child{
+        padding: 25px 25px 30px 25px;
+    }
+
+    .first{
+        padding: 50px 25px 80px 25px;
+    }
+
+    .leftTop h6{
+        font-size: 28px;
+    }
+
+    .child h6,
+    .first h6{
+        font-size: 24px;
+    }
+
+    .typeTag{
+        top: 25px;
+        right: 25px;
+        font-size: 13px;
+    }
+
+    .formGroup{
+        min-width: 130px;
+    }
+
+    .reviewDivider{
+        width: 100%;
+        height: 1px;
+    }
+}
+
+
+@media (max-width: 480px){
+    .parent{
+        padding: 30px 12px;
+    }
+
+    .cont{
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .leftTop,
+    .rightTop{
+        width: 100%;
+    }
+
+    .rightTop{
+        justify-content: flex-start;
+        margin-top: 16px;
+    }
+
+    .rightTop p{
+        width: 26px;
+        height: 26px;
+        font-size: 12px;
+    }
+
+    .leftTop h6{
+        font-size: 22px;
+    }
+
+    .leftTop p{
+        font-size: 13px;
+    }
+
+    .child,
+    .first{
+        border-radius: 14px;
+        padding: 20px 16px 24px 16px;
+    }
+
+    .first{
+        padding: 40px 16px 60px 16px;
+    }
+
+    .child h6,
+    .first h6{
+        font-size: 20px;
+    }
+
+    .child p,
+    .first p{
+        font-size: 13px;
+    }
+
+    .typeTag{
+        position: static;
+        display: inline-block;
+        margin-top: 10px;
+    }
+
+    .typeCards{
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .typeCard{
+        width: 100%;
+    }
+
+    .formRow{
+        flex-direction: column;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .formGroup,
+    .formGroup.small,
+    .formGroup.wide{
+        flex: 1 1 100%;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .btnRow{
+        flex-direction: column-reverse;
+    }
+
+    .backBtn,
+    .continueBtn{
+        width: 100%;
+        justify-content: center;
+    }
+
+    .reviewGrid{
+        flex-direction: column;
+        gap: 16px;
+    }
+}
