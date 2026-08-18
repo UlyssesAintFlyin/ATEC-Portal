@@ -1,5 +1,4 @@
 import React from "react";
-import { Header } from '../components/Header';
 import { styled } from '@mui/material/styles';
 import { Box, Typography, ButtonBase, Grid } from "@mui/material";
 import {Link} from 'react-router-dom';
@@ -13,9 +12,9 @@ const images = [
   },
   {
     url: '/resources/grades-img.jpg',
-    title: 'Grading',
+    title: 'Students Grades',
     width: '33%',
-    link: '/admin/gradeReport',
+    link: '/admin/sections',
      
   },
   {
@@ -101,8 +100,8 @@ const Overlay = styled('span')(({ theme }) => ({
 
 function Admin() {
   return (
+    
     <>
-
   <Grid
     container
     spacing={2}
@@ -114,7 +113,7 @@ function Admin() {
       mx: 'auto',
     }}
   >
-    {/* Left side: 2x2 grid */}
+    {/* First 4 buttons */}
     <Grid item xs={12} md={8}>
       <Grid container spacing={2}>
         {images.slice(0, 4).map((image, idx) => (
@@ -125,7 +124,7 @@ function Admin() {
               focusRipple
               style={{
                 width: '100%',
-                height: 200,   // ✅ fixed equal height
+                height: 200,   
                 position: 'relative',
               }}
             >
@@ -155,7 +154,7 @@ function Admin() {
       </Grid>
     </Grid>
 
-    {/* Right side: tall button */}
+    {/* Enrollment Button */}
     <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
       <ImageButton
         component={Link}
@@ -164,7 +163,7 @@ function Admin() {
         sx={{
           flex: 1,
           width: '100%',
-          height: { xs: 200, md: 416 }, // ✅ 200px small buttons, 416px tall on desktop
+          height: { xs: 200, md: 416 },
           position: 'relative',
         }}
       >

@@ -5,15 +5,16 @@ import Autocomplete from "@mui/material/Autocomplete";
 import { Table } from "../components/Table";
 import { Link, useNavigate } from "react-router-dom";
 import {Header} from '../components/AdminHeader';
-export default function FacultyEvaluation() {
+export default function SelectedSection() {
     const navigate = useNavigate();
- 
-  const columns = [
+   
+
+    const columns = [
     { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
-    { field: "facultyName", headerName: "Faculty Name", flex: 1 },
+    { field: "studentName", headerName: "Student Name", flex: 1 },
     { field: "age", headerName: "Age", type: "number", flex: 0.5 },
     { field: "gender", headerName: "Gender", flex: 0.5 },
-    { field: "position", headerName: "Position", flex: 0.5},
+    { field: "program", headerName: "Program", flex: 0.5},
     {
       field: "action",
       headerName: "Action",
@@ -32,7 +33,7 @@ export default function FacultyEvaluation() {
           onClick={() => navigate(`/${params.row.id}`)}
           sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px" ,} ,width: { xs: "80px", sm: "120px", md: "100px" }}}
         >
-            Evaluation
+            View
           </Button></>
       ),
 
@@ -43,52 +44,52 @@ export default function FacultyEvaluation() {
   const rows = [
     {
       id: 1,
-      facultyName: "Albert Einstein",
-      age: 50,
+      studentName: "Gojo Satoru",
+      age: 17,
       gender: "Male",
-      position: "Academic Head",
+      program: "TechPro - ICT",
     },
     {
       id: 2,
-      facultyName: "Maria Montessori",
-      age: 29,
+      studentName: "Coleen Santos",
+      age: 16,
       gender: "Female",
-      position: "Teacher",
+      program: "TechPro - ICT",
     },
     {
       id: 3,
-      facultyName: "Bobby Lopez",
-      age: 39,
+      studentName: "Nelson Mandela",
+      age: 18,
       gender: "Male",
-      position: "Teacher",
+      program: "TechPro - ICT",
     },
     {
       id: 4,
-      facultyName: "Belno Light",
-      age: 24,
-      gender: "Female",
-      position: "Teacher",
+      studentName: "Tony Stark",
+      age: 19,
+      gender: "Male",
+      program: "TechPro - ICT",
     },
     {
       id: 5,
-      facultyName: "Jose Rizal",
-      age: 23,
+      studentName: "Itaru Hashida",
+      age: 18,
       gender: "Male",
-      position: "Teacher",
+      program: "TechPro - ICT",
     },
     {
       id: 6,
-      facultyName: "Pedro Ramirez Cruz",
-      age: 42,
-      gender: "Male",
-      position: "Academic Head",
+      studentName: "Michelle Jones",
+      age: 17,
+      gender: "Female",
+      program: "TechPro - ICT",
     },
     {
       id: 7,
-      facultyName: "Osamu Dazai",
-      age: 32,
-      gender: "Male",
-      position: "Teacher",
+      studentName: "Naomi Payton",
+      age: 17,
+      gender: "Female",
+      program: "TechPro - ICT",
     }
 
   ];
@@ -134,7 +135,7 @@ export default function FacultyEvaluation() {
               marginLeft: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
-            Faculty
+            Grade 11 - Commitment
           </Typography>
           <Box
             sx={{
@@ -144,20 +145,6 @@ export default function FacultyEvaluation() {
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
-            <Button
-              sx={{
-                fontSize: { xs: "12px", sm: "15px", md: "17px" },
-                color: "#E8EDF2",
-                backgroundColor: "#242C54",
-                borderRadius: "5px",
-                "&:hover": {
-                  backgroundColor: "#4f5d9e",
-                  transform: "scale(1.05)",
-                },
-              }}
-            >
-              Configure Evaluation
-            </Button>
           </Box>
         </Box>
 

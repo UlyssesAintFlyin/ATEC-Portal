@@ -13,6 +13,8 @@ import AdminLayout from "./layouts/AdminLayout";
 import FacultyEvaluation from './pages/FacultyEvaluation';
 import Evaluation from './pages/Evaluation';
 import Enrollment from './pages/Enrollment';
+import Sections from './pages/Sections';
+import SelectedSection from './pages/SelectedSection';
 import SignIn from "./pages/SignIn"
 import { Link } from "react-router-dom";
 
@@ -46,6 +48,9 @@ function App() {
             <Route index element={<Admin />} />
             <Route path="enrollmentList" element={<EnrollmentManagement />} />
             <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
+            <Route path="facultyEvaluation" element={<FacultyEvaluation />} />
+            <Route path="sections" element={<Sections />} />
+            <Route path="sections/:id" element={<SelectedSection />} />
           </Route>
 
           {/* signin without header */}

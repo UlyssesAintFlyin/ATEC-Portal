@@ -5,35 +5,26 @@ import Autocomplete from "@mui/material/Autocomplete";
 import { Table } from "../components/Table";
 import { Link, useNavigate } from "react-router-dom";
 import {Header} from '../components/AdminHeader';
-export default function FacultyEvaluation() {
+export default function Sections() {
     const navigate = useNavigate();
- 
+    
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
-    { field: "facultyName", headerName: "Faculty Name", flex: 1 },
-    { field: "age", headerName: "Age", type: "number", flex: 0.5 },
-    { field: "gender", headerName: "Gender", flex: 0.5 },
-    { field: "position", headerName: "Position", flex: 0.5},
+    { field: "id", headerName: "Section ID", flex: 0, minWidth: 60 },
+    { field: "gradeLevel", headerName: "Grade Level", flex: 0.5, minWidth: 60 },
+    { field: "sectionName", headerName: "Section Name", flex: 1 },
     {
       field: "action",
       headerName: "Action",
       flex: 1,
       renderCell: (params) => (
-        <><Button
+        <Button
           variant="contained"
           color="inherit"
-          onClick={() => navigate(`/${params.row.id}`)}
-          sx={{ fontSize: { xs: "12px", sm: "15px", md: "15px" }, width: { xs: "80px", sm: "120px", md: "100px" } }}
-        >
-          Edit
-        </Button><Button
-          variant="contained"
-          color="inherit"
-          onClick={() => navigate(`/${params.row.id}`)}
+          onClick={() => navigate(`/admin/sections/${params.row.id}`)}
           sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px" ,} ,width: { xs: "80px", sm: "120px", md: "100px" }}}
         >
-            Evaluation
-          </Button></>
+            View
+          </Button>
       ),
 
     },
@@ -43,54 +34,10 @@ export default function FacultyEvaluation() {
   const rows = [
     {
       id: 1,
-      facultyName: "Albert Einstein",
-      age: 50,
-      gender: "Male",
-      position: "Academic Head",
+      gradeLevel: "Grade 11",
+      sectionName: "Commitment",
     },
-    {
-      id: 2,
-      facultyName: "Maria Montessori",
-      age: 29,
-      gender: "Female",
-      position: "Teacher",
-    },
-    {
-      id: 3,
-      facultyName: "Bobby Lopez",
-      age: 39,
-      gender: "Male",
-      position: "Teacher",
-    },
-    {
-      id: 4,
-      facultyName: "Belno Light",
-      age: 24,
-      gender: "Female",
-      position: "Teacher",
-    },
-    {
-      id: 5,
-      facultyName: "Jose Rizal",
-      age: 23,
-      gender: "Male",
-      position: "Teacher",
-    },
-    {
-      id: 6,
-      facultyName: "Pedro Ramirez Cruz",
-      age: 42,
-      gender: "Male",
-      position: "Academic Head",
-    },
-    {
-      id: 7,
-      facultyName: "Osamu Dazai",
-      age: 32,
-      gender: "Male",
-      position: "Teacher",
-    }
-
+    
   ];
 
   return (
