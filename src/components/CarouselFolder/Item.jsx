@@ -1,5 +1,6 @@
 import React from "react";
 import { Paper, Button, Box, Typography } from "@mui/material";
+import { Link } from "react-router-dom";
 
 function Item(props) {
   return (
@@ -31,7 +32,7 @@ function Item(props) {
           bottom: 0,
           left: 0,
           width: "100%",
-          height: "40%", 
+          height: "40%",
           background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
         }}
       />
@@ -75,6 +76,8 @@ function Item(props) {
             color: "#fff",
             "&:hover": { backgroundColor: "#474f78" },
           }}
+          component={Link}
+          to="/enrollment"
         >
           Enroll Now!
         </Button>

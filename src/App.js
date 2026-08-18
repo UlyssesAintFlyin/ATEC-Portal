@@ -11,6 +11,11 @@ import EnrollmentManagement from './pages/EnrollmentManagement';
 import EnrollmentRecord from "./pages/EnrollmentRecord";
 import AdminLayout from "./layouts/AdminLayout";
 import FacultyEvaluation from './pages/FacultyEvaluation';
+import Evaluation from './pages/Evaluation';
+import Enrollment from './pages/Enrollment';
+import SignIn from "./pages/SignIn"
+import { Link } from "react-router-dom";
+
 function LayoutWithHeader() {
   return (
     <>
@@ -22,6 +27,36 @@ function LayoutWithHeader() {
     </>
   );
 }
+
+function App() {
+  return (
+    <Router>
+      <div className="app-root">
+        <Routes>
+          {/* Public layout */}
+          <Route element={<LayoutWithHeader />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/grades" element={<GradeReport />} />
+            <Route path="/evaluation" element={<Evaluation />} />
+            <Route path="/enrollment" element={<Enrollment />} />
+          </Route>
+
+          {/* Admin layout */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Admin />} />
+            <Route path="enrollmentList" element={<EnrollmentManagement />} />
+            <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
+          </Route>
+
+          {/* signin without header */}
+          <Route path="/signin" element={<SignIn />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
 
 function Home() {
   return (
@@ -84,7 +119,8 @@ function Home() {
           <Typography variant="body1" className="advocate-paragraph-last">
             Begin your journey with ATEC and be prepared to be a competitive student, globally!
           </Typography>
-          <Button className="enroll-button">
+          <Button className="enroll-button" component={Link}
+            to="/enrollment" >
             Enroll Now
           </Button>
         </Box>
@@ -230,32 +266,3 @@ function Home() {
     </div>
   );
 }
-
-function App() {
-  return (
-    <Router>
-      <div className="app-root">
-        <Routes>
-          {/* Public layout */}
-          <Route element={<LayoutWithHeader />}>
-            <Route path="/" element={<Home />} /> 
-            <Route path="/grades" element={<GradeReport />} />
-          </Route>
-
-          {/* Admin layout */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Admin />} />
-            <Route path="/admin/enrollmentList" element={<EnrollmentManagement />} />
-            <Route path="/admin/enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
-            <Route path="/admin/facultyEvaluation" element={<FacultyEvaluation />} />
-          </Route>
-
-          {/* Home without header */}
-          <Route path="/" element={<Home />} />
-        </Routes>
-      </div>
-    </Router>
-  );
-}
-
-export default App;
