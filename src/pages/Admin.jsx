@@ -2,23 +2,39 @@ import React from "react";
 import { Header } from '../components/Header';
 import { styled } from '@mui/material/styles';
 import { Box, Typography, ButtonBase, Grid } from "@mui/material";
-
+import {Link} from 'react-router-dom';
 
 const images = [
   {
     url: '/resources/grades-img.jpg',
+    title: 'Configure Academic Year',
+    width: '33%',
+    link: '/admin/gradeReport',
+  },
+  {
+    url: '/resources/grades-img.jpg',
     title: 'Grading',
     width: '33%',
+    link: '/admin/gradeReport',
+     
+  },
+  {
+    url: '/resources/grades-img.jpg',
+    title: 'Configure Subjects',
+    width: '33%',
+    link: '/admin/gradeReport',
   },
   {
     url: '/resources/evaluation-img.jpg',
     title: 'Faculty Evaluation',
     width: '30%',
+    link: '/admin/facultyEvaluation',
   },
   {
     url: '/resources/enrollment-img.jpg',
-    title: 'Camera',
+    title: 'Enrollment',
     width: '30%',
+    link: '/admin/enrollmentList',
   },
 ];
 
@@ -84,107 +100,102 @@ const Overlay = styled('span')(({ theme }) => ({
 
 
 function Admin() {
- return (
-   <>
-      <Typography 
-        variant="h4" 
-        align="center" 
-        sx={{ mt: 2, width: '60%', fontWeight: 'bold', backgroundColor: '#4B5694', color: 'white', padding: 2, borderRadius: 1, marginX: 'auto' }}
-      >
-        Manage Academic Terms
-      </Typography>
+  return (
+    <>
 
-      <Grid 
-        container 
-        spacing={2} 
-        sx={{ 
-          marginTop: 1, 
-          marginBottom: 5,
-          minWidth: 300, 
-          width: '60%', 
-          marginX: 'auto',       
-          minHeight: '75vh',      
-          alignItems: 'stretch',  
-          justifyContent: 'center',
-        }}
-      >
-
-        <Grid item xs={6} container direction="column" spacing={2}>
-          {images.slice(0, 2).map((image, idx) => (
-            <Grid item key={image.title} sx={{ flex: 1 }}>
-              <ImageButton
-                focusRipple
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  position: 'relative',
-                }}
-              >
-                <ImageSrc style={{ backgroundImage: `url(${image.url})` }} />
-                <ImageBackdrop className="MuiImageBackdrop-root" />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    p: 2,
-                    color: '#fff',
-                  }}
-                >
-                  <Typography  variant="h6" align="left"  sx={{ fontWeight: 'bold' }}>
-                    {`0${idx + 1}`} 
-                  </Typography>
-                  <Typography variant="subtitle1" align="left" sx={{ fontWeight: 'bold' }}>
-                    {image.title} 
-                  </Typography>
-                </Box>
-              </ImageButton>
-            </Grid>
-          ))}
-        </Grid>
-
-        <Grid item xs={6} sx={{ display: 'flex' }}>
-          <ImageButton
-            focusRipple
-            style={{
-              width: '100%',
-              height: '100%',
-              position: 'relative',
-            }}
-          >
-            <ImageSrc style={{ backgroundImage: `url(${images[2].url})` }} />
-            <ImageBackdrop className="MuiImageBackdrop-root" />
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                p: 2,
-                color: '#fff',
+  <Grid
+    container
+    spacing={2}
+    sx={{
+      mt: 2,
+      mb: 4,
+      width: { xs: '90%', md: '75%' },
+      maxWidth: 1200,
+      mx: 'auto',
+    }}
+  >
+    {/* Left side: 2x2 grid */}
+    <Grid item xs={12} md={8}>
+      <Grid container spacing={2}>
+        {images.slice(0, 4).map((image, idx) => (
+          <Grid item xs={12} md={6} key={image.title}>
+            <ImageButton
+              component={Link}
+              to={image.link}
+              focusRipple
+              style={{
+                width: '100%',
+                height: 200,   // ✅ fixed equal height
+                position: 'relative',
               }}
             >
-              <Typography  variant="h6" align="left"  sx={{ fontWeight: 'bold' }}>
-                03
-              </Typography>
-              <Typography variant="subtitle1" align="left" sx={{ fontWeight: 'bold' }}>
-                {images[2].title}
-              </Typography>
-            </Box>
-          </ImageButton>
-        </Grid>
+              <ImageSrc style={{ backgroundImage: `url(${image.url})` }} />
+              <ImageBackdrop className="MuiImageBackdrop-root" />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  p: 1.5,
+                  color: '#fff',
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                  {`0${idx + 1}`}
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                  {image.title}
+                </Typography>
+              </Box>
+            </ImageButton>
+          </Grid>
+        ))}
       </Grid>
-    </>
+    </Grid>
 
+    {/* Right side: tall button */}
+    <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+      <ImageButton
+        component={Link}
+        to={images[4].link}
+        focusRipple
+        sx={{
+          flex: 1,
+          width: '100%',
+          height: { xs: 200, md: 416 }, // ✅ 200px small buttons, 416px tall on desktop
+          position: 'relative',
+        }}
+      >
+        <ImageSrc style={{ backgroundImage: `url(${images[4].url})` }} />
+        <ImageBackdrop className="MuiImageBackdrop-root" />
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            p: 1.5,
+            color: '#fff',
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+            05
+          </Typography>
+          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+            {images[4].title}
+          </Typography>
+        </Box>
+      </ImageButton>
+    </Grid>
+  </Grid>
+
+
+
+    </>
   );
 }
+
 export default Admin    

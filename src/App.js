@@ -10,7 +10,7 @@ import Admin from './pages/Admin';
 import EnrollmentManagement from './pages/EnrollmentManagement';
 import EnrollmentRecord from "./pages/EnrollmentRecord";
 import AdminLayout from "./layouts/AdminLayout";
-
+import FacultyEvaluation from './pages/FacultyEvaluation';
 function LayoutWithHeader() {
   return (
     <>
@@ -245,8 +245,9 @@ function App() {
           {/* Admin layout */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Admin />} />
-            <Route path="enrollmentList" element={<EnrollmentManagement />} />
-            <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
+            <Route path="/admin/enrollmentList" element={<EnrollmentManagement />} />
+            <Route path="/admin/enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
+            <Route path="/admin/facultyEvaluation" element={<FacultyEvaluation />} />
           </Route>
 
           {/* Home without header */}
