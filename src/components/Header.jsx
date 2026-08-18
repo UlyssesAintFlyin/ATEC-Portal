@@ -29,7 +29,7 @@ export const Header = () => {
         backgroundImage: "linear-gradient(180deg, #242C54 25%, #171B2E 75%)",
       }}
     >
-      <Toolbar sx={{ px: { xs: 1, sm: 2 }, minWidth: 0}}>
+      <Toolbar sx={{ px: { xs: 1, sm: 2 }, minWidth: 0 }}>
         <IconButton
           edge="start"
           color="inherit"
@@ -151,8 +151,10 @@ export const Header = () => {
           </Box>
         )}
 
-        {location.pathname === "/grades" && (
-          <Button 
+        {["/grades", "/enrollment", "/evaluation"].includes(
+          location.pathname,
+        ) && (
+          <Button
             color="inherit"
             sx={{
               fontSize: { xs: "10px", sm: "12px", md: "15px" },
@@ -163,7 +165,7 @@ export const Header = () => {
               p: 0.5,
             }}
             component={Link}
-            to="/" 
+            to="/"
           >
             Home
           </Button>
@@ -211,13 +213,28 @@ export const Header = () => {
           </Box>
 
           <List>
-            <ListItem button component={Link} to="/">
+            <ListItem
+              button
+              component={Link}
+              to="/enrollment"
+              onClick={toggleDrawer(false)}
+            >
               <ListItemText primary="Enrollment" />
             </ListItem>
-            <ListItem button component={Link} to="/about">
+            <ListItem
+              button
+              component={Link}
+              to="/evaluation"
+              onClick={toggleDrawer(false)}
+            >
               <ListItemText primary="Evaluation" />
             </ListItem>
-            <ListItem button component={Link} to="/grades">
+            <ListItem
+              button
+              component={Link}
+              to="/grades"
+              onClick={toggleDrawer(false)}
+            >
               <ListItemText primary="Grades" />
             </ListItem>
           </List>
@@ -225,11 +242,13 @@ export const Header = () => {
           <Box sx={{ p: 2 }}>
             <Button
               variant="contained"
-              color="error"
+              sx={{color: "#E8EDF2", backgroundColor: "#242C54"}}
               fullWidth
-              onClick={() => console.log("Sign Out clicked")}
+              onClick={toggleDrawer(false)}
+              component={Link}
+              to="/signin"
             >
-              Sign-Out
+              Sign-In
             </Button>
           </Box>
         </Box>

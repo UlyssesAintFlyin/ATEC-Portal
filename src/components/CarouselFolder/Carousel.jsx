@@ -32,8 +32,7 @@ function CarouselComponent() {
       navButtonsAlwaysVisible={true}
       navButtonsProps={{
         style: {
-          backgroundColor: "#242C54",
-          borderRadius: 50
+          backgroundColor: "#242C54"
         }
       }}
       sx={{ width: "100%", height: { xs: 300, sm: 500, md: 600 } }}
