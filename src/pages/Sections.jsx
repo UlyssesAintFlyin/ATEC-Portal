@@ -1,13 +1,50 @@
-import React from "react";
-import { Typography, Box, Button } from "@mui/material";
-import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
+
+import React, { useState } from "react";
+import { Typography, 
+  Box, 
+  Button, 
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Autocomplete
+} from "@mui/material";
+
+
 import { Table } from "../components/Table";
 import { Link, useNavigate } from "react-router-dom";
-import {Header} from '../components/AdminHeader';
 export default function Sections() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [rows, setRows] = useState([
+      {
+        id: 1,
+        gradeLevel: "Grade 11",
+        sectionName: "Commitment",
+      },
     
+  ]);
+
+
+   // Adding Student Dialog State
+    const [open, setOpen] = useState(false);
+    const [newSection, setNewSection] = useState({ gradeLevel: "", sectionName: "" });
+  
+    const handleAdd = () => {
+      const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
+      setRows([...rows, { id: nextId, ...newSection }]);
+      setOpen(false);
+      setNewSection({ gradeLevel: "", sectionName: "" });
+    };
+  
+    // Track selected rows from Table (Supposedly)
+    const [selectedIds, setSelectedIds] = useState([]);
+  
+    const handleRemoveSelected = () => {
+      setRows(rows.filter((r) => !selectedIds.includes(r.id)));
+      setSelectedIds([]);
+    };
+
   const columns = [
     { field: "id", headerName: "Section ID", flex: 0, minWidth: 60 },
     { field: "gradeLevel", headerName: "Grade Level", flex: 0.5, minWidth: 60 },
@@ -31,14 +68,7 @@ export default function Sections() {
     
   ];
 
-  const rows = [
-    {
-      id: 1,
-      gradeLevel: "Grade 11",
-      sectionName: "Commitment",
-    },
-    
-  ];
+  
 
   return (
     <Box
@@ -81,7 +111,7 @@ export default function Sections() {
               marginLeft: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
-            Faculty
+            Sections
           </Typography>
           <Box
             sx={{
@@ -91,20 +121,14 @@ export default function Sections() {
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
-            <Button
-              sx={{
-                fontSize: { xs: "12px", sm: "15px", md: "17px" },
-                color: "#E8EDF2",
-                backgroundColor: "#242C54",
-                borderRadius: "5px",
-                "&:hover": {
-                  backgroundColor: "#4f5d9e",
-                  transform: "scale(1.05)",
-                },
-              }}
-            >
-              Configure Evaluation
-            </Button>
+            <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
+                <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+                    Add Section
+                </Button>
+                <Button variant="contained" color="error" onClick={handleRemoveSelected} disabled={selectedIds.length === 0}>
+                          Remove Selected
+                </Button>
+              </Box>
           </Box>
         </Box>
 
@@ -118,8 +142,39 @@ export default function Sections() {
         >
           {/*Table Component*/}
           <Table rows={rows} columns={columns} />
-        </Box>
+        </Box> 
       </Box>
+      <Dialog open={open} onClose={() => setOpen(false)}>
+              <DialogTitle>Add New Section</DialogTitle>
+              <DialogContent>
+                 <Autocomplete
+                  options={[
+                    "Grade 11",
+                    "Grade 12",
+                    "College - DIT",
+                    "College - DRT",
+                    "College - DHT",
+                  ]}
+                  value={newSection.gradeLevel}
+                  onChange={(event, newValue) =>
+                    setNewSection({ ...newSection, gradeLevel: newValue })
+                  }
+                  renderInput={(params) => (
+                    <TextField {...params} margin="dense" label="Grade Level" fullWidth />
+                  )}
+                />
+                <TextField 
+                margin="dense" 
+                label="Section Name" 
+                fullWidth value={newSection.sectionName} 
+                onChange={(e) => setNewSection({ ...newSection, sectionName: e.target.value })} 
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setOpen(false)}>Cancel</Button>
+                <Button onClick={handleAdd} variant="contained">Add</Button>
+              </DialogActions>
+            </Dialog>
     </Box>
   );
 }

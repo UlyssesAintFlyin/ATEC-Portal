@@ -16,6 +16,8 @@ import Enrollment from './pages/Enrollment';
 import Sections from './pages/Sections';
 import SelectedSection from './pages/SelectedSection';
 import SignIn from "./pages/SignIn"
+import EditStudent from './pages/EditStudent';
+import EditFaculty from './pages/EditFaculty';
 import { Link } from "react-router-dom";
 
 function LayoutWithHeader() {
@@ -49,8 +51,10 @@ function App() {
             <Route path="enrollmentList" element={<EnrollmentManagement />} />
             <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
             <Route path="facultyEvaluation" element={<FacultyEvaluation />} />
+            <Route path="facultyEvaluation/editFaculty/:id" element={<EditFaculty />} />
             <Route path="sections" element={<Sections />} />
             <Route path="sections/:id" element={<SelectedSection />} />
+            <Route path="section/thisSection/:id" element={<EditStudent />} />
           </Route>
 
           {/* signin without header */}
