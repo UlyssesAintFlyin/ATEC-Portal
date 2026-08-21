@@ -13,7 +13,7 @@ export default function EnrollmentRecord() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
-      }}
+    }}  
     >
       <Box
         sx={{

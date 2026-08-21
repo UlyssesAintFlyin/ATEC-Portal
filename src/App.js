@@ -18,6 +18,7 @@ import SelectedSection from './pages/SelectedSection';
 import SignIn from "./pages/SignIn"
 import EditStudent from './pages/EditStudent';
 import EditFaculty from './pages/EditFaculty';
+import EditGrade from './pages/EditGrade';
 import { Link } from "react-router-dom";
 
 function LayoutWithHeader() {
@@ -55,6 +56,7 @@ function App() {
             <Route path="sections" element={<Sections />} />
             <Route path="sections/:id" element={<SelectedSection />} />
             <Route path="section/thisSection/:id" element={<EditStudent />} />
+            <Route path="section/thisSection/thisStudent/editGrade" element={<EditGrade />}/>
           </Route>
 
           {/* signin without header */}

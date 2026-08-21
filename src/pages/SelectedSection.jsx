@@ -81,7 +81,7 @@ export default function SelectedSection() {
           <Button
             variant="contained"
             color="inherit"
-            onClick={() => navigate(`/${params.row.id}`)}
+            onClick={() => navigate(`/admin/section/thisSection/thisStudent/editGrade`)}
             sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px" }, width: { xs: "80px", sm: "120px", md: "100px" } }}
           >
             View
