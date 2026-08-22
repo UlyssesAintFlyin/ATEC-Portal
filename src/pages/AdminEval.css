@@ -1,0 +1,247 @@
+@import url('https://fonts.googleapis.com/css2?family=Agbalumo&family=Climate+Crisis:YEAR@1979&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Geist:ital,wght@0,100..900;1,100..900&family=Great+Vibes&family=Hedvig+Letters+Serif:opsz@12..24&family=Ingrid+Darling&family=Inika:wght@400;700&family=Lobster+Two:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poetsen+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Quattrocento:wght@400;700&display=swap');
+
+.evaluation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 91vh;
+    background-color: #fffffffd;
+    padding: 60px 120px 40px;
+}
+
+.evaluationHeader {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 30px;
+}
+.evaluation h2 {
+    font-family: hedvig letters serif, sans-serif;
+    font-size: clamp(24px, 4vw, 35px);
+    color: #242C54;
+    margin: 0 0 10px;
+    text-shadow: 1px 1px 10px #85858549;
+}
+
+.evaluation p {
+    font-family: sans-serif;
+    font-size: clamp(13px, 2vw, 15px);
+    color: #5f5f5f;
+    text-shadow: 1px 1px 10px #85858549;
+    margin: 0;
+}
+
+.professorsDiv {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(820px, 1fr));
+    gap: 20px;
+    width: 100%;
+    max-width: 900px;
+}
+
+.professor {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 120px;
+    padding: 16px 20px 16px 90px;
+    border: rgba(87, 92, 165, 0.596) 1px solid;
+    background-color: #ffffffda;
+    border-radius: 15px;
+    box-shadow: 1px 1px 20px #acacac49;
+}
+
+.circle {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    height: 52px;
+    width: 52px;
+    border-radius: 50%;
+    background-color: #7198d3;
+    font-family: hedvig letters serif, sans-serif;
+    font-size: 18px;
+    color: #2e1e02;
+    text-shadow: 1px 1px 10px #85858549;
+}
+
+.professor h3 {
+    font-family: hedvig letters serif, sans-serif;
+    font-size: clamp(16px, 2.2vw, 20px);
+    color: #242C54;
+    text-shadow: 1px 1px 10px #85858549;
+    margin: 0 0 4px;
+}
+
+.professor h6 {
+    font-family: sans-serif;
+    font-weight: normal;
+    font-size: 14px;
+    color: #5f5f5f;
+    text-shadow: 1px 1px 10px #85858549;
+    margin: 0;
+}
+
+.evaluationHeader button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 10px 16px;
+    border-radius: 5px;
+    color: white;
+    background-color: #242C54;
+    border: 1px solid #242C54;
+    box-shadow: 1px 1px 10px rgb(189, 188, 188);
+    transition: transform 0.2s ease;
+    white-space: nowrap;
+}
+
+.evaluationHeader button:hover {
+    color: #242C54;
+    background-color: white;
+    transform: translateY(2px);
+    cursor: pointer;
+}
+
+
+.sum {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    min-height: auto;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+    border: rgba(87, 92, 165, 0.596) 1px solid;
+    background-color: #ffffffda;
+    border-radius: 15px;
+    box-shadow: 1px 1px 20px #acacac49;
+    grid-column: 1 / -1;
+}
+
+.variety {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 60px;
+    width: 100%;
+    padding: 16px 24px;
+    border: rgba(87, 92, 165, 0.596) 1px solid;
+    background-color: #ffffffda;
+    border-radius: 10px;
+    box-shadow: 1px 1px 20px #acacac49;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.variety p {
+    font-family: sans-serif;
+    font-size: 14px;
+    color: #242C54;
+    margin: 0;
+    flex: 0 0 160px;
+}
+
+.side {
+    flex: 1 1 120px;
+    height: 10px;
+    background-color: #e6e6e6;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.measure {
+    height: 100%;
+    background-color: #7198d3;
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+.variety h6 {
+    font-family: sans-serif;
+    font-weight: normal;
+    font-size: 14px;
+    color: #5f5f5f;
+    margin: 0;
+    flex: 0 0 30px;
+    text-align: right;
+}
+
+
+@media (max-width: 1024px) {
+    .evaluation {
+        padding: 50px 6vw 40px;
+    }
+
+    .professorsDiv {
+        grid-template-columns: repeat(auto-fill, minmax(660px, 1fr));
+    }
+
+    .evaluationHeader button {
+        padding: 8px 14px;
+        font-size: 14px;
+    }
+}
+
+
+@media (max-width: 640px) {
+    .evaluation {
+        min-height: 100vh;
+        padding: 90px 5vw 30px;
+    }
+
+    .evaluationHeader button {
+        position: static;
+        display: block;
+        width: 100%;
+        margin-top: 12px;
+        text-align: center;
+    }
+
+    .professorsDiv {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .professor {
+        padding-left: 82px;
+        min-height: 80px;
+    }
+
+    .circle {
+        height: 44px;
+        width: 44px;
+        left: 16px;
+        font-size: 15px;
+    }
+
+    .variety {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .variety p {
+        flex: none;
+    }
+
+    .side {
+        width: 100%;
+        flex: none;
+    }
+
+    .variety h6 {
+        text-align: left;
+    }
+}
