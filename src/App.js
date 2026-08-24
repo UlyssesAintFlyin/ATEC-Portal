@@ -19,6 +19,12 @@ import SignIn from "./pages/SignIn"
 import EditStudent from './pages/EditStudent';
 import EditFaculty from './pages/EditFaculty';
 import EditGrade from './pages/EditGrade';
+import AdminEval from './pages/AdminEval';
+import SystemSettings from  './pages/SystemSettings'
+import TermConfig from './pages/TermConfig'
+import CurriculumConfig from './pages/CurriculumConfig';
+import CurriculumSubjects from './pages/CurriculumSubjects';
+import AddSubject from './pages/AddSubject'
 import { Link } from "react-router-dom";
 
 function LayoutWithHeader() {
@@ -53,10 +59,16 @@ function App() {
             <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
             <Route path="facultyEvaluation" element={<FacultyEvaluation />} />
             <Route path="facultyEvaluation/editFaculty/:id" element={<EditFaculty />} />
+            <Route path="facultyEvaluation/evaluation-:id" element={<AdminEval />}/>
             <Route path="sections" element={<Sections />} />
             <Route path="sections/:id" element={<SelectedSection />} />
             <Route path="section/thisSection/:id" element={<EditStudent />} />
             <Route path="section/thisSection/thisStudent/editGrade" element={<EditGrade />}/>
+            <Route path='systemSettings' element = {<SystemSettings/>} />
+            <Route path='systemSettings/termConfig' element={<TermConfig/>}/>
+            <Route path='systemSettings/curriculumConfig' element={<CurriculumConfig/>}/>
+            <Route path='systemSettings/curriculumConfig/curriculum-:id' element={<CurriculumSubjects/>}/>
+            <Route path='systemSettings/curriculumConfig/curriculum-:id/addSubject' element={<AddSubject/>}/>
           </Route>
 
           {/* signin without header */}

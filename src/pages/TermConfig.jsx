@@ -15,27 +15,29 @@ import {
 
 import { Table } from "../components/Table";
 import { Link, useNavigate } from "react-router-dom";
-export default function Sections() {
+export default function TermConfig() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([
     {
       id: 1,
-      gradeLevel: "Grade 11",
-      sectionName: "Commitment",
+      term: "Academic Year 2023-2024",
     },
-
+    {
+      id: 2,
+      term: "Academic Year 2024-2025",
+    },
   ]);
 
 
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
-  const [newSection, setNewSection] = useState({ gradeLevel: "", sectionName: "" });
+  const [newTerm, setTerm] = useState({ term: ""});
 
   const handleAdd = () => {
     const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
-    setRows([...rows, { id: nextId, ...newSection }]);
+    setRows([...rows, { id: nextId, ...newTerm }]);
     setOpen(false);
-    setNewSection({ gradeLevel: "", sectionName: "" });
+    setTerm({ term: ""});
   };
 
   // Track selected rows from Table (Supposedly)
@@ -47,21 +49,20 @@ export default function Sections() {
   };
 
   const columns = [
-    { field: "id", headerName: "Section ID", flex: 0, minWidth: 60 },
-    { field: "gradeLevel", headerName: "Grade Level", flex: 0.5, minWidth: 60 },
-    { field: "sectionName", headerName: "Section Name", flex: 1 },
+
+    { field: "term", headerName: "Term", flex: 1.5 },
     {
       field: "action",
       headerName: "Action",
-      flex: 1,
+      flex: 0.5,
       renderCell: (params) => (
         <Button
           variant="contained"
           color="inherit"
-          onClick={() => navigate(`/admin/sections/${params.row.id}`)}
+          onClick={() => navigate(`/`)}
           sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px", }, width: { xs: "80px", sm: "120px", md: "100px" } }}
         >
-          View
+          Open
         </Button>
       ),
 
@@ -112,7 +113,7 @@ export default function Sections() {
               marginLeft: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
-            Sections
+            Term Management
           </Typography>
           <Box
             sx={{
@@ -124,7 +125,7 @@ export default function Sections() {
           >
             <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
               <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
-                Add Section
+                Add Term
               </Button>
               <Button variant="contained" color="error" onClick={handleRemoveSelected} disabled={selectedIds.length === 0}>
                 Remove Selected
@@ -146,29 +147,13 @@ export default function Sections() {
         </Box>
       </Box>
       <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Add New Section</DialogTitle>
+        <DialogTitle>Add New Academic Year</DialogTitle>
         <DialogContent>
-          <Autocomplete
-            options={[
-              "Grade 11",
-              "Grade 12",
-              "College - DIT",
-              "College - DRT",
-              "College - DHT",
-            ]}
-            value={newSection.gradeLevel}
-            onChange={(event, newValue) =>
-              setNewSection({ ...newSection, gradeLevel: newValue })
-            }
-            renderInput={(params) => (
-              <TextField {...params} margin="dense" label="Grade Level" fullWidth />
-            )}
-          />
           <TextField
             margin="dense"
-            label="Section Name"
-            fullWidth value={newSection.sectionName}
-            onChange={(e) => setNewSection({ ...newSection, sectionName: e.target.value })}
+            label="Term"
+            fullWidth value={newTerm.term}
+            onChange={(e) => setTerm({ ...newTerm, term: e.target.value })}
           />
         </DialogContent>
         <DialogActions>

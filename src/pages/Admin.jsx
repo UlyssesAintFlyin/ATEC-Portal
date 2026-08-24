@@ -8,7 +8,7 @@ const images = [
     url: '/resources/system-setting-img.jpg',
     title: 'System Settings',
     width: '33%',
-    link: '/admin/gradeReport',
+    link: '/admin/systemSettings',
   },
   {
     url: '/resources/grades-img.jpg',

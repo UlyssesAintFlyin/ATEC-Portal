@@ -15,27 +15,29 @@ import {
 
 import { Table } from "../components/Table";
 import { Link, useNavigate } from "react-router-dom";
-export default function Sections() {
+export default function CurriculumConfig() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([
     {
       id: 1,
-      gradeLevel: "Grade 11",
-      sectionName: "Commitment",
+      curriculum: "Grade 12 STEM 1st Semester",
     },
-
+    {
+      id: 2,
+      curriculum: "Grade 12 ABM 1st Semester",
+    },
   ]);
 
 
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
-  const [newSection, setNewSection] = useState({ gradeLevel: "", sectionName: "" });
+  const [newCurriculum, setCurriculum] = useState({ curriculum: ""});
 
   const handleAdd = () => {
     const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
-    setRows([...rows, { id: nextId, ...newSection }]);
+    setRows([...rows, { id: nextId, ...newCurriculum }]);
     setOpen(false);
-    setNewSection({ gradeLevel: "", sectionName: "" });
+    setCurriculum({ curriculum: ""});
   };
 
   // Track selected rows from Table (Supposedly)
@@ -47,21 +49,20 @@ export default function Sections() {
   };
 
   const columns = [
-    { field: "id", headerName: "Section ID", flex: 0, minWidth: 60 },
-    { field: "gradeLevel", headerName: "Grade Level", flex: 0.5, minWidth: 60 },
-    { field: "sectionName", headerName: "Section Name", flex: 1 },
+
+    { field: "curriculum", headerName: "Curriculum", flex: 1.5 },
     {
       field: "action",
       headerName: "Action",
-      flex: 1,
+      flex: 0.5,
       renderCell: (params) => (
         <Button
           variant="contained"
           color="inherit"
-          onClick={() => navigate(`/admin/sections/${params.row.id}`)}
+          onClick={() => navigate(`./curriculum-:id`)}
           sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px", }, width: { xs: "80px", sm: "120px", md: "100px" } }}
         >
-          View
+          Open
         </Button>
       ),
 
@@ -112,7 +113,7 @@ export default function Sections() {
               marginLeft: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
-            Sections
+            Curriculum Management
           </Typography>
           <Box
             sx={{
@@ -124,7 +125,7 @@ export default function Sections() {
           >
             <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
               <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
-                Add Section
+                Add Curriculum
               </Button>
               <Button variant="contained" color="error" onClick={handleRemoveSelected} disabled={selectedIds.length === 0}>
                 Remove Selected
@@ -146,29 +147,13 @@ export default function Sections() {
         </Box>
       </Box>
       <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Add New Section</DialogTitle>
+        <DialogTitle>Add New Curriculum</DialogTitle>
         <DialogContent>
-          <Autocomplete
-            options={[
-              "Grade 11",
-              "Grade 12",
-              "College - DIT",
-              "College - DRT",
-              "College - DHT",
-            ]}
-            value={newSection.gradeLevel}
-            onChange={(event, newValue) =>
-              setNewSection({ ...newSection, gradeLevel: newValue })
-            }
-            renderInput={(params) => (
-              <TextField {...params} margin="dense" label="Grade Level" fullWidth />
-            )}
-          />
           <TextField
             margin="dense"
-            label="Section Name"
-            fullWidth value={newSection.sectionName}
-            onChange={(e) => setNewSection({ ...newSection, sectionName: e.target.value })}
+            label="Curriculum"
+            fullWidth value={newCurriculum.curriculum}
+            onChange={(e) => setCurriculum({ ...newCurriculum, curriculum: e.target.value })}
           />
         </DialogContent>
         <DialogActions>

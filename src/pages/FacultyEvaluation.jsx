@@ -106,7 +106,7 @@ export default function FacultyEvaluation() {
         </Button><Button
           variant="contained"
           color="inherit"
-          onClick={() => navigate(`/${params.row.id}`)}
+          onClick={() => navigate(`./evaluation-:id`)}
           sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px" ,} ,width: { xs: "80px", sm: "120px", md: "100px" }}}
         >
             Evaluation

@@ -15,28 +15,28 @@ import {
 
 import { Table } from "../components/Table";
 import { Link, useNavigate } from "react-router-dom";
-export default function Sections() {
+export default function CurriculumSubjects() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([
     {
       id: 1,
-      gradeLevel: "Grade 11",
-      sectionName: "Commitment",
+      subject: "Oral Communication",
     },
-
+    {
+      id: 2,
+      subject: "Earth And Life Science",
+    },
+    {
+      id: 3,
+      subject: "General Mathematics",
+    },
   ]);
 
 
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
-  const [newSection, setNewSection] = useState({ gradeLevel: "", sectionName: "" });
+  const [newSubject, setSubject] = useState({ curriculum: ""});
 
-  const handleAdd = () => {
-    const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
-    setRows([...rows, { id: nextId, ...newSection }]);
-    setOpen(false);
-    setNewSection({ gradeLevel: "", sectionName: "" });
-  };
 
   // Track selected rows from Table (Supposedly)
   const [selectedIds, setSelectedIds] = useState([]);
@@ -47,25 +47,8 @@ export default function Sections() {
   };
 
   const columns = [
-    { field: "id", headerName: "Section ID", flex: 0, minWidth: 60 },
-    { field: "gradeLevel", headerName: "Grade Level", flex: 0.5, minWidth: 60 },
-    { field: "sectionName", headerName: "Section Name", flex: 1 },
-    {
-      field: "action",
-      headerName: "Action",
-      flex: 1,
-      renderCell: (params) => (
-        <Button
-          variant="contained"
-          color="inherit"
-          onClick={() => navigate(`/admin/sections/${params.row.id}`)}
-          sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px", }, width: { xs: "80px", sm: "120px", md: "100px" } }}
-        >
-          View
-        </Button>
-      ),
 
-    },
+    { field: "subject", headerName: "Subjects", flex: 1.5 },
 
   ];
 
@@ -112,7 +95,7 @@ export default function Sections() {
               marginLeft: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
-            Sections
+            Curriculum Subjects
           </Typography>
           <Box
             sx={{
@@ -123,8 +106,8 @@ export default function Sections() {
             }}
           >
             <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
-              <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
-                Add Section
+              <Button variant="contained" color="primary" onClick={() => navigate(`./addSubject`)}>
+                Add Subject
               </Button>
               <Button variant="contained" color="error" onClick={handleRemoveSelected} disabled={selectedIds.length === 0}>
                 Remove Selected
@@ -145,37 +128,6 @@ export default function Sections() {
           <Table rows={rows} columns={columns} />
         </Box>
       </Box>
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Add New Section</DialogTitle>
-        <DialogContent>
-          <Autocomplete
-            options={[
-              "Grade 11",
-              "Grade 12",
-              "College - DIT",
-              "College - DRT",
-              "College - DHT",
-            ]}
-            value={newSection.gradeLevel}
-            onChange={(event, newValue) =>
-              setNewSection({ ...newSection, gradeLevel: newValue })
-            }
-            renderInput={(params) => (
-              <TextField {...params} margin="dense" label="Grade Level" fullWidth />
-            )}
-          />
-          <TextField
-            margin="dense"
-            label="Section Name"
-            fullWidth value={newSection.sectionName}
-            onChange={(e) => setNewSection({ ...newSection, sectionName: e.target.value })}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleAdd} variant="contained">Add</Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

@@ -7,7 +7,7 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions   ,
+    DialogActions,
 } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -38,23 +38,27 @@ function EditGrade() {
         { id: 5, subjectName: "Purposive Communication", instructor: "Catherine Lasos", grade: 99.00 },
     ]);
 
+
+
+    // Adding Student Dialog State
     const [open, setOpen] = useState(false);
-    const [newGrade, setNewGrade] = useState({ subjectName: "", grade: ""});
+    const [newGrade, setNewGrade] = useState({ id: "", subjectName: "", instructor: "", grade: "" });
 
     const handleAdd = () => {
         const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
-        setRows([...rows, { id: nextId, ...newGrade }]);
+        setRows([
+            ...rows,
+            {
+                id: nextId,
+                subjectName: newGrade.subjectName,
+                instructor: newGrade.instructor,
+                grade: Number(newGrade.grade),
+            },
+        ]);
         setOpen(false);
-        setNewGrade({ subjectName: "", grade: ""}); {/*Will default value based on section track - Backend lol*/ }
+        setNewGrade({ id: "", subjectName: "", instructor: "", grade: "" });
     };
 
-    // Track selected rows from Table (Supposedly)
-    const [selectedIds, setSelectedIds] = useState([]);
-
-    const handleRemoveSelected = () => {
-        setRows(rows.filter((r) => !selectedIds.includes(r.id)));
-        setSelectedIds([]);
-    };
     return (
         <Box
             sx={{
@@ -146,7 +150,7 @@ function EditGrade() {
                             <TextField {...params} label="Academic Year" />
                         )}
                     />
-                     <Box sx={{ display: "flex", gap: 2, mr: { xs: "20px", sm: "30px", md: "50px" },}}>
+                    <Box sx={{ display: "flex", gap: 2, mr: { xs: "20px", sm: "30px", md: "50px" }, }}>
                         <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
                             Add Grade
                         </Button>
@@ -162,7 +166,7 @@ function EditGrade() {
                     }}
                 >
                     {/*Table Component*/}
-                    <Table rows={rows} columns={columns} />
+                    <Table rows={rows} columns={columns} paginationModel={undefined} />
                 </Box>
                 {/*Add Grade Dialog*/}
                 <Dialog open={open} onClose={() => setOpen(false)}>
@@ -175,7 +179,7 @@ function EditGrade() {
                             ]}
                             value={newGrade.subjectName}
                             onChange={(event, newValue) =>
-                                setNewGrade({ ...newGrade, subjectName: newValue })
+                                setNewGrade({ ...newGrade, subjectName: newValue ?? "" })
                             }
                             renderInput={(params) => (
                                 <TextField {...params} margin="dense" label="Subject" fullWidth />
@@ -187,8 +191,8 @@ function EditGrade() {
                             fullWidth value={newGrade.grade}
                             onChange={(e) => setNewGrade({ ...newGrade, grade: e.target.value })}
                         />
-                    
-                        
+
+
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => setOpen(false)}>Cancel</Button>
