@@ -5,8 +5,7 @@ export default function Evaluation() {
     <div className="evaluation">
       <div className="evaluationHeader">
         <h2>Faculty Evaluation</h2>
-        <p>Below is the summary of the faculty member's evaluation.</p>
-        <button>Send via Email</button>
+        <p>Below is the summary of your evaluation.</p>
       </div>
 
       <div className="professorsDiv">

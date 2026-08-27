@@ -1,6 +1,6 @@
 import './App.css';
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from "react-router-dom";
 import { Box, Typography, Button } from "@mui/material";
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -20,12 +20,15 @@ import EditStudent from './pages/EditStudent';
 import EditFaculty from './pages/EditFaculty';
 import EditGrade from './pages/EditGrade';
 import AdminEval from './pages/AdminEval';
-import SystemSettings from  './pages/SystemSettings'
+import SystemSettings from './pages/SystemSettings'
 import TermConfig from './pages/TermConfig'
 import CurriculumConfig from './pages/CurriculumConfig';
 import CurriculumSubjects from './pages/CurriculumSubjects';
 import AddSubject from './pages/AddSubject'
+import FacultyReport from './pages/FacultyReportPublic'
 import { Link } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
 
 function LayoutWithHeader() {
   return (
@@ -41,41 +44,63 @@ function LayoutWithHeader() {
 
 function App() {
   return (
-    <Router>
-      <div className="app-root">
-        <Routes>
-          {/* Public layout */}
-          <Route element={<LayoutWithHeader />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/grades" element={<GradeReport />} />
-            <Route path="/evaluation" element={<Evaluation />} />
-            <Route path="/enrollment" element={<Enrollment />} />
-          </Route>
+    <AuthProvider>
+      <Router>
+        <div className="app-root">
+          <Routes>
+            {/* Public layout */}
+            <Route element={<LayoutWithHeader />}>
+              <Route path="/" element={<Home />} />
 
-          {/* Admin layout */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Admin />} />
-            <Route path="enrollmentList" element={<EnrollmentManagement />} />
-            <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
-            <Route path="facultyEvaluation" element={<FacultyEvaluation />} />
-            <Route path="facultyEvaluation/editFaculty/:id" element={<EditFaculty />} />
-            <Route path="facultyEvaluation/evaluation-:id" element={<AdminEval />}/>
-            <Route path="sections" element={<Sections />} />
-            <Route path="sections/:id" element={<SelectedSection />} />
-            <Route path="section/thisSection/:id" element={<EditStudent />} />
-            <Route path="section/thisSection/thisStudent/editGrade" element={<EditGrade />}/>
-            <Route path='systemSettings' element = {<SystemSettings/>} />
-            <Route path='systemSettings/termConfig' element={<TermConfig/>}/>
-            <Route path='systemSettings/curriculumConfig' element={<CurriculumConfig/>}/>
-            <Route path='systemSettings/curriculumConfig/curriculum-:id' element={<CurriculumSubjects/>}/>
-            <Route path='systemSettings/curriculumConfig/curriculum-:id/addSubject' element={<AddSubject/>}/>
-          </Route>
+              {/* Guest-only: signed-in users bounce to "/" */}
+              <Route element={<GuestOnlyRoute />}>
+                <Route path="/enrollment" element={<Enrollment />} />
+              </Route>
 
-          {/* signin without header */}
-          <Route path="/signin" element={<SignIn />} />
-        </Routes>
-      </div>
-    </Router>
+              {/* Student-only */}
+              <Route element={<ProtectedRoute allowedRoles={["Student"]} />}>
+                <Route path="/grades" element={<GradeReport />} />
+                <Route path="/evaluation" element={<Evaluation />} />
+              </Route>
+
+              {/* Teacher-only */}
+              <Route element={<ProtectedRoute allowedRoles={["Teacher"]} />}>
+                <Route path="/evaluationFaculty" element={<FacultyEvaluation />} />
+              </Route>
+            </Route>
+
+            {/* Admin layout — guard wraps the whole subtree, so every nested
+                route under /admin is covered by this one check */}
+            <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<Admin />} />
+                <Route path="enrollmentList" element={<EnrollmentManagement />} />
+                <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
+                <Route path="facultyEvaluation" element={<FacultyEvaluation />} />
+                <Route path="facultyEvaluation/editFaculty/:id" element={<EditFaculty />} />
+                <Route path="facultyEvaluation/evaluation-:id" element={<AdminEval />} />
+                <Route path="sections" element={<Sections />} />
+                <Route path="sections/:id" element={<SelectedSection />} />
+                <Route path="section/thisSection/:id" element={<EditStudent />} />
+                <Route path="section/thisSection/thisStudent/editGrade" element={<EditGrade />} />
+                <Route path="systemSettings" element={<SystemSettings />} />
+                <Route path="systemSettings/termConfig" element={<TermConfig />} />
+                <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />
+                <Route path="systemSettings/curriculumConfig/curriculum-:id" element={<CurriculumSubjects />} />
+                <Route path="systemSettings/curriculumConfig/curriculum-:id/addSubject" element={<AddSubject />} />
+              </Route>
+            </Route>
+
+            {/* signin without header */}
+            <Route path="/signin" element={<SignIn />} />
+
+            {/* Catch-all: any unmatched path (typos, stale bookmarks) goes home
+                instead of the blank "No routes matched" screen */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

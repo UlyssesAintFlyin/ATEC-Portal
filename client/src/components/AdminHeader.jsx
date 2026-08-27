@@ -10,16 +10,29 @@ import {
   ListItem,
   ListItemText,
   Box,
+  Avatar,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export const AdminHeader = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
   const toggleDrawer = (state) => () => {
     setOpen(state);
   };
+
+  function getInitials(name) {
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  }
 
   return (
     <AppBar
@@ -130,50 +143,70 @@ export const AdminHeader = () => {
             display: "flex",
             flexDirection: "column",
             height: "100%",
-            justifyContent: "space-between",
           }}
         >
           <Box sx={{ p: 2, textAlign: "center" }}>
-            <Box
-              component="img"
-              src="/resources/profile-placeholder.png"
-              alt="Profile"
+            <Avatar
               sx={{
                 width: 70,
                 height: 70,
-                borderRadius: "50%",
+                mx: "auto",
                 mb: 1,
+                bgcolor: "#242C54",
+                fontSize: "1.5rem",
               }}
-            />
+            >
+              {getInitials(user?.name)}
+            </Avatar>
             <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              Ivan Manalad
+              {user ? user.name : "Guest"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              BST - 3D2B
+              {user ? user.role : "Not signed in"}
             </Typography>
           </Box>
+          {/*add real profile photos, you'd just pass src={user.photoUrl} to the same Avatar*/}
 
           <List>
-            <ListItem button component={Link} to="/">
+            <ListItem button component={Link} to="/admin/sections" onClick={toggleDrawer(false)}>
+              <ListItemText primary="Student Grades" />
+            </ListItem>
+            <ListItem button component={Link} to="/admin/facultyEvaluation" onClick={toggleDrawer(false)}>
+              <ListItemText primary="Faculty Evaluation" />
+            </ListItem>
+            <ListItem button component={Link} to="/admin/enrollmentList" onClick={toggleDrawer(false)}>
               <ListItemText primary="Enrollment" />
             </ListItem>
-            <ListItem button component={Link} to="/about">
-              <ListItemText primary="Evaluation" />
-            </ListItem>
-            <ListItem button component={Link} to="/grades">
-              <ListItemText primary="Grades" />
+            <ListItem button component={Link} to="/admin/systemSettings" onClick={toggleDrawer(false)}>
+              <ListItemText primary="Settings Configuration" />
             </ListItem>
           </List>
 
-          <Box sx={{ p: 2 }}>
-            <Button
-              variant="contained"
-              color="error"
-              fullWidth
-              onClick={() => console.log("Sign Out clicked")}
-            >
-              Sign-Out
-            </Button>
+          <Box sx={{ p: 2, mt: "auto" }}>
+            {user ? (
+              <Button sx={{backgroundColor: "#542425", color: "#E8EDF2"}}
+                variant="contained"
+                fullWidth
+                component={Link}
+                to="/signin"
+                onClick={() => {
+                  logout();
+                  toggleDrawer(false)();
+                }}
+              >
+                Sign Out
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                fullWidth
+                component={Link}
+                to="/signin"
+                onClick={toggleDrawer(false)}
+              >
+                Sign-In
+              </Button>
+            )}
           </Box>
         </Box>
       </Drawer>
