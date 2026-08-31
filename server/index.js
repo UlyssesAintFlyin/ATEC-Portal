@@ -1,7 +1,8 @@
 require('dotenv').config(); //Loads variables from .env
 const express = require('express'); //web framework
 const cors = require('cors'); //cross‑origin requests
-const authRoutes = require('./routes/authRoutes'); //imported function
+const authRoutes = require('./routes/authRoutes');
+const enrollmentRoutes = require('./routes/enrollmentRoutes') //imported function
 // ...import  other route files as you build them, e.g.:
 // const enrollmentRoutes = require('./routes/enrollmentRoutes');
 // const gradeRoutes = require('./routes/gradeRoutes');
@@ -13,7 +14,7 @@ app.use(cors()); // lock down `origin` when deployed to Hostinger
 app.use(express.json()); //Parses incoming JSON request
 
 app.use('/api/auth', authRoutes); //organizes api routes
-// app.use('/api/enrollment', enrollmentRoutes);
+app.use('/api/enrollment', enrollmentRoutes);
 // app.use('/api/grades', gradeRoutes);
 // app.use('/api/evaluation', evaluationRoutes);
 

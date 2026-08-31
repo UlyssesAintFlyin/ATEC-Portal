@@ -25,10 +25,12 @@ import TermConfig from './pages/TermConfig'
 import CurriculumConfig from './pages/CurriculumConfig';
 import CurriculumSubjects from './pages/CurriculumSubjects';
 import AddSubject from './pages/AddSubject'
+import EnrolleeQueue from './pages/EnrolleeQueue';
 import FacultyReport from './pages/FacultyReportPublic'
 import { Link } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
+
 
 function LayoutWithHeader() {
   return (
@@ -81,6 +83,7 @@ function App() {
                 <Route path="facultyEvaluation/evaluation-:id" element={<AdminEval />} />
                 <Route path="sections" element={<Sections />} />
                 <Route path="sections/:id" element={<SelectedSection />} />
+                <Route path="sections/:id/addStudent" element={<EnrolleeQueue/>}/>
                 <Route path="section/thisSection/:id" element={<EditStudent />} />
                 <Route path="section/thisSection/thisStudent/editGrade" element={<EditGrade />} />
                 <Route path="systemSettings" element={<SystemSettings />} />

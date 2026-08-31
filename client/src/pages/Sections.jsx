@@ -58,7 +58,7 @@ export default function Sections() {
         <Button
           variant="contained"
           color="inherit"
-          onClick={() => navigate(`/admin/sections/${params.row.id}`)}
+          onClick={() => navigate(`/admin/sections/thisSection`)}
           sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px", }, width: { xs: "80px", sm: "120px", md: "100px" } }}
         >
           View

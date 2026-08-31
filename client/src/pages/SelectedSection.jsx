@@ -11,11 +11,11 @@ import {
   Autocomplete,
 } from "@mui/material";
 import { Table } from "../components/Table";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function SelectedSection() {
   const navigate = useNavigate();
-
+  const{sectionId} = useParams();
   const [rows, setRows] = useState([
     { 
       id: 1, 
@@ -120,7 +120,7 @@ export default function SelectedSection() {
             Grade 11 - Commitment
           </Typography>
           <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
-            <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+            <Button variant="contained" color="primary" onClick={() => navigate(`/admin/sections/${sectionId}}/addStudent`)}>
               Add Student
             </Button>
             <Button variant="contained" color="error" onClick={handleRemoveSelected} disabled={selectedIds.length === 0}>
