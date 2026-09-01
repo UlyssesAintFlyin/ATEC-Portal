@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 
 
-import { Table } from "../components/Table";
+import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
 export default function CurriculumSubjects() {
   const navigate = useNavigate();
@@ -35,8 +35,14 @@ export default function CurriculumSubjects() {
 
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
-  const [newSubject, setSubject] = useState({ curriculum: ""});
-
+  const [newSubject, setSubject] = useState({ subject: ""});
+  
+  const handleAdd = () => {
+    const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
+    setRows([...rows, { id: nextId, ...newSubject }]);
+    setOpen(false);
+    setSubject({ subject: ""});
+  };
 
   // Track selected rows from Table (Supposedly)
   const [selectedIds, setSelectedIds] = useState([]);
@@ -95,7 +101,7 @@ export default function CurriculumSubjects() {
               marginLeft: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
-            Curriculum Subjects
+            Subject Management
           </Typography>
           <Box
             sx={{
@@ -106,7 +112,7 @@ export default function CurriculumSubjects() {
             }}
           >
             <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
-              <Button variant="contained" color="primary" onClick={() => navigate(`./addSubject`)}>
+              <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
                 Add Subject
               </Button>
               <Button variant="contained" color="error" onClick={handleRemoveSelected} disabled={selectedIds.length === 0}>
@@ -127,6 +133,21 @@ export default function CurriculumSubjects() {
           {/*Table Component*/}
           <Table rows={rows} columns={columns} />
         </Box>
+        <Dialog open={open} onClose={() => setOpen(false)}>
+                <DialogTitle>Add New Subject</DialogTitle>
+                <DialogContent>
+                  <TextField
+                    margin="dense"
+                    label="Subject"
+                    fullWidth value={newSubject.subject}
+                    onChange={(e) => setSubject({ ...newSubject, subject: e.target.value })}
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setOpen(false)}>Cancel</Button>
+                  <Button onClick={handleAdd } variant="contained">Add</Button>
+                </DialogActions>
+              </Dialog>
       </Box>
     </Box>
   );

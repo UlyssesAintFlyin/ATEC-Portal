@@ -1,6 +1,6 @@
-import styles from './AdminEval.css';
+import styles from '../admin/AdminEval.css';
 
-export default function Evaluation() {
+export default function FacultyReport() {
   return (
     <div className="evaluation">
       <div className="evaluationHeader">

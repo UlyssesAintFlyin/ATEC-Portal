@@ -2,7 +2,7 @@ import React from "react";
 import { Typography, Box, Button } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
-import { Table } from "../components/Table";
+import { Table } from "../../components/Table";
 
 function GradeReport() {
   //Array for dropdown

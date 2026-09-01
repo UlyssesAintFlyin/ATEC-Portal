@@ -19,7 +19,9 @@ export default function Enrollment() {
         mothersContact: '',
         fathersName: '',
         fathersContact: '',
-        prevSchool: ''
+        prevSchool: '',
+        guardiansName: '',
+        guardiansContact: ''
     });
 
     const [programTerm, setProgramTerm] = useState({
@@ -58,12 +60,38 @@ export default function Enrollment() {
         setStep(target);
     };
 
-    const handleFinalSubmit = (e) => {
-        e.preventDefault();
-        console.log({ studentDetails, studentType, programTerm });
-        alert('Enrollment submitted!');
+    const handleFinalSubmit = async (e) => {
+    e.preventDefault();
+
+    const enrollmentData = {
+        studentDetails,
+        studentType,
+        programTerm
     };
 
+    try {
+        const response = await fetch('http://localhost:5000/api/enrollments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(enrollmentData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Enrollment submitted successfully!');
+            console.log(data);
+        } else {
+            alert('Failed to submit enrollment.');
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Cannot connect to the server.');
+    }
+};
     const fullName = `${studentDetails.firstName} ${studentDetails.middleName} ${studentDetails.lastName}`.trim();
 
     return (
@@ -108,70 +136,82 @@ export default function Enrollment() {
                         <form onSubmit={handleDetailsSubmit}>
                             <div className='formRow'>
                                 <div className='formGroup'>
-                                    <label for="lastName">Last name:</label>
-                                    <input type="text" id="lastName" name="lastName" value={studentDetails.lastName} onChange={handleDetailsChange} />
+                                    <label htmlFor="lastName">Last name:</label>
+                                    <input type="text" id="lastName" name="lastName" value={studentDetails.lastName} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label for="firstName">First name:</label>
-                                    <input type="text" id="firstName" name="firstName" value={studentDetails.firstName} onChange={handleDetailsChange} />
+                                    <label htmlFor="firstName">First name:</label>
+                                    <input type="text" id="firstName" name="firstName" value={studentDetails.firstName} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label for="middleName">Middle name:</label>
-                                    <input type="text" id="middleName" name="middleName" value={studentDetails.middleName} onChange={handleDetailsChange} />
+                                    <label htmlFor="middleName">Middle name:</label>
+                                    <input type="text" id="middleName" name="middleName" value={studentDetails.middleName} onChange={handleDetailsChange} required/>
                                 </div>
                             </div>
 
                             <div className='formRow'>
                                 <div className='formGroup small'>
-                                    <label for="age">Age:</label>
-                                    <input type="number" id="age" name="age" value={studentDetails.age} onChange={handleDetailsChange} />
+                                    <label htmlFor="age">Age:</label>
+                                    <input type="number" id="age" name="age" value={studentDetails.age} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup small'>
-                                    <label for="gender">Gender/Sex:</label>
-                                    <input type="text" id="gender" name="gender" value={studentDetails.gender} onChange={handleDetailsChange} />
+                                    <label htmlFor="gender">Gender/Sex:</label>
+                                    <input type="text" id="gender" name="gender" value={studentDetails.gender} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label for="homeAddress">Home address:</label>
-                                    <input type="text" id="homeAddress" name="homeAddress" value={studentDetails.homeAddress} onChange={handleDetailsChange} />
+                                    <label htmlFor="homeAddress">Home address:</label>
+                                    <input type="text" id="homeAddress" name="homeAddress" value={studentDetails.homeAddress} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label for="contact">Contact number:</label>
-                                    <input type="text" id="contact" name="contact" value={studentDetails.contact} onChange={handleDetailsChange} />
+                                    <label htmlFor="contact">Contact number:</label>
+                                    <input type="text" id="contact" name="contact" value={studentDetails.contact} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label for="email">Email:</label>
-                                    <input type="email" id="email" name="email" value={studentDetails.email} onChange={handleDetailsChange} />
+                                    <label htmlFor="email">Email:</label>
+                                    <input type="email" id="email" name="email" value={studentDetails.email} onChange={handleDetailsChange} required/>
                                 </div>
                             </div>
 
                             <div className='formRow'>
                                 <div className='formGroup'>
-                                    <label for="birthdate">Birthdate:</label>
-                                    <input type="date" id="birthdate" name="birthdate" value={studentDetails.birthdate} onChange={handleDetailsChange} />
+                                    <label htmlFor="birthdate">Birthdate:</label>
+                                    <input type="date" id="birthdate" name="birthdate" value={studentDetails.birthdate} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label for="mothersName">Mother's Maiden Name:</label>
-                                    <input type="text" id="mothersName" name="mothersName" value={studentDetails.mothersName} onChange={handleDetailsChange} />
+                                    <label htmlFor="mothersName">Mother's Maiden Name:</label>
+                                    <input type="text" id="mothersName" name="mothersName" value={studentDetails.mothersName} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label htmforlFor="mothersContact">Mother's Contact Number:</label>
-                                    <input type="text" id="mothersContact" name="mothersContact" value={studentDetails.mothersContact} onChange={handleDetailsChange} />
+                                    <label htmlFor="mothersContact">Mother's Contact Number:</label>
+                                    <input type="text" id="mothersContact" name="mothersContact" value={studentDetails.mothersContact} onChange={handleDetailsChange} required/>
                                 </div>
                             </div>
 
                             <div className='formRow'>
                                 <div className='formGroup'>
-                                    <label for="fathersName">Father's Name:</label>
-                                    <input type="text" id="fathersName" name="fathersName" value={studentDetails.fathersName} onChange={handleDetailsChange} />
+                                    <label htmlFor="fathersName">Father's Name:</label>
+                                    <input type="text" id="fathersName" name="fathersName" value={studentDetails.fathersName} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label for="fathersContact">Father's Contact Number:</label>
-                                    <input type="text" id="fathersContact" name="fathersContact" value={studentDetails.fathersContact} onChange={handleDetailsChange} />
+                                    <label htmlFor="fathersContact">Father's Contact Number:</label>
+                                    <input type="text" id="fathersContact" name="fathersContact" value={studentDetails.fathersContact} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label for="prevSchool">Previous School:</label>
-                                    <input type="text" id="prevSchool" name="prevSchool" value={studentDetails.prevSchool} onChange={handleDetailsChange} />
+                                    <label htmlFor="prevSchool">Previous School:</label>
+                                    <input type="text" id="prevSchool" name="prevSchool" value={studentDetails.prevSchool} onChange={handleDetailsChange} required/>
                                 </div>
+                            </div>
+
+                            <div className='formRow'>
+                                <div className='formGroup'>
+                                    <label htmlFor="guardiansName">Guardian's Name:</label>
+                                    <input type="text" id="guardiansName" name="guardiansName" value={studentDetails.guardiansName} onChange={handleDetailsChange} required/>
+                                </div>
+                                <div className='formGroup'>
+                                    <label htmlFor="guardiansContact">Father's Contact Number:</label>
+                                    <input type="text" id="guardiansContact" name="guardiansContact" value={studentDetails.guardiansContact} onChange={handleDetailsChange} required/>
+                                </div>
+                                
                             </div>
 
                             <div className='divider'></div>
@@ -195,7 +235,7 @@ export default function Enrollment() {
                         <form onSubmit={handleProgramSubmit}>
                             <div className='formRow'>
                                 <div className='formGroup'>
-                                    <label for="term">Term</label>
+                                    <label htmlFor="term">Term</label>
                                     <select id="term" name="term" value={programTerm.term} onChange={handleProgramChange}>
                                         <option value="">Select Term</option>
                                         <option value="1st Semester">1st Semester</option>
@@ -204,7 +244,7 @@ export default function Enrollment() {
                                     </select>
                                 </div>
                                 <div className='formGroup'>
-                                    <label for="year">Year</label>
+                                    <label htmlFor="year">Year</label>
                                     <select id="year" name="year" value={programTerm.year} onChange={handleProgramChange}>
                                         <option value="">Select Year</option>
                                         <option value="1st Year">1st Year</option>
@@ -215,7 +255,7 @@ export default function Enrollment() {
                                 </div>
                                 {studentType === 'seniorHigh' ? (
                                     <div className='formGroup'>
-                                        <label for="track">Track & Specialization</label>
+                                        <label htmlFor="track">Track & Specialization</label>
                                         <select id="track" name="track" value={programTerm.track} onChange={handleProgramChange}>
                                             <option value="">Select Track & Specialization</option>
                                             <option value="STEM">STEM</option>
@@ -226,7 +266,7 @@ export default function Enrollment() {
                                     </div>
                                 ) : (
                                     <div className='formGroup'>
-                                        <label for="program">Program</label>
+                                        <label htmlFor="program">Program</label>
                                         <select id="program" name="program" value={programTerm.program} onChange={handleProgramChange}>
                                             <option value="">Select Program</option>
                                             <option value="BS Information Technology">BS Information Technology</option>
@@ -282,6 +322,14 @@ export default function Enrollment() {
                                     <div className='formGroup wide'>
                                         <label>Email address</label>
                                         <input type="text" value={studentDetails.email} readOnly />
+                                    </div>
+                                    <div className='formGroup wide'>
+                                        <label>Guardian's Name</label>
+                                        <input type="text" value={studentDetails.guardiansName} readOnly />
+                                    </div>
+                                    <div className='formGroup wide'>
+                                        <label>Guardian's Contact</label>
+                                        <input type="text" value={studentDetails.guardiansName} readOnly />
                                     </div>
                                 </div>
 
