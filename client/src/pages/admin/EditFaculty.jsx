@@ -9,7 +9,7 @@ import {
   DialogActions,
   Autocomplete
 } from "@mui/material";
-import { Table } from "../components/Table";
+import { Table } from "../../components/Table";
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
 

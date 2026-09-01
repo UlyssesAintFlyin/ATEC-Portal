@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box } from "@mui/material";
-import { Table } from "../components/Table";
+import { Table } from "../../components/Table";
 import { useNavigate } from "react-router-dom";
 
 export default function EnrolleeQueue() {

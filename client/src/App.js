@@ -5,28 +5,28 @@ import { Box, Typography, Button } from "@mui/material";
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import CarouselComponent from './components/CarouselFolder/Carousel';
-import GradeReport from './pages/GradeReport';
-import Admin from './pages/Admin';
-import EnrollmentManagement from './pages/EnrollmentManagement';
-import EnrollmentRecord from "./pages/EnrollmentRecord";
+import GradeReport from './pages/grades/GradeReport';
+import Admin from './pages/admin/Admin';
+import EnrollmentManagement from './pages/admin/EnrollmentManagement';
+import EnrollmentRecord from "./pages/admin/EnrollmentRecord";
 import AdminLayout from "./layouts/AdminLayout";
-import FacultyEvaluation from './pages/FacultyEvaluation';
-import Evaluation from './pages/Evaluation';
-import Enrollment from './pages/Enrollment';
-import Sections from './pages/Sections';
-import SelectedSection from './pages/SelectedSection';
-import SignIn from "./pages/SignIn"
-import EditStudent from './pages/EditStudent';
-import EditFaculty from './pages/EditFaculty';
-import EditGrade from './pages/EditGrade';
-import AdminEval from './pages/AdminEval';
-import SystemSettings from './pages/SystemSettings'
-import TermConfig from './pages/TermConfig'
-import CurriculumConfig from './pages/CurriculumConfig';
-import CurriculumSubjects from './pages/CurriculumSubjects';
-import AddSubject from './pages/AddSubject'
-import EnrolleeQueue from './pages/EnrolleeQueue';
-import FacultyReport from './pages/FacultyReportPublic'
+import FacultyEvaluation from './pages/admin/FacultyEvaluation';
+import Evaluation from './pages/evaluation/Evaluation';
+import Enrollment from './pages/enrollment/Enrollment';
+import Sections from './pages/admin/Sections';
+import SelectedSection from './pages/admin/SelectedSection';
+import SignIn from "./pages/sign_in/SignIn";
+import EditStudent from './pages/admin/EditStudent';
+import EditFaculty from './pages/admin/EditFaculty';
+import EditGrade from './pages/admin/EditGrade';
+import AdminEval from './pages/admin/AdminEval';
+import SystemSettings from './pages/admin/SystemSettings'
+import TermConfig from './pages/admin/TermConfig'
+import CurriculumConfig from './pages/admin/CurriculumConfig';
+import CurriculumSubjects from './pages/admin/CurriculumSubjects';
+import AddSubject from './pages/admin/AddSubject'
+import EnrolleeQueue from './pages/admin/EnrolleeQueue';
+import FacultyReport from './pages/evaluation/FacultyReportPublic'
 import { Link } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";

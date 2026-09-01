@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 
 
-import { Table } from "../components/Table";
+import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
 export default function Sections() {
   const navigate = useNavigate();
