@@ -67,7 +67,7 @@ function App() {
 
               {/* Teacher-only */}
               <Route element={<ProtectedRoute allowedRoles={["Teacher"]} />}>
-                <Route path="/evaluationFaculty" element={<FacultyEvaluation />} />
+                <Route path="/evaluationFaculty" element={<FacultyReport />} />
               </Route>
             </Route>
 

@@ -38,9 +38,9 @@ function CustomToolbar() {
   );
 }
 
-export const Table = ({ rows, columns, paginationModel }) => {
+export const Table = ({ rows, columns, paginationModel, ...props }) => {
   return (
-    <Paper sx={{ height: "100%", width: "100%", minWidth: 0}}>
+    <Paper sx={{ height: "100%", width: "100%", minWidth: 0 }}>
       <DataGrid
         rows={rows}
         columns={columns}
@@ -49,6 +49,7 @@ export const Table = ({ rows, columns, paginationModel }) => {
         checkboxSelection
         components={{ Toolbar: CustomToolbar }}
         sx={{ border: 0 }}
+        {...props} 
       />
     </Paper>
   );
