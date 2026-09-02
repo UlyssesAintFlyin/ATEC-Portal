@@ -2,19 +2,11 @@ require('dotenv').config(); //Loads variables from .env
 const express = require('express'); //web framework
 const cors = require('cors'); //cross‑origin requests
 const authRoutes = require('./routes/authRoutes');
-<<<<<<< HEAD
-const enrollmentRoutes = require('./routes/enrollmentRoutes') //imported function
+const enrollmentRoutes = require('./routes/enrollmentRoutes'); 
 const path = require('path');
 const carouselRoutes = require('./routes/carouselRoutes');
-// ...import  other route files as you build them, e.g.:
-// const enrollmentRoutes = require('./routes/enrollmentRoutes');
-// const gradeRoutes = require('./routes/gradeRoutes');
-// const evaluationRoutes = require('./routes/evaluationRoutes');
-
-=======
-const enrollmentRoutes = require('./routes/enrollmentRoutesK'); //imported function
 const adminRoutes = require('./routes/adminRoutes');
->>>>>>> 53db6b1ddcd3a94a0fbccc1df52db9cca28a067a
+
 const app = express(); //Creates the Express application instance.
 
 app.use(cors()); // lock down `origin` when deployed to Hostinger
@@ -37,4 +29,4 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`AXIOM server running on port ${PORT}`);
-}); //Reads the port from .env and starts the server
+}); 
