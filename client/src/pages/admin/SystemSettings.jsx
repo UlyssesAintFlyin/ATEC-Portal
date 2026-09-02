@@ -96,6 +96,24 @@ export default function SystemSettings() {
                         >
                             Configure A.Y. Term
                         </Button>
+
+                        <Button
+                            sx={{
+                                fontSize: { xs: "12px", sm: "15px", md: "17px" } ,
+                                color: "#E8EDF2", // light gray text
+                                backgroundColor: "#242C54",
+                                borderRadius: "5px",
+                                height:{xs: "40px", sm: "50px", md: "60px"},
+                                width: { xs: "150px", sm: "200px", md: "250px" },
+                                "&:hover": {
+                                    backgroundColor: "#4f5d9e",
+                                    transform: "scale(1.05)",
+                                },
+                            }}
+                            onClick={() => navigate(`./carouselConfig`)}
+                        >
+                            Configure Carousel
+                        </Button>
                     </Box>
             </Box>
         </Box>

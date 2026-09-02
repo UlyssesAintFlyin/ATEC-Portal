@@ -3,6 +3,8 @@ const express = require('express'); //web framework
 const cors = require('cors'); //cross‑origin requests
 const authRoutes = require('./routes/authRoutes');
 const enrollmentRoutes = require('./routes/enrollmentRoutes') //imported function
+const path = require('path');
+const carouselRoutes = require('./routes/carouselRoutes');
 // ...import  other route files as you build them, e.g.:
 // const enrollmentRoutes = require('./routes/enrollmentRoutes');
 // const gradeRoutes = require('./routes/gradeRoutes');
@@ -17,6 +19,9 @@ app.use('/api/auth', authRoutes); //organizes api routes
 app.use('/api/enrollment', enrollmentRoutes);
 // app.use('/api/grades', gradeRoutes);
 // app.use('/api/evaluation', evaluationRoutes);
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/carousel', carouselRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

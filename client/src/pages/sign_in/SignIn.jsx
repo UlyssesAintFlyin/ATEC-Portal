@@ -166,7 +166,7 @@ function SignIn() {
 
               <Box sx={{ mt: 2 }}>
                 <Button
-                  type="sumbit"
+                  type="submit"
                   variant="contained"
                   fullWidth
                   disabled={loading}

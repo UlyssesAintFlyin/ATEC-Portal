@@ -32,7 +32,7 @@ function Item(props) {
           bottom: 0,
           left: 0,
           width: "100%",
-          height: "40%",
+          height: { xs: "90%", md: "40%" },
           background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
         }}
       />
@@ -41,6 +41,7 @@ function Item(props) {
         sx={{
           position: "absolute",
           bottom: 20,
+          width: "70%",
           left: "50%",
           transform: "translateX(-50%)",
           color: "#fff",
@@ -51,7 +52,7 @@ function Item(props) {
         <Typography
           variant="h1"
           sx={{
-            fontSize: { xs: 16, sm: 20, md: 24 },
+            fontSize: { xs: 13, sm: 20, md: 24 },
             color: "#fff",
             fontWeight: "bold",
             marginBottom: 1,
@@ -63,7 +64,7 @@ function Item(props) {
           variant="body1"
           sx={{
             color: "#fff",
-            fontSize: { xs: 12, sm: 14, md: 16 },
+            fontSize: { xs: 9, sm: 14, md: 16 },
             marginBottom: 1,
           }}
         >
@@ -75,6 +76,8 @@ function Item(props) {
             backgroundColor: "#242C54",
             color: "#fff",
             "&:hover": { backgroundColor: "#474f78" },
+            fontSize: { xs: "10px", sm: "12px", md: "14px" }, 
+            padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
           }}
           component={Link}
           to="/enrollment"

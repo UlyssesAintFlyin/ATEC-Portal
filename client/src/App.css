@@ -218,7 +218,7 @@
 }
 
 .advocate-text {
-  max-width: 400px;
+  max-width: 300px;
   min-width: 0;
   text-align: center;
   display: flex;
@@ -394,7 +394,7 @@
 
 .program-section {
   width: 100%;
-  height: 700px;
+  height: 600px;
   position: relative;
 }
 
@@ -424,7 +424,7 @@
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 100px;
+  gap: 300px;
 }
 
 .atec-logo {
@@ -460,6 +460,10 @@
 }
 
 @media (max-width: 600px) {
+  .program-section {
+    height: 700px;
+  }
+
   .app-root .program-title {
     margin-bottom: 10px;
     font-size: 20px;

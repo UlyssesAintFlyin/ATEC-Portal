@@ -18,6 +18,7 @@ import SelectedSection from './pages/admin/SelectedSection';
 import SignIn from "./pages/sign_in/SignIn";
 import EditStudent from './pages/admin/EditStudent';
 import EditFaculty from './pages/admin/EditFaculty';
+import CarouselConfig from './pages/admin/CarouselConfig';
 import EditGrade from './pages/admin/EditGrade';
 import AdminEval from './pages/admin/AdminEval';
 import SystemSettings from './pages/admin/SystemSettings'
@@ -67,7 +68,7 @@ function App() {
 
               {/* Teacher-only */}
               <Route element={<ProtectedRoute allowedRoles={["Teacher"]} />}>
-                <Route path="/evaluationFaculty" element={<FacultyEvaluation />} />
+                <Route path="/evaluationFaculty" element={<FacultyReport />} />
               </Route>
             </Route>
 
@@ -91,6 +92,7 @@ function App() {
                 <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />
                 <Route path="systemSettings/curriculumConfig/curriculum-:id" element={<CurriculumSubjects />} />
                 <Route path="systemSettings/curriculumConfig/curriculum-:id/addSubject" element={<AddSubject />} />
+                <Route path="systemSettings/carouselConfig" element={<CarouselConfig />} />
               </Route>
             </Route>
 
@@ -146,7 +148,7 @@ function Home() {
         <Box className="about-image-wrap">
           <Box
             component="img"
-            src="/resources/images.jpg"
+            src="/resources/aboutImg.JPG"
             alt="ATEC"
             className="about-image"
           />
@@ -185,44 +187,47 @@ function Home() {
         <Box className="studentLife-items">
           <Box className="studentLife-item">
             <Box className="studentLife-image-wrap">
-              <Box component="img" src="/resources/image1.jpg" alt="ATEC" className="studentLife-image" />
+              <Box component="img" src="/resources/studentLife1.jpg" alt="ATEC" className="studentLife-image" />
             </Box>
             <Typography variant="body1" className="studentLife-item-title">
-              This is the title.
+              Events That Inspire Camaraderie
             </Typography>
             <Typography variant="body1" className="studentLife-item-description">
-              This is where the text shall go which shall serve as the description of the image at the side.
+              ATEC Technological College is dedicated to fostering a sense of community and belonging 
+              among its students, faculty, and staff.
             </Typography>
           </Box>
 
           <Box className="studentLife-item">
             <Box className="studentLife-image-wrap">
-              <Box component="img" src="/resources/image1.jpg" alt="ATEC" className="studentLife-image" />
+              <Box component="img" src="/resources/studentLife2.jpg" alt="ATEC" className="studentLife-image" />
             </Box>
             <Typography variant="body1" className="studentLife-item-title">
-              This is the title.
+              Life Inside The Campus
             </Typography>
             <Typography variant="body1" className="studentLife-item-description">
-              This is where the text shall go which shall serve as the description of the image at the side.
+              Amidst the challenges and uncertainties, ATEC Technological College will keep moving forward 
+              and will continuously deliver an exceptional school experience.
             </Typography>
           </Box>
 
           <Box className="studentLife-item">
             <Box className="studentLife-image-wrap">
-              <Box component="img" src="/resources/image1.jpg" alt="ATEC" className="studentLife-image" />
+              <Box component="img" src="/resources/studentLife3.jpg" alt="ATEC" className="studentLife-image" />
             </Box>
             <Typography variant="body1" className="studentLife-item-title">
-              This is the title.
+              The School Environment
             </Typography>
             <Typography variant="body1" className="studentLife-item-description">
-              This is where the text shall go which shall serve as the description of the image at the side.
+              The school is committed to providing a safe and inclusive environment for all students, 
+              where they can thrive academically, socially, and emotionally. 
             </Typography>
           </Box>
         </Box>
       </Box>
 
       <Box className="program-section" id="offers">
-        <Box component="img" src="/resources/image1.jpg" className="bg-image-wrapper" />
+        <Box component="img" src="/resources/progBg.jpg" className="bg-image-wrapper" />
         <Box className="bg-image-overlay">
           <Typography variant="h4" className="program-title">
             Programs Offered
