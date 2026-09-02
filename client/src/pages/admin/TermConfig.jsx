@@ -84,22 +84,6 @@ export default function TermConfig() {
   const columns = [
 
     { field: "AY_Name", headerName: "Term", flex: 1.5 },
-    {
-      field: "action",
-      headerName: "Action",
-      flex: 0.5,
-      renderCell: (params) => (
-        <Button
-          variant="contained"
-          color="inherit"
-          onClick={() => navigate(`/`)}
-          sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px", }, width: { xs: "80px", sm: "120px", md: "100px" } }}
-        >
-          Open
-        </Button>
-      ),
-
-    },
 
   ];
 
