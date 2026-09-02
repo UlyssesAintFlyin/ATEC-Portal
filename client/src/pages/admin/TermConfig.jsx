@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -17,56 +17,73 @@ import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
 export default function TermConfig() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      term: "Academic Year 2023-2024",
-    },
-    {
-      id: 2,
-      term: "Academic Year 2024-2025",
-    },
-  ]);
+  const [rows, setRows] = useState([]);
+  useEffect(() => {
+    fetch("http://localhost:5000/api/admin/loadAcademicYear")
+      .then((res) => res.json())
+      .then((data) => setRows(data))
+      .catch((err) => console.error(err));
+  }, []);
 
 
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
-  const [newTerm, setTerm] = useState({ term: ""});
+  const [newTerm, setTerm] = useState({ term: "" });
 
-  const handleAdd = () => {
-    const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
-    setRows([...rows, { id: nextId, ...newTerm }]);
+  const handleAddRecords = async () => {
+  try {
+    const response = await fetch("http://localhost:5000/api/admin/addAcademicYear", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newTerm),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to add term");
+    }
+
+    await response.json(); 
+
+    const reload = await fetch("http://localhost:5000/api/admin/loadAcademicYear");
+    const updatedData = await reload.json();
+    setRows(updatedData);
     setOpen(false);
-    setTerm({ term: ""});
-  };
+    setTerm({ term: "" });
+  } catch (err) {
+    console.error("Error adding term:", err);
+  }
+};
 
-  // Track selected rows from Table (Supposedly)
+
+
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const handleRemoveSelected = () => {
-    setRows(rows.filter((r) => !selectedIds.includes(r.id)));
-    setSelectedIds([]);
+  const handleRemoveSelected = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/removeAcademicYears", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove terms");
+      }
+
+      const result = await response.json();
+
+
+      setRows((prevRows) => prevRows.filter((r) => !selectedIds.includes(r.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      console.error("Error removing terms:", err);
+    }
   };
+
 
   const columns = [
 
-    { field: "term", headerName: "Term", flex: 1.5 },
-    {
-      field: "action",
-      headerName: "Action",
-      flex: 0.5,
-      renderCell: (params) => (
-        <Button
-          variant="contained"
-          color="inherit"
-          onClick={() => navigate(`/`)}
-          sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px", }, width: { xs: "80px", sm: "120px", md: "100px" } }}
-        >
-          Open
-        </Button>
-      ),
-
-    },
+    { field: "AY_Name", headerName: "Term", flex: 1.5 },
 
   ];
 
@@ -127,7 +144,12 @@ export default function TermConfig() {
               <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
                 Add Term
               </Button>
-              <Button variant="contained" color="error" onClick={handleRemoveSelected} disabled={selectedIds.length === 0}>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleRemoveSelected}
+                disabled={selectedIds.length === 0}
+              >
                 Remove Selected
               </Button>
             </Box>
@@ -143,7 +165,16 @@ export default function TermConfig() {
           }}
         >
           {/*Table Component*/}
-          <Table rows={rows} columns={columns} />
+          <Table
+            rows={rows}
+            columns={columns}
+            checkboxSelection
+            disableRowSelectionOnClick
+            onSelectionModelChange={(newSelection) => {
+              setSelectedIds(newSelection);
+            }}
+            selectionModel={selectedIds}
+          />
         </Box>
       </Box>
       <Dialog open={open} onClose={() => setOpen(false)}>
@@ -158,7 +189,7 @@ export default function TermConfig() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleAdd} variant="contained">Add</Button>
+          <Button onClick={handleAddRecords} variant="contained">Add</Button>
         </DialogActions>
       </Dialog>
     </Box>

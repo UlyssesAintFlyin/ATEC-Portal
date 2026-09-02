@@ -1,8 +1,7 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { loadEnrollee } = require("../controllers/enrollmentController");
+const { createEnrollment } = require('../controllers/enrollmentControllerK');
 
-// Example: GET /api/enrollees
-router.get("/enrollees", loadEnrollee);
+router.post('/', createEnrollment);
 
 module.exports = router;

@@ -1,22 +1,66 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken'); //for creating JWTs (secure tokens).
 const pool = require('../config/db');
 
+const createEnrollment = async (req, res) => {
+    try {
+        const { studentDetails, studentType, programTerm } = req.body;
 
-async function loadEnrollee(req, res) {
-  try {
-    const [rows] = await pool.query(
-      `SELECT e.enrollment_ID AS id, 
-              CONCAT(e.f_Name, ' ', e.l_name) AS enrollee, 
-              status 
-       FROM enrollment_table e
-       WHERE status = 'Validated'`
-    );
-    res.json(rows);
-  } catch (err) {
-    console.error("Error loading enrollees:", err);
-    res.status(500).json({ error: "Failed to load enrollees" });
-  }
-}
+        const [ayRows] = await pool.query(
+            'SELECT AY_ID FROM academic_year_table WHERE AY_Name = ?',
+            ['2025-2026']
+        );
+        const AY_ID = ayRows.length > 0 ? ayRows[0].AY_ID : null;
 
-module.exports={ loadEnrollee };
+        const sql = `
+            INSERT INTO enrollment_table
+            (f_Name, m_Name, l_Name, gender, age, contact_Number, email, address,
+             father_Name, father_Contact, mother_Name, mother_Contact,
+             guardian_Name, guardian_Contact,
+             birthdate, transferring_from, AY_ID,
+             student_type, term, year_level, track, program
+             )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const values = [
+            studentDetails.firstName,
+            studentDetails.middleName,
+            studentDetails.lastName,
+            studentDetails.gender,
+            studentDetails.age,
+            studentDetails.contact,
+            studentDetails.email,
+            studentDetails.homeAddress,
+            studentDetails.fathersName,
+            studentDetails.fathersContact,
+            studentDetails.mothersName,
+            studentDetails.mothersContact,
+            studentDetails.guardiansName,
+            studentDetails.guardiansContact,
+            studentDetails.birthdate,
+            studentDetails.prevSchool,
+            AY_ID,
+            studentType,
+            programTerm.term,
+            programTerm.year,
+            programTerm.track,
+            programTerm.program,
+            
+        ];
+
+        const [result] = await pool.query(sql, values);
+
+        res.status(201).json({
+            message: 'Enrollment submitted successfully!',
+            enrollmentId: result.insertId
+        });
+
+    } catch (error) {
+        console.error('Enrollment error:', error);
+        res.status(500).json({
+            message: 'Failed to save enrollment',
+            error: error.message
+        });
+    }
+};
+
+module.exports = { createEnrollment };
