@@ -9,7 +9,7 @@ export default function EnrolleeQueue() {
   const [selectedIds, setSelectedIds] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/enrollment/enrollees") 
+    fetch("http://localhost:5000/api/admin/loadValidatedEnrollees") 
       .then((res) => res.json())
       .then((data) => setRows(data))
       .catch((err) => console.error(err));

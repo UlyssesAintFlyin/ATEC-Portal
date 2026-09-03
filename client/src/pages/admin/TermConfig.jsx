@@ -25,38 +25,59 @@ export default function TermConfig() {
       .catch((err) => console.error(err));
   }, []);
 
-
-  // Adding Student Dialog State
   const [open, setOpen] = useState(false);
   const [newTerm, setTerm] = useState({ term: "" });
 
   const handleAddRecords = async () => {
-  try {
-    const response = await fetch("http://localhost:5000/api/admin/addAcademicYear", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newTerm),
-    });
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/addAcademicYear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTerm),
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to add term");
+      if (!response.ok) {
+        throw new Error("Failed to add term");
+      }
+
+      await response.json();
+
+      const reload = await fetch("http://localhost:5000/api/admin/loadAcademicYear");
+      const updatedData = await reload.json();
+      setRows(updatedData);
+      setOpen(false);
+      setTerm({ term: "" });
+    } catch (err) {
+      console.error("Error adding term:", err);
     }
-
-    await response.json(); 
-
-    const reload = await fetch("http://localhost:5000/api/admin/loadAcademicYear");
-    const updatedData = await reload.json();
-    setRows(updatedData);
-    setOpen(false);
-    setTerm({ term: "" });
-  } catch (err) {
-    console.error("Error adding term:", err);
-  }
-};
+  };
 
 
 
   const [selectedIds, setSelectedIds] = useState([]);
+
+
+const handleSetAY = async () => {
+  try {
+    const ayId = parseInt(selectedIds[0], 10); // ensure integer
+
+    const response = await fetch("http://localhost:5000/api/admin/setAY", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ AY_ID: ayId }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to set academic year");
+    }
+
+    const result = await response.json();
+  } catch (err) {
+    console.error("Error setting academic year:", err);
+  }
+};
+
+
 
   const handleRemoveSelected = async () => {
     try {
@@ -141,8 +162,18 @@ export default function TermConfig() {
             }}
           >
             <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
+
+
               <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
                 Add Term
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSetAY}
+                disabled={selectedIds.length !== 1}
+              >
+                Set Selected
               </Button>
               <Button
                 variant="contained"
