@@ -4,31 +4,30 @@ import { useState } from 'react';
 export default function Enrollment() {
     const [step, setStep] = useState(1);
     const [studentType, setStudentType] = useState('');
+    const [enrollmentCode, setEnrollmentCode] = useState('');
+
+    // for hte pop-up code checking modal
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [statusCodeInput, setStatusCodeInput] = useState('');
+    const [statusResult, setStatusResult] = useState(null);
+    const [statusError, setStatusError] = useState('');
+
+    const handleCloseStatusModal = () => {
+    setShowStatusModal(false);
+    setStatusCodeInput('');
+    setStatusResult(null);
+    setStatusError('');
+    };
 
     const [studentDetails, setStudentDetails] = useState({
-        lastName: '',
-        firstName: '',
-        middleName: '',
-        age: '',
-        gender: '',
-        homeAddress: '',
-        contact: '',
-        email: '',
-        birthdate: '',
-        mothersName: '',
-        mothersContact: '',
-        fathersName: '',
-        fathersContact: '',
-        prevSchool: '',
-        guardiansName: '',
-        guardiansContact: ''
+        lastName: '', firstName: '', middleName: '', age: '', gender: '',
+        homeAddress: '', contact: '', email: '', birthdate: '',
+        mothersName: '', mothersContact: '', fathersName: '', fathersContact: '',
+        prevSchool: '', guardiansName: '', guardiansContact: ''
     });
 
     const [programTerm, setProgramTerm] = useState({
-        term: '',
-        year: '',
-        track: '',
-        program: ''
+        term: '', year: '', track: '', program: ''
     });
 
     const handleDetailsChange = (e) => {
@@ -60,38 +59,95 @@ export default function Enrollment() {
         setStep(target);
     };
 
-    const handleFinalSubmit = async (e) => {
-    e.preventDefault();
+    const handleBackToEnrollment = () => {
+    setStep(1);
 
-    const enrollmentData = {
-        studentDetails,
-        studentType,
-        programTerm
+    // Clear student type
+    setStudentType('');
+
+    // Clear enrollment code
+    setEnrollmentCode('');
+
+    // Clear student details
+    setStudentDetails({
+        lastName: '',
+        firstName: '',
+        middleName: '',
+        age: '',
+        gender: '',
+        homeAddress: '',
+        contact: '',
+        email: '',
+        birthdate: '',
+        mothersName: '',
+        mothersContact: '',
+        fathersName: '',
+        fathersContact: '',
+        prevSchool: '',
+        guardiansName: '',
+        guardiansContact: ''
+    });
+
+    // Clear program/term
+    setProgramTerm({
+        term: '',
+        year: '',
+        track: '',
+        program: ''
+    });
+};
+
+    const handleFinalSubmit = async (e) => {
+        e.preventDefault();
+
+        const enrollmentData = { studentDetails, studentType, programTerm };
+
+        try {
+            const response = await fetch('http://localhost:5000/api/enrollment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(enrollmentData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setEnrollmentCode(data.enrollmentCode);
+                setStep(5);
+            } else {
+                alert(data.message || 'Failed to submit enrollment.');
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Cannot connect to the server.');
+        }
     };
 
-    try {
-        const response = await fetch('http://localhost:5000/api/enrollments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(enrollmentData)
-        });
+    const handleCheckStatus = async () => {
+        setStatusError('');
+        setStatusResult(null);
 
-        const data = await response.json();
-
-        if (response.ok) {
-            alert('Enrollment submitted successfully!');
-            console.log(data);
-        } else {
-            alert('Failed to submit enrollment.');
+        if (!statusCodeInput.trim()) {
+            setStatusError('Please enter your enrollment code.');
+            return;
         }
 
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Cannot connect to the server.');
-    }
-};
+        try {
+            const response = await fetch(`http://localhost:5000/api/enrollment/status/${statusCodeInput.trim()}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                setStatusResult(data.enrollment);
+            } else {
+                setStatusError(data.message || 'Enrollment not found.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            setStatusError('Cannot connect to the server.');
+        }
+    };
+
     const fullName = `${studentDetails.firstName} ${studentDetails.middleName} ${studentDetails.lastName}`.trim();
 
     return (
@@ -101,7 +157,7 @@ export default function Enrollment() {
                     <h6>Course Enrollment</h6>
                     <p>Complete each step below to reserve you place for incoming term.</p>
                 </div>
-                {step !== 1 && (
+                {step !== 1 && step !== 5 && (
                     <div className='rightTop'>
                         <p className={step === 2 ? 'stepActive' : 'stepDone'}>1</p>
                         <div className='load'></div>
@@ -124,6 +180,13 @@ export default function Enrollment() {
                             <p>Senior high school</p>
                         </div>
                     </div>
+                    <button
+                        type="button"
+                        className='statusBtn'
+                        onClick={() => setShowStatusModal(true)}
+                    >
+                        View Enrollment Status
+                    </button>
                 </div>
             )}
 
@@ -208,7 +271,7 @@ export default function Enrollment() {
                                     <input type="text" id="guardiansName" name="guardiansName" value={studentDetails.guardiansName} onChange={handleDetailsChange} required/>
                                 </div>
                                 <div className='formGroup'>
-                                    <label htmlFor="guardiansContact">Father's Contact Number:</label>
+                                    <label htmlFor="guardiansContact">Guardian's Contact Number:</label>
                                     <input type="text" id="guardiansContact" name="guardiansContact" value={studentDetails.guardiansContact} onChange={handleDetailsChange} required/>
                                 </div>
                                 
@@ -329,7 +392,7 @@ export default function Enrollment() {
                                     </div>
                                     <div className='formGroup wide'>
                                         <label>Guardian's Contact</label>
-                                        <input type="text" value={studentDetails.guardiansName} readOnly />
+                                        <input type="text" value={studentDetails.guardiansContact} readOnly />
                                     </div>
                                 </div>
 
@@ -361,6 +424,67 @@ export default function Enrollment() {
                     </div>
                 </div>
             )}
+
+                {step === 5 && (
+                    <div className='confirmation'>
+                        <p className='success'>
+                            You have successfully submitted your enrollment!
+                        </p>
+
+                        <p>Your enrollment code is:</p>
+
+                        <h2 className='enrollmentCode'>
+                            {enrollmentCode}
+                        </h2>
+
+                        <p>
+                            Keep this code, you'll need it to check your enrollment status.
+                            Just navigate to the enrollment page and press enrollment status.
+                        </p>
+
+                        <button
+                            type="button"
+                            className="backToEnrollment"
+                            onClick={handleBackToEnrollment}
+                        >
+                            Back to Enrollment
+                        </button>
+                    </div>
+                )}
+
+            {showStatusModal && (
+                <div className='modalOverlay' onClick={handleCloseStatusModal}>
+                    <div className='modalBox' onClick={(e) => e.stopPropagation()}>
+                        <h6>Check Enrollment Status</h6>
+                        <input
+                            type="text"
+                            placeholder="e.g. ATEC-2025-00042"
+                            value={statusCodeInput}
+                            onChange={(e) => setStatusCodeInput(e.target.value)}
+                        />
+                        <button type="button" onClick={handleCheckStatus}>Check</button>
+
+                        {statusError && <p className='statusError'>{statusError}</p>}
+
+                        {statusResult && (
+                            <div className='statusResult'>
+                                <p><strong>Name:</strong> {statusResult.f_Name} {statusResult.l_Name}</p>
+                                <p><strong>Status:</strong> {statusResult.status}</p>
+                                <p><strong>Submitted:</strong> {new Date(statusResult.created_at).toLocaleDateString()}</p>
+                            </div>
+                        )}
+
+                        <button
+                            type="button"
+                            className='closeBtn'
+                            onClick={handleCloseStatusModal}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
+    
     );
 }
