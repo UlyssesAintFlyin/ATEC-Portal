@@ -6,6 +6,7 @@ const enrollmentRoutes = require('./routes/enrollmentRoutes');
 const path = require('path');
 const carouselRoutes = require('./routes/carouselRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const systemSettingsRoutes = require('./routes/systemRoutes');
 
 const app = express(); //Creates the Express application instance.
 
@@ -20,6 +21,8 @@ app.use('/api/admin', adminRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/carousel', carouselRoutes);
+
+app.use('/api/system-settings', systemSettingsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

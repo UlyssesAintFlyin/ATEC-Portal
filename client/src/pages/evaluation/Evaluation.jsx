@@ -1,60 +1,69 @@
-import styles from './Evaluation.css';
-import { useState } from 'react';
+import styles from "./Evaluation.css";
+import { useState, useEffect } from "react";
+import Blockade from "../../components/Blockade";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Evaluation() {
   const [showEval, setShowEval] = useState(false);
   const [answers, setAnswers] = useState({});
+  const { user } = useAuth();
 
-  const CHOICES = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
+  const CHOICES = [
+    "Strongly Disagree",
+    "Disagree",
+    "Neutral",
+    "Agree",
+    "Strongly Agree",
+  ];
 
   const SECTIONS = [
     {
-      title: 'I - Personality and Appearance',
+      title: "I - Personality and Appearance",
       questions: [
-        'Shows a pleasant personality, happy disposition in life and behave professionally as a teacher.',
-        'Talks clearly and audibly',
-        'Approachable and accommodating.',
-        'Shows evidence of love for his/her work.',
-        'Displays no irritating speech mannerisms.',
+        "Shows a pleasant personality, happy disposition in life and behave professionally as a teacher.",
+        "Talks clearly and audibly",
+        "Approachable and accommodating.",
+        "Shows evidence of love for his/her work.",
+        "Displays no irritating speech mannerisms.",
       ],
     },
     {
-      title: 'II - Teaching Methodology',
+      title: "II - Teaching Methodology",
       questions: [
-        'Performs regular monitoring of attendance.',
+        "Performs regular monitoring of attendance.",
         "Shows mastery on his/her subject matter.",
-        'Presents the lesson clearly, logically and orderly.',
+        "Presents the lesson clearly, logically and orderly.",
         "Answers student's questions satisfactorily.",
-        'Uses methods/techniques appropriate for the lessons.',
+        "Uses methods/techniques appropriate for the lessons.",
         "Sustains student's interest and participation from the beginning up to the end of the online class.",
         "Sometimes asks challenging and thought provoking questions to exercise students' critical thinking.",
         "Evaluates student's learning for the day through quiz, activities or oral recitation.",
-        'Explains lessons (either in English or Filipino).',
-        'Has correct diction and pronunciation when explaining the lesson.',
-        'Uses instructional aides. (PPT/Photos/video/Audio/Tools & Materials)',
+        "Explains lessons (either in English or Filipino).",
+        "Has correct diction and pronunciation when explaining the lesson.",
+        "Uses instructional aides. (PPT/Photos/video/Audio/Tools & Materials)",
         "Starts and ends up his/her classes on time.",
         "Always present on his/her class.",
       ],
     },
     {
-      title: 'III - Class & Classroom Management',
+      title: "III - Class & Classroom Management",
       questions: [
-        'Did you learn a lot from this teacher?',
-        'Entertains problems of students & gives advice.',
-        'Shows concern for student.',
-        'Manages class discipline in the classroom during class.',
-        'Gives everyone an equal chance.',
+        "Did you learn a lot from this teacher?",
+        "Entertains problems of students & gives advice.",
+        "Shows concern for student.",
+        "Manages class discipline in the classroom during class.",
+        "Gives everyone an equal chance.",
         "Acknowledges student's responses and questions.",
       ],
     },
     {
-      title: 'IV - Child Protection Policy Implementation',
+      title: "IV - Child Protection Policy Implementation",
       questions: [
         "Protects student's confidentiality especially when you shared sensitive information.",
-        'Never say/use/mention malicious words during class, break time or any time in school vicinity.',
-        'Never show or display any malicious acts.',
-        'Never give a joke that may offend a student or any individual.',
-        'Never bully a student or any individual.',
+        "Never say/use/mention malicious words during class, break time or any time in school vicinity.",
+        "Never show or display any malicious acts.",
+        "Never give a joke that may offend a student or any individual.",
+        "Never bully a student or any individual.",
       ],
     },
   ];
@@ -68,19 +77,61 @@ export default function Evaluation() {
     const answeredCount = Object.keys(answers).length;
 
     if (answeredCount < totalQuestions) {
-      alert(`Please answer all questions. (${answeredCount}/${totalQuestions} completed)`);
+      alert(
+        `Please answer all questions. (${answeredCount}/${totalQuestions} completed)`,
+      );
       return;
     }
 
-    console.log('Submitted evaluation:', answers);
+    console.log("Submitted evaluation:", answers);
     setShowEval(false);
   };
+
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [evaluationOpen, setEvaluationOpen] = useState(false);
+  const [termLabel, setTermLabel] = useState("");
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/system-settings")
+      .then((res) => res.json())
+      .then((data) => {
+        setEvaluationOpen(Boolean(data.evaluation_settings_value));
+        if (data.evaluation_AY_Name) {
+          setTermLabel(
+            `${data.evaluation_AY_Name}, ${data.evaluation_semester_name}`,
+          );
+        }
+      })
+      .catch(() => setEvaluationOpen(false))
+      .finally(() => setSettingsLoading(false));
+  }, []);
+
+  if (settingsLoading) {
+    return null;
+  }
+
+  if (!evaluationOpen) {
+    return (
+      <Blockade
+            userName={user?.name}   // pull from your AuthContext
+            messageDetail={
+                termLabel
+                    ? `Evaluation for ${termLabel} is currently closed.`
+                    : "This page is currently unavailable as evaluation is temporarily closed."
+            }
+            statusDetail="Evaluation Closed"
+        />
+    );
+  }
 
   return (
     <div className="evaluation">
       <div className="evaluationHeader">
         <h2>Evaluate Professor</h2>
-        <p>Below is the list of faculty members you need to evaluate. Please complete all evaluations honestly and carefully.</p>
+        <p>
+          Below is the list of faculty members you need to evaluate. Please
+          complete all evaluations honestly and carefully.
+        </p>
       </div>
 
       <div className="professorsDiv">
@@ -108,15 +159,20 @@ export default function Evaluation() {
 
       {showEval && (
         <div className="Evaluationform">
-          <button className="backButton" onClick={() => setShowEval(false)}>Back</button>
+          <button className="backButton" onClick={() => setShowEval(false)}>
+            Back
+          </button>
 
           <div className="formInner">
             <div className="formHeader">
               <div className="formHeaderText">
-                <h6><i>Evaluation Form</i></h6>
+                <h6>
+                  <i>Evaluation Form</i>
+                </h6>
                 <p>
                   Below is the list of faculty members you need to evaluate.
-                  <br />Please complete all evaluations honestly and carefully.
+                  <br />
+                  Please complete all evaluations honestly and carefully.
                 </p>
               </div>
 
@@ -134,12 +190,16 @@ export default function Evaluation() {
                       const key = `${sectionIndex}-${questionIndex}`;
                       return (
                         <div className="questions" key={key}>
-                          <p>{questionIndex + 1}. {question}</p>
+                          <p>
+                            {questionIndex + 1}. {question}
+                          </p>
                           <div className="choices">
                             {CHOICES.map((choice) => (
                               <button
                                 key={choice}
-                                className={answers[key] === choice ? 'selected' : ''}
+                                className={
+                                  answers[key] === choice ? "selected" : ""
+                                }
                                 onClick={() => handleSelect(key, choice)}
                               >
                                 {choice}
@@ -153,7 +213,13 @@ export default function Evaluation() {
                 ))}
                 <form>
                   <label htmlFor="comments">Additional comments:</label>
-                  <textarea id="comments" name="comments" rows="5" cols="50" placeholder="Type here..."></textarea>
+                  <textarea
+                    id="comments"
+                    name="comments"
+                    rows="5"
+                    cols="50"
+                    placeholder="Type here..."
+                  ></textarea>
                 </form>
                 <button className="submitButton" onClick={handleSubmit}>
                   Submit Evaluation
