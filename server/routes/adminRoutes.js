@@ -10,6 +10,7 @@ const { setSemester } = require('../controllers/adminController');
 const { toggleEvaluation } = require('../controllers/adminController');
 const { toggleEnrollment } = require('../controllers/adminController');
 const { getSystemSettings } = require('../controllers/adminController');
+const { getCurrentAcademicYear } = require('../controllers/adminController');
 
 router.get('/loadAcademicYear', loadAcademicYear); //this pulls in the loadAcademicYear function
 router.post('/addAcademicYear', addAcademicYear); //this pulls in the addAcademicYear function
@@ -22,6 +23,7 @@ router.put('/setSemester', setSemester); //this pulls in the setSemester functio
 router.put('/toggleEvaluation', toggleEvaluation); //this pulls in the toggleEvaluation function
 router.put('/toggleEnrollment', toggleEnrollment); //this pulls in the toggleEnrollment function
 router.get('/systemSettings', getSystemSettings); //this pulls in the getSystemSettings function
+router.get('/currentAcademicYear', getCurrentAcademicYear); //this pulls in the getCurrentAcademicYear function
 //calls adminController during an API request   
 
 module.exports = router;

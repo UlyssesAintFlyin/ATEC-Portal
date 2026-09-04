@@ -8,6 +8,8 @@
 
 .app-main {
   flex: 1;
+  min-width: 0;
+  width: 100%;
 }
 
 /* Thin navy divider bar under the carousel */

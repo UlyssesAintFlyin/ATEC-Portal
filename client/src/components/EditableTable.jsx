@@ -41,7 +41,13 @@ function CustomToolbar() {
   );
 }
 
-export const Table = ({ rows, columns, paginationModel, ...props }) => {
+export const EditableTable = ({
+  rows,
+  columns,
+  paginationModel,
+  onSelectionModelChange,
+  ...props
+}) => {
   return (
     <Paper sx={{ width: "100%" }}>
       <div style={{ display: "flex", flexDirection: "column", height: 540 }}>
@@ -51,6 +57,8 @@ export const Table = ({ rows, columns, paginationModel, ...props }) => {
           pageSize={paginationModel?.pageSize || 5}
           rowsPerPageOptions={[5, 10]}
           checkboxSelection
+          disableMultipleRowSelection
+          onSelectionModelChange={onSelectionModelChange}
           components={{ Toolbar: CustomToolbar }}
           sx={{ border: 0 }}
           {...props}

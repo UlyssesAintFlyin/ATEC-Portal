@@ -230,7 +230,34 @@ async function getSystemSettings(req, res) {
   }
 }
 
+async function getCurrentAcademicYear(req, res) {
+  try {
+    const [settings] = await pool.query(
+      `SELECT enrollment_AYS_ID FROM system_settings_table WHERE system_settings_ID = 1`
+    );
 
+    if (settings.length === 0 || !settings[0].enrollment_AYS_ID) {
+      return res.status(404).json({ error: "No active academic year set" });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT ay.AY_ID, ay.AY_Name
+       FROM academic_year_semester_table ays
+       JOIN academic_year_table ay ON ays.AY_ID = ay.AY_ID
+       WHERE ays.AYS_ID = ?`,
+      [settings[0].enrollment_AYS_ID]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Active academic year not found" });
+    }
+
+    res.json(rows[0]); // { AY_ID, AY_Name }
+  } catch (err) {
+    console.error("Error getting current academic year:", err);
+    res.status(500).json({ error: "Failed to get current academic year" });
+  }
+}
 
 // Export functions
-module.exports = { loadAcademicYear, addAcademicYear, removeAcademicYears, loadEnrollees, loadValidatedEnrollees, setAY, setSemester, toggleEvaluation, toggleEnrollment, getSystemSettings };
+module.exports = { loadAcademicYear, addAcademicYear, removeAcademicYears, loadEnrollees, loadValidatedEnrollees, setAY, setSemester, toggleEvaluation, toggleEnrollment, getSystemSettings, getCurrentAcademicYear };

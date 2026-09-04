@@ -7,6 +7,8 @@ const path = require('path');
 const carouselRoutes = require('./routes/carouselRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const systemSettingsRoutes = require('./routes/systemRoutes');
+const curriculumRoutes = require('./routes/curriculumRoutes');
+const subjectRoutes = require('./routes/subjectRoutes');
 
 const app = express(); //Creates the Express application instance.
 
@@ -23,6 +25,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/carousel', carouselRoutes);
 
 app.use('/api/system-settings', systemSettingsRoutes);
+
+app.use('/api/curricula', curriculumRoutes);
+app.use('/api/subjects', subjectRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

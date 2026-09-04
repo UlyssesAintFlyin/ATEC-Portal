@@ -136,7 +136,10 @@ export default function EnrollmentManagement() {
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
             height: { xs: "600px", md: "500px" },
-            minWidth: 0,
+            maxWidth:  "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
           }}
         >
           {/*Table Component*/}

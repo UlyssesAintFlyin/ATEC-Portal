@@ -32,7 +32,6 @@ import { Link } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
 
-
 function LayoutWithHeader() {
   return (
     <>
@@ -81,17 +80,17 @@ function App() {
                 <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
                 <Route path="facultyEvaluation" element={<FacultyEvaluation />} />
                 <Route path="facultyEvaluation/editFaculty/:id" element={<EditFaculty />} />
-                <Route path="facultyEvaluation/evaluation-:id" element={<AdminEval />} />
+                <Route path="facultyEvaluation/evaluation/:id" element={<AdminEval />} />
                 <Route path="sections" element={<Sections />} />
                 <Route path="sections/:id" element={<SelectedSection />} />
-                <Route path="sections/:id/addStudent" element={<EnrolleeQueue/>}/>
+                <Route path="sections/:id/addStudent" element={<EnrolleeQueue />} />
                 <Route path="section/thisSection/:id" element={<EditStudent />} />
                 <Route path="section/thisSection/thisStudent/editGrade" element={<EditGrade />} />
                 <Route path="systemSettings" element={<SystemSettings />} />
                 <Route path="systemSettings/termConfig" element={<TermConfig />} />
                 <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />
-                <Route path="systemSettings/curriculumConfig/curriculum-:id" element={<CurriculumSubjects />} />
-                <Route path="systemSettings/curriculumConfig/curriculum-:id/addSubject" element={<AddSubject />} />
+                <Route path="systemSettings/curriculumConfig/curriculum/:id" element={<CurriculumSubjects />} />
+                <Route path="systemSettings/curriculumConfig/curriculum/:id/addSubject" element={<AddSubject />} />
                 <Route path="systemSettings/carouselConfig" element={<CarouselConfig />} />
               </Route>
             </Route>
@@ -193,7 +192,7 @@ function Home() {
               Events That Inspire Camaraderie
             </Typography>
             <Typography variant="body1" className="studentLife-item-description">
-              ATEC Technological College is dedicated to fostering a sense of community and belonging 
+              ATEC Technological College is dedicated to fostering a sense of community and belonging
               among its students, faculty, and staff.
             </Typography>
           </Box>
@@ -206,7 +205,7 @@ function Home() {
               Life Inside The Campus
             </Typography>
             <Typography variant="body1" className="studentLife-item-description">
-              Amidst the challenges and uncertainties, ATEC Technological College will keep moving forward 
+              Amidst the challenges and uncertainties, ATEC Technological College will keep moving forward
               and will continuously deliver an exceptional school experience.
             </Typography>
           </Box>
@@ -219,8 +218,8 @@ function Home() {
               The School Environment
             </Typography>
             <Typography variant="body1" className="studentLife-item-description">
-              The school is committed to providing a safe and inclusive environment for all students, 
-              where they can thrive academically, socially, and emotionally. 
+              The school is committed to providing a safe and inclusive environment for all students,
+              where they can thrive academically, socially, and emotionally.
             </Typography>
           </Box>
         </Box>

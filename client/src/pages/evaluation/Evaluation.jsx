@@ -8,6 +8,43 @@ export default function Evaluation() {
   const [answers, setAnswers] = useState({});
   const { user } = useAuth();
 
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [evaluationOpen, setEvaluationOpen] = useState(false);
+  const [termLabel, setTermLabel] = useState("");
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/system-settings")
+      .then((res) => res.json())
+      .then((data) => {
+        setEvaluationOpen(Boolean(data.evaluation_settings_value));
+        if (data.evaluation_AY_Name) {
+          setTermLabel(
+            `${data.evaluation_AY_Name}, ${data.evaluation_semester_name}`,
+          );
+        }
+      })
+      .catch(() => setEvaluationOpen(false))
+      .finally(() => setSettingsLoading(false));
+  }, []);
+
+  if (settingsLoading) {
+    return null;
+  }
+
+  if (!evaluationOpen) {
+    return (
+      <Blockade
+        userName={user?.name} // pull from your AuthContext
+        messageDetail={
+          termLabel
+            ? `Evaluation for ${termLabel} is currently closed.`
+            : "This page is currently unavailable as evaluation is temporarily closed."
+        }
+        statusDetail="Evaluation Closed"
+      />
+    );
+  }
+
   const CHOICES = [
     "Strongly Disagree",
     "Disagree",
@@ -86,43 +123,6 @@ export default function Evaluation() {
     console.log("Submitted evaluation:", answers);
     setShowEval(false);
   };
-
-  const [settingsLoading, setSettingsLoading] = useState(true);
-  const [evaluationOpen, setEvaluationOpen] = useState(false);
-  const [termLabel, setTermLabel] = useState("");
-
-  useEffect(() => {
-    fetch("http://localhost:5000/api/system-settings")
-      .then((res) => res.json())
-      .then((data) => {
-        setEvaluationOpen(Boolean(data.evaluation_settings_value));
-        if (data.evaluation_AY_Name) {
-          setTermLabel(
-            `${data.evaluation_AY_Name}, ${data.evaluation_semester_name}`,
-          );
-        }
-      })
-      .catch(() => setEvaluationOpen(false))
-      .finally(() => setSettingsLoading(false));
-  }, []);
-
-  if (settingsLoading) {
-    return null;
-  }
-
-  if (!evaluationOpen) {
-    return (
-      <Blockade
-            userName={user?.name}   // pull from your AuthContext
-            messageDetail={
-                termLabel
-                    ? `Evaluation for ${termLabel} is currently closed.`
-                    : "This page is currently unavailable as evaluation is temporarily closed."
-            }
-            statusDetail="Evaluation Closed"
-        />
-    );
-  }
 
   return (
     <div className="evaluation">
