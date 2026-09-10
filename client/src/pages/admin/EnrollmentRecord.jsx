@@ -1,10 +1,36 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Typography, Box, Button } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function EnrollmentRecord() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [enrollee, setEnrollee] = useState(null);
+
+ useEffect(() => {
+    fetch(`http://localhost:5000/api/admin/enrollees/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+     
+        if (data.status === "Validated") {
+          navigate(`/admin/enrollmentList`);
+        } else {
+          setEnrollee(data);
+        }
+      })
+      .catch((err) => console.error("Error loading enrollee:", err));
+  }, [id, navigate]);
+
+  
+
+  const formatDateLocal = (isoString) => {
+    if (!isoString) return "";
+    const d = new Date(isoString);
+    // Use local year, month, day
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
   return (
     <Box
       sx={{
@@ -13,7 +39,7 @@ export default function EnrollmentRecord() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
-    }}  
+      }}
     >
       <Box
         sx={{
@@ -74,15 +100,27 @@ export default function EnrollmentRecord() {
               sx={{
                 fontSize: { xs: "12px", sm: "15px", md: "17px" },
                 color: "#E8EDF2",
-                backgroundColor: "#791818",
+                backgroundColor: "#242C54",
                 borderRadius: "5px",
                 "&:hover": {
-                  backgroundColor: "#bc4949",
+                  backgroundColor: "#4f5d9e",
                   transform: "scale(1.05)",
                 },
               }}
+              onClick={() => {
+                fetch(`http://localhost:5000/api/admin/enrollees/${id}/validate`, {
+                  method: "PUT",
+                })
+                  .then((res) => res.json())
+                  .then((data) => {
+                    console.log("Enrollee validated:", data);
+                    setEnrollee((prev) => ({ ...prev, status: "Accepted" } ));
+                    navigate(`/admin/enrollmentList`)
+                  })
+                  .catch((err) => console.error("Error validating enrollee:", err));
+              }}
             >
-              Remove Selected
+              Validate Enrollment
             </Button>
           </Box>
         </Box>
@@ -118,9 +156,30 @@ export default function EnrollmentRecord() {
               margin: "0 20px",
             }}
           >
-            <TextField label="First Name" fullWidth />
-            <TextField label="Middle Name" fullWidth />
-            <TextField label="Surname" fullWidth />
+            <TextField
+              label="First Name"
+              value={enrollee?.f_Name || ""}
+              fullWidth
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+            <TextField
+              label="Middle Name"
+              value={enrollee?.m_Name || ""}
+              fullWidth
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+            <TextField
+              label="Surname"
+              value={enrollee?.l_Name || ""}
+              fullWidth
+              InputProps={{
+                readOnly: true,
+              }}
+            />
           </Box>
 
           <Box
@@ -131,13 +190,32 @@ export default function EnrollmentRecord() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Age" type="number" fullWidth />
-            <TextField label="Gender" fullWidth />
+            <TextField
+              label="Age"
+              type="number"
+              value={enrollee?.age || ""}
+              fullWidth
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+            <TextField
+              label="Gender"
+              value={enrollee?.gender || ""}
+              fullWidth
+              InputProps={{
+                readOnly: true,
+              }}
+            />
             <TextField
               label="Birthdate"
+              value={formatDateLocal(enrollee?.birthdate)}
               type="date"
               InputLabelProps={{ shrink: true }}
               fullWidth
+              InputProps={{
+                readOnly: true,
+              }}
             />
           </Box>
           <Box
@@ -148,7 +226,14 @@ export default function EnrollmentRecord() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Home Address" fullWidth />
+            <TextField
+              label="Home Address"
+              value={enrollee?.address || ""}
+              fullWidth
+              InputProps={{
+                readOnly: true,
+              }}
+            />
           </Box>
         </Box>
 
@@ -183,8 +268,22 @@ export default function EnrollmentRecord() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Email Adress" fullWidth />
-            <TextField label="Contact Number" fullWidth />
+            <TextField
+              label="Email Adress"
+              fullWidth
+              value={enrollee?.email || ""}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+            <TextField
+              label="Contact Number"
+              fullWidth
+              value={enrollee?.contact_Number || ""}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
           </Box>
         </Box>
 
@@ -219,8 +318,22 @@ export default function EnrollmentRecord() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Father's Name" fullWidth />
-            <TextField label="Father's Contact Number" fullWidth />
+            <TextField
+              label="Father's Name"
+              fullWidth
+              value={enrollee?.father_Name || ""}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+            <TextField
+              label="Father's Contact Number"
+              fullWidth
+              value={enrollee?.father_Contact || ""}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
           </Box>
           <Box
             sx={{
@@ -230,8 +343,22 @@ export default function EnrollmentRecord() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Mother's Maiden Name" fullWidth />
-            <TextField label="Mother's Contact Number" fullWidth />
+            <TextField
+              label="Mother's Maiden Name"
+              fullWidth
+              value={enrollee?.mother_Name || ""}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+            <TextField
+              label="Mother's Contact Number"
+              fullWidth
+              value={enrollee?.mother_Contact || ""}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
           </Box>
         </Box>
 
@@ -266,9 +393,30 @@ export default function EnrollmentRecord() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Program" fullWidth />
-            <TextField label="Program Type" fullWidth />
-            <TextField label="Transferring From" fullWidth />
+            <TextField
+              label="Program"
+              fullWidth
+              value={enrollee?.program || ""}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+            <TextField
+              label="Program"
+              fullWidth
+              value={enrollee?.program || ""}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+            <TextField
+              label="Transferring From"
+              fullWidth
+              value={enrollee?.transferring_from || ""}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
           </Box>
         </Box>
       </Box>

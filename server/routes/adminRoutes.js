@@ -11,6 +11,9 @@ const { toggleEvaluation } = require('../controllers/adminController');
 const { toggleEnrollment } = require('../controllers/adminController');
 const { getSystemSettings } = require('../controllers/adminController');
 const { getCurrentAcademicYear } = require('../controllers/adminController');
+const { rejectEnrollees } = require('../controllers/adminController');
+const { getEnrolleeById } = require('../controllers/adminController');
+const {validateEnrollee} = require('../controllers/adminController');
 
 router.get('/loadAcademicYear', loadAcademicYear); //this pulls in the loadAcademicYear function
 router.post('/addAcademicYear', addAcademicYear); //this pulls in the addAcademicYear function
@@ -24,6 +27,10 @@ router.put('/toggleEvaluation', toggleEvaluation); //this pulls in the toggleEva
 router.put('/toggleEnrollment', toggleEnrollment); //this pulls in the toggleEnrollment function
 router.get('/systemSettings', getSystemSettings); //this pulls in the getSystemSettings function
 router.get('/currentAcademicYear', getCurrentAcademicYear); //this pulls in the getCurrentAcademicYear function
+router.post('/rejectEnrollees', rejectEnrollees); //this pulls in the rejectEnrollees function
+router.get('/enrollees/:id', getEnrolleeById); //this pulls in the getEnrolleeById function
+router.get('/enrollees/:id/validate', validateEnrollee); //this pulls in the validateEnrollee function
+router.put('/enrollees/:id/validate', validateEnrollee); //this pulls in the validateEnrollee function
 //calls adminController during an API request   
 
 module.exports = router;

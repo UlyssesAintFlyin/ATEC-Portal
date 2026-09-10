@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Typography, Box, Button } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -6,14 +6,23 @@ import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function EnrollmentManagement() {
-    const navigate = useNavigate();
-  //Array for table column
+  const navigate = useNavigate();
+
+
+
+  const [rows, setRows] = useState([]);
+
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/admin/loadEnrollees")
+      .then((res) => res.json())
+      .then((data) => setRows(data))
+      .catch((err) => console.error(err));
+  }, []);
+
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
-    { field: "studentName", headerName: "Student Name", flex: 0.5 },
-    { field: "age", headerName: "Age", type: "number", flex: 1 },
-    { field: "gender", headerName: "Gender", flex: 1 },
-    { field: "program", headerName: "Program", flex: 1 },
+    { field: "enrollee", headerName: "Enrollee Name", flex: 1 },
+    { field: "status", headerName: "Status", flex: 1 },
     {
       field: "action",
       headerName: "Action",
@@ -31,23 +40,31 @@ export default function EnrollmentManagement() {
       ),
     },
   ];
+  const [selectedIds, setSelectedIds] = useState([]);
 
-  const rows = [
-    {
-      id: 1,
-      studentName: "Sakura Matou",
-      age: 17,
-      gender: "Female",
-      program: "Grade 12 STEM",
-    },
-    {
-      id: 2,
-      studentName: "Rudeus Greyrat",
-      age: 19,
-      gender: "Male",
-      program: "BSIT",
-    },
-  ];
+  const handleRejectSelected = async () => {
+    console.log("Rejecting IDs from frontend:", selectedIds); // Debug
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/rejectEnrollees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds }), // must be { ids: [...] }
+      });
+
+      if (!response.ok) throw new Error("Failed to reject enrollees");
+
+      const result = await response.json();
+      setRows((prevRows) => prevRows.filter((r) => !selectedIds.includes(r.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      console.error("Error rejecting enrollees:", err);
+    }
+  };
+
+
+
+
+
 
   return (
     <Box
@@ -123,10 +140,12 @@ export default function EnrollmentManagement() {
                 "&:hover": {
                   backgroundColor: "#bc4949",
                   transform: "scale(1.05)",
+
                 },
               }}
+              onClick={handleRejectSelected}
             >
-              Remove Selected
+              Reject Selected
             </Button>
           </Box>
         </Box>
@@ -136,14 +155,23 @@ export default function EnrollmentManagement() {
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
             height: { xs: "600px", md: "500px" },
-            maxWidth:  "100%",
+            maxWidth: "100%",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
           }}
         >
           {/*Table Component*/}
-          <Table rows={rows} columns={columns} />
+          <Table
+            rows={rows}
+            columns={columns}
+            checkboxSelection
+            disableRowSelectionOnClick
+            onSelectionModelChange={(newSelection) => {
+              setSelectedIds(newSelection);
+            }}
+            selectionModel={selectedIds}
+          />
         </Box>
       </Box>
     </Box>

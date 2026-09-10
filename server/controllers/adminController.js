@@ -13,7 +13,7 @@ async function loadAcademicYear(req, res) {
   } catch (err) {
     console.error("Error loading academic years:", err);
     res.status(500).json({ error: "Failed to load academic years" });
-  } 
+  }
 }
 // Add Academic Year
 async function addAcademicYear(req, res) {
@@ -21,7 +21,7 @@ async function addAcademicYear(req, res) {
     const { term } = req.body;
     if (!term || term.trim() === "") {
       return res.status(400).json({ error: "Term is required" });
-    }  
+    }
     const [yearResult] = await pool.query(
       `INSERT INTO academic_year_table (AY_Name) VALUES (?)`,
       [term]
@@ -173,11 +173,10 @@ async function setSemester(req, res) {
   }
 }
 
-
 // Toggle evaluation
 async function toggleEvaluation(req, res) {
   try {
-    const { enabled } = req.body; 
+    const { enabled } = req.body;
     await pool.query(
       `UPDATE system_settings_table 
        SET evaluation_settings_value = ?, updated_at = CURRENT_TIMESTAMP
@@ -194,7 +193,7 @@ async function toggleEvaluation(req, res) {
 // Toggle enrollment
 async function toggleEnrollment(req, res) {
   try {
-    const { enabled } = req.body; 
+    const { enabled } = req.body;
     await pool.query(
       `UPDATE system_settings_table 
        SET enrollment_settings_value = ?, updated_at = CURRENT_TIMESTAMP
@@ -207,8 +206,6 @@ async function toggleEnrollment(req, res) {
     res.status(500).json({ error: "Failed to toggle enrollment" });
   }
 }
-
-
 
 // Get current system settings
 async function getSystemSettings(req, res) {
@@ -259,5 +256,85 @@ async function getCurrentAcademicYear(req, res) {
   }
 }
 
+async function rejectEnrollees(req, res) {
+  try {
+    console.log("Reject request body:", req.body); // Debug
+
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
+    }
+
+    await pool.query(
+      `UPDATE enrollment_table 
+       SET status = 'Rejected' 
+       WHERE enrollment_ID IN (?)`,
+      [ids]
+    );
+
+    res.json({ success: true, rejected: ids });
+  } catch (err) {
+    console.error("Error rejecting enrollees:", err);
+    res.status(500).json({ error: "Failed to reject enrollees" });
+  }
+}
+
+async function validateEnrollee(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "No enrollee ID provided" });
+    }
+
+    await pool.query(
+      `UPDATE enrollment_table 
+       SET status = 'Validated' 
+       WHERE enrollment_ID = ?`,
+      [id]
+    );
+
+    res.json({ success: true, acceptedId: id });
+  } catch (err) {
+    console.error("Error accepting enrollee:", err);
+    res.status(500).json({ error: "Failed to accept enrollee" });
+  }
+}
+async function getEnrolleeById(req, res) {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      `SELECT 
+        f_Name, m_Name, l_Name, gender, age, contact_Number, email, address,
+        father_Name, father_Contact, mother_Name, mother_Contact,
+        guardian_Name, guardian_Contact,
+        birthdate, transferring_from, AYS_ID,
+        student_type, term, year_level, track, program, status
+       FROM enrollment_table
+       WHERE enrollment_ID = ?`,
+      [id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "Not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch enrollee info" });
+  }
+}
 // Export functions
-module.exports = { loadAcademicYear, addAcademicYear, removeAcademicYears, loadEnrollees, loadValidatedEnrollees, setAY, setSemester, toggleEvaluation, toggleEnrollment, getSystemSettings, getCurrentAcademicYear };
+module.exports = {
+  loadAcademicYear,
+  addAcademicYear,
+  removeAcademicYears,
+  loadEnrollees,
+  loadValidatedEnrollees,
+  setAY,
+  setSemester,
+  toggleEvaluation,
+  toggleEnrollment,
+  getSystemSettings,
+  getCurrentAcademicYear,
+  rejectEnrollees,
+  getEnrolleeById,
+  validateEnrollee
+};

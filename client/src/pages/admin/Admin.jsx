@@ -116,7 +116,7 @@ function Admin() {
       sx={{
         flex: 1,
         width: '100%',
-        height: { xs: 150, md: 416 }, // ✅ tall on desktop, equal on mobile
+        height: { xs: 150, md: 416 },
         position: 'relative',
       }}
     >
@@ -140,7 +140,7 @@ function Admin() {
             focusRipple
             sx={{
               width: '100%',
-              height: { xs: 150, md: 200 }, // ✅ equal height
+              height: { xs: 150, md: 200 }, 
               position: 'relative',
             }}
           >
@@ -169,7 +169,7 @@ function Admin() {
       sx={{
         flex: 1,
         width: '100%',
-        height: { xs: 150, md: 416 }, // ✅ tall on desktop
+        height: { xs: 150, md: 416 }, 
         position: 'relative',
       }}
     >
