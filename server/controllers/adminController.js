@@ -227,6 +227,7 @@ async function getSystemSettings(req, res) {
   }
 }
 
+// Get current academic year
 async function getCurrentAcademicYear(req, res) {
   try {
     const [settings] = await pool.query(
@@ -256,6 +257,7 @@ async function getCurrentAcademicYear(req, res) {
   }
 }
 
+// Reject enrollees
 async function rejectEnrollees(req, res) {
   try {
     console.log("Reject request body:", req.body); // Debug
@@ -280,6 +282,7 @@ async function rejectEnrollees(req, res) {
   }
 }
 
+// Validate enrollee
 async function validateEnrollee(req, res) {
   try {
     const { id } = req.params;
@@ -301,6 +304,7 @@ async function validateEnrollee(req, res) {
     res.status(500).json({ error: "Failed to accept enrollee" });
   }
 }
+// Get enrollee by ID
 async function getEnrolleeById(req, res) {
   try {
     const { id } = req.params;
@@ -321,6 +325,190 @@ async function getEnrolleeById(req, res) {
     res.status(500).json({ error: "Failed to fetch enrollee info" });
   }
 }
+
+//Convert Enrolee to Student
+async function convertEnrollees(req, res) {
+  const { sectionId, enrolleeIds, AYS_ID } = req.body;
+
+  try {
+    // Get enrollee info
+    const [enrollees] = await pool.query(
+      `SELECT * FROM enrollment_table WHERE enrollment_ID IN (?) AND status = 'Validated'`,
+      [enrolleeIds]
+    );
+
+    const createdStudents = [];
+
+    for (const enrollee of enrollees) {
+      // Insert into student_table
+      const [studentResult] = await pool.query(
+        `INSERT INTO student_table 
+         (f_Name, m_Name, l_Name, gender, contact_Number, email, address, birthdate, 
+          father_Name, father_Contact, mother_Name, mother_Contact, guardian_Name, guardian_Contact, password) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          enrollee.f_Name,
+          enrollee.m_Name,
+          enrollee.l_Name,
+          enrollee.gender,
+          enrollee.contact_Number,
+          enrollee.email,
+          enrollee.address,
+          enrollee.birthdate,
+          enrollee.father_Name,
+          enrollee.father_Contact,
+          enrollee.mother_Name,
+          enrollee.mother_Contact,
+          enrollee.guardian_Name,
+          enrollee.guardian_Contact,
+          enrollee.email // or generate a default password
+        ]
+      );
+
+      const studentId = studentResult.insertId;
+
+      // Insert into student_year_record_table
+      await pool.query(
+        `INSERT INTO student_year_record_table
+        (student_ID, section_ID, AYS_ID, program, department, specialization)
+        SELECT ?, ?, ?, ?, s.department, ?
+        FROM section_table s
+        WHERE s.section_ID = ?`,
+        [studentId, sectionId, AYS_ID, enrollee.program, enrollee.specialization, sectionId]
+      );
+
+      // Mark enrollee as converted
+      await pool.query(
+        `DELETE FROM enrollment_table WHERE enrollment_ID = ?`,
+        [enrollee.enrollment_ID]
+      );
+
+      createdStudents.push({
+        id: studentId,
+        name: `${enrollee.f_Name} ${enrollee.l_Name}`
+      });
+    }
+
+    res.json({ success: true, students: createdStudents });
+  } catch (err) {
+    console.error("Error converting enrollees:", err);
+    res.status(500).json({ error: "Failed to convert enrollees" });
+  }
+}
+
+// Load Section
+async function loadSections(req, res) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT Section_ID AS id, Section_Name AS sectionName, 
+              gradeLevel, department
+       FROM section_table`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Error loading sections:", err);
+    res.status(500).json({ error: "Failed to load sections" });
+  }
+}
+
+// Create Section
+async function createSection(req, res) {
+  try {
+    const { sectionName, gradeLevel, department } = req.body;
+
+    if (!sectionName || !gradeLevel || !department) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO section_table (section_Name, gradeLevel, department) 
+       VALUES (?, ?, ?)`,
+      [sectionName, gradeLevel, department]
+    );
+
+    res.status(201).json({
+      id: result.insertId,
+      sectionName,
+      gradeLevel,
+      department,
+    });
+  } catch (err) {
+    console.error("Error creating section:", err);
+    res.status(500).json({ error: "Failed to create section" });
+  }
+}
+
+// Delete Section
+async function deleteSections(req, res) {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "No IDs provided for deletion" });
+    }
+
+    await pool.query(
+      `DELETE FROM section_table WHERE Section_ID IN (?)`,
+      [ids]
+    );
+
+    res.json({ message: "Section(s) deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting sections:", err);
+    res.status(500).json({ error: "Failed to delete sections" });
+  }
+}
+
+// Load Section Students 
+async function loadStudentsBySection(req, res) {
+  try {
+    const { sectionId } = req.params;
+
+    const [rows] = await pool.query(
+      `SELECT s.student_ID AS id,
+              CONCAT(s.f_Name, ' ', s.m_Name, ' ', s.l_Name) AS studentName,
+              s.gender,
+              YEAR(CURDATE()) - YEAR(s.birthdate) AS age,
+              syr.program
+       FROM student_year_record_table syr
+       JOIN student_table s ON syr.student_ID = s.student_ID
+       WHERE syr.section_ID = ?`,
+      [sectionId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error loading students:", err.sqlMessage || err);
+    res.status(500).json({ error: "Failed to load students" });
+  }
+}
+
+//getStudent Info by ID
+async function getStudentById(req, res) {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      `SELECT 
+        f_Name, m_Name, l_Name, gender, contact_Number, email, address,
+        father_Name, father_Contact, mother_Name, mother_Contact,
+        guardian_Name, guardian_Contact,
+        birthdate, account_type_ID, created_at
+       FROM student_table
+       WHERE student_ID = ?`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching student info:", err);
+    res.status(500).json({ error: "Failed to fetch student info" });
+  }
+}
+
 // Export functions
 module.exports = {
   loadAcademicYear,
@@ -336,5 +524,11 @@ module.exports = {
   getCurrentAcademicYear,
   rejectEnrollees,
   getEnrolleeById,
-  validateEnrollee
+  validateEnrollee,
+  loadSections,
+  createSection,
+  deleteSections,
+  loadStudentsBySection,
+  convertEnrollees,
+  getStudentById
 };

@@ -1,19 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const { loadAcademicYear } = require('../controllers/adminController');  
-const { addAcademicYear } = require('../controllers/adminController');
-const { removeAcademicYears } = require('../controllers/adminController');
-const { loadEnrollees } = require('../controllers/adminController');
-const { loadValidatedEnrollees } = require('../controllers/adminController');
-const { setAY } = require('../controllers/adminController');
-const { setSemester } = require('../controllers/adminController');
-const { toggleEvaluation } = require('../controllers/adminController');
-const { toggleEnrollment } = require('../controllers/adminController');
-const { getSystemSettings } = require('../controllers/adminController');
-const { getCurrentAcademicYear } = require('../controllers/adminController');
-const { rejectEnrollees } = require('../controllers/adminController');
-const { getEnrolleeById } = require('../controllers/adminController');
-const {validateEnrollee} = require('../controllers/adminController');
+const {
+  loadAcademicYear,
+  addAcademicYear,
+  removeAcademicYears,
+  loadEnrollees,
+  loadValidatedEnrollees,
+  setAY,
+  setSemester,
+  toggleEvaluation,
+  toggleEnrollment,
+  getSystemSettings,
+  getCurrentAcademicYear,
+  rejectEnrollees,
+  getEnrolleeById,
+  validateEnrollee,
+  loadSections,
+  createSection,
+  deleteSections,
+  loadStudentsBySection,
+  convertEnrollees,
+  getStudentById
+} = require('../controllers/adminController');
 
 router.get('/loadAcademicYear', loadAcademicYear); //this pulls in the loadAcademicYear function
 router.post('/addAcademicYear', addAcademicYear); //this pulls in the addAcademicYear function
@@ -31,6 +39,12 @@ router.post('/rejectEnrollees', rejectEnrollees); //this pulls in the rejectEnro
 router.get('/enrollees/:id', getEnrolleeById); //this pulls in the getEnrolleeById function
 router.get('/enrollees/:id/validate', validateEnrollee); //this pulls in the validateEnrollee function
 router.put('/enrollees/:id/validate', validateEnrollee); //this pulls in the validateEnrollee function
+router.get('/sections/loadSections', loadSections); //this pulls in the loadSections function
+router.post('/sections/addSection', createSection); //this pulls in the createSection function
+router.delete('/sections/deleteSections', deleteSections); //this pulls in the deleteSections function 
+router.get('/sections/:sectionId/students', loadStudentsBySection); //this pulls in the loadStudentsBySection function
+router.post('/sections/convertEnrollees', convertEnrollees); //this pulls in the convertEnrollees function
+router.get('/students/:id', getStudentById); //this pulls in the getStudentById function
 //calls adminController during an API request   
 
 module.exports = router;

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -17,37 +17,64 @@ import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
 export default function Sections() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      gradeLevel: "Grade 11",
-      sectionName: "Commitment",
-    },
-
-  ]);
-
-
-  // Adding Student Dialog State
+  const [rows, setRows] = useState([]);
   const [open, setOpen] = useState(false);
-  const [newSection, setNewSection] = useState({ gradeLevel: "", sectionName: "" });
+ const [newSection, setNewSection] = useState({
+  gradeLevel: null,
+  sectionName: "",
+  department: null,
+});
 
-  const handleAdd = () => {
-    const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
-    setRows([...rows, { id: nextId, ...newSection }]);
-    setOpen(false);
-    setNewSection({ gradeLevel: "", sectionName: "" });
-  };
-
-  // Track selected rows from Table (Supposedly)
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const handleRemoveSelected = () => {
-    setRows(rows.filter((r) => !selectedIds.includes(r.id)));
-    setSelectedIds([]);
+
+  useEffect(() => {
+    const fetchSections = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/admin/sections/loadSections");
+        const data = await res.json();
+        setRows(data);
+      } catch (err) {
+        console.error("Error loading sections:", err);
+      }
+    };
+    fetchSections();
+  }, []);
+
+
+  const handleAdd = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/admin/sections/addSection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSection),
+      });
+      const created = await res.json();
+      setRows([...rows, created]); // append new section
+      setOpen(false);
+      setNewSection({ gradeLevel: "", sectionName: "", department: "" });
+    } catch (err) {
+      console.error("Error creating section:", err);
+    }
+  };
+
+
+  const handleRemoveSelected = async () => {
+    try {
+      await fetch("http://localhost:5000/api/admin/sections/deleteSections", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      setRows(rows.filter((r) => !selectedIds.includes(r.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      console.error("Error deleting sections:", err);
+    }
   };
 
   const columns = [
-    { field: "id", headerName: "Section ID", flex: 0, minWidth: 60 },
+    { field: "department", headerName: "Department", flex: 1, minWidth: 100 },
     { field: "gradeLevel", headerName: "Grade Level", flex: 0.5, minWidth: 60 },
     { field: "sectionName", headerName: "Section Name", flex: 1 },
     {
@@ -58,18 +85,20 @@ export default function Sections() {
         <Button
           variant="contained"
           color="inherit"
-          onClick={() => navigate(`/admin/sections/thisSection`)}
-          sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px", }, width: { xs: "80px", sm: "120px", md: "100px" } }}
+          onClick={() => navigate(`/admin/sections/${params.row.sectionName}`, {
+            state: { gradeLevel: params.row.gradeLevel, section_ID: params.row.id }
+          })}
+          sx={{
+            marginLeft: "10px",
+            fontSize: { xs: "12px", sm: "15px", md: "15px" },
+            width: { xs: "80px", sm: "120px", md: "100px" },
+          }}
         >
           View
         </Button>
       ),
-
     },
-
   ];
-
-
 
   return (
     <Box
@@ -142,32 +171,48 @@ export default function Sections() {
           }}
         >
           {/*Table Component*/}
-          <Table rows={rows} columns={columns} />
+          <Table
+            rows={rows}
+            columns={columns}
+            checkboxSelection
+            disableRowSelectionOnClick
+            onSelectionModelChange={(newSelection) => {
+              setSelectedIds(newSelection);
+            }}
+            selectionModel={selectedIds}
+          />
         </Box>
       </Box>
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Add New Section</DialogTitle>
         <DialogContent>
           <Autocomplete
-            options={[
-              "Grade 11",
-              "Grade 12",
-              "College - DIT",
-              "College - DRT",
-              "College - DHT",
-            ]}
+            options={["Senior High School", "College"]}
+            value={newSection.department}
+            onChange={(event, newValue) =>
+              setNewSection({ ...newSection, department: newValue, gradeLevel: null })
+            }
+            renderInput={(params) => (
+              <TextField {...params} margin="dense" label="Department" fullWidth />
+            )}
+          />
+          <Autocomplete
+            options={
+              newSection.department === "College"
+                ? ["1st Year", "2nd Year", "3rd Year", "4th Year"]
+                : ["Grade 11", "Grade 12"]
+            }
             value={newSection.gradeLevel}
             onChange={(event, newValue) =>
               setNewSection({ ...newSection, gradeLevel: newValue })
             }
-            renderInput={(params) => (
-              <TextField {...params} margin="dense" label="Grade Level" fullWidth />
-            )}
+            renderInput={(params) => <TextField {...params} margin="dense" label="Grade Level" fullWidth />}
           />
           <TextField
             margin="dense"
             label="Section Name"
-            fullWidth value={newSection.sectionName}
+            fullWidth
+            value={newSection.sectionName}
             onChange={(e) => setNewSection({ ...newSection, sectionName: e.target.value })}
           />
         </DialogContent>

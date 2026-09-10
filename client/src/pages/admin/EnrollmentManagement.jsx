@@ -128,8 +128,9 @@ export default function EnrollmentManagement() {
                   transform: "scale(1.05)",
                 },
               }}
+              onClick={() => navigate("/admin/systemSettings")}
             >
-              Turn-off Enrollment
+              Configure Enrollment
             </Button>
             <Button
               sx={{

@@ -1,19 +1,24 @@
 
 import React, { useState } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
-    Typography,
-    Box,
-    Button,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
+  Typography,
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Autocomplete,
 } from "@mui/material";
-import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
 import { Table } from "../../components/Table";
 
 function EditGrade() {
+    const {studentId } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const sectionName = location.state?.sectionName;
     //Array for dropdown
     const choices = [
         { label: "Academic Year 2024–2026 – 1st Semester", id: 1 },

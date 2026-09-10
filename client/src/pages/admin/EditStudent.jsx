@@ -1,25 +1,42 @@
-import React,{useState} from "react";
-import { 
-    Typography,
-    Box, 
-    Button,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions  } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  Typography,
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
+} from "@mui/material";
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
 
 export default function EditStudent() {
-  const { id } = useParams();
+  const { studentId } = useParams();
   const [open, setOpen] = useState(false);
-
+  const [student, setStudent] = useState(null);
+  console.log("Student ID from params:", studentId);
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/admin/students/${studentId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setStudent(data);
+      })
+      .catch((err) => console.error("Error loading student:", err));
+  }, [studentId]);
+  console.log("Student data:", student);
   const handleSave = () => {
     // Backend logic to save changes for the student with the given ID
     setOpen(false);
-    console.log("Changes saved for student ID:", id);
+    console.log("Changes saved for student ID:", studentId);
   };
-
+  
+   const formatDateLocal = (isoString) => {
+    if (!isoString) return "";
+    const d = new Date(isoString);
+    // Use local year, month, day
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
 
 
   return (
@@ -30,7 +47,7 @@ export default function EditStudent() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
-    }}  
+      }}
     >
       <Box
         sx={{
@@ -107,9 +124,21 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField label="First Name" fullWidth />
-            <TextField label="Middle Name" fullWidth />
-            <TextField label="Surname" fullWidth />
+            <TextField
+              label="First Name"
+              value={student ? student.f_Name : ''}
+              onChange={(e) => setStudent({ ...student, f_Name: e.target.value })}
+              fullWidth
+            />
+            <TextField 
+            label="Middle Name"
+              value={student ? student.m_Name : ''}
+              onChange={(e) => setStudent({ ...student, m_Name: e.target.value })}
+              fullWidth />
+            <TextField label="Surname"
+              value={student ? student.l_Name : ''}
+              onChange={(e) => setStudent({ ...student, l_Name: e.target.value })}
+              fullWidth />
           </Box>
 
           <Box
@@ -121,11 +150,15 @@ export default function EditStudent() {
             }}
           >
             <TextField label="Age" type="number" fullWidth />
-            <TextField label="Gender" fullWidth />
+            <TextField 
+            label="Gender" 
+            value={student ? student.gender : ''}
+            fullWidth />
             <TextField
               label="Birthdate"
               type="date"
               InputLabelProps={{ shrink: true }}
+              value={formatDateLocal(student?.birthdate)}
               fullWidth
             />
           </Box>
@@ -137,7 +170,11 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Home Address" fullWidth />
+            <TextField 
+            label="Home Address" 
+            value={student ? student.address : ''}
+            onChange={(e) => setStudent({ ...student, address: e.target.value })}
+            fullWidth />
           </Box>
         </Box>
 
@@ -172,8 +209,14 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Email Adress" fullWidth />
-            <TextField label="Contact Number" fullWidth />
+            <TextField 
+            label="Email Adress" 
+            value={student ? student.email : ''}
+            fullWidth />
+            <TextField 
+            label="Contact Number" 
+            value={student ? student.contact_Number : ''}
+            fullWidth />
           </Box>
         </Box>
         {/* Family information */}
@@ -208,8 +251,14 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Father's Name" fullWidth />
-            <TextField label="Father's Contact Number" fullWidth />
+            <TextField 
+            label="Father's Name" 
+            value={student ? student.father_Name : ''}
+            fullWidth />
+            <TextField 
+            label="Father's Contact Number" 
+            value={student ? student.father_Contact : ''}
+            fullWidth />
           </Box>
           <Box
             sx={{
@@ -219,8 +268,14 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Mother's Maiden Name" fullWidth />
-            <TextField label="Mother's Contact Number" fullWidth />
+            <TextField 
+            label="Mother's Maiden Name" 
+            value={student ? student.mother_Name : ''}
+            fullWidth />
+            <TextField 
+            label="Mother's Contact Number" 
+            value={student ? student.mother_Contact : ''}
+            fullWidth />
           </Box>
           <Box
             sx={{
@@ -230,8 +285,14 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Guardian's Name" fullWidth />
-            <TextField label="Guardian's Contact Number" fullWidth />
+            <TextField 
+            label="Guardian's Name" 
+            value={student ? student.guardian_Name : ''}
+            fullWidth />
+            <TextField 
+            label="Guardian's Contact Number" 
+            value={student ? student.guardian_Contact : ''}
+            fullWidth />
           </Box>
         </Box>
 
@@ -308,51 +369,51 @@ export default function EditStudent() {
           </Box>
         </Box>
       </Box>
-       <Box sx={{ display: "flex", justifyContent: "flex-end", mr: { xs: "20px", sm: "30px", md: "85px" }, mb: { xs: "20px", sm: "30px", md: "50px" } }}>
-            <Button
-                sx={{
-                fontSize: { xs: "12px", sm: "15px", md: "17px" },
-                color: "#E8EDF2",
-                backgroundColor: "#791818",
-                borderRadius: "5px",
-                mr: { xs: "20px", sm: "30px", md: "50px" },
-                width: { xs: "150px", sm: "200px", md: "250px" },
-                "&:hover": {
-                    backgroundColor: "#bc4949",
-                    transform: "scale(1.05)",
-                },
-                }}
-            >
-                Cancel
-            </Button>
-            <Button
-                sx={{
-                fontSize: { xs: "12px", sm: "15px", md: "17px" },
-                color: "#E8EDF2",
-                backgroundColor: "#242C54",
-                borderRadius: "5px",
-                width: { xs: "150px", sm: "200px", md: "250px" },
-                "&:hover": {
-                    backgroundColor: "#4f5d9e",
-                    transform: "scale(1.05)",
-                },
-                }}
-                onClick={() => setOpen(true)}
-            >
-                Save Changes
-            </Button>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mr: { xs: "20px", sm: "30px", md: "85px" }, mb: { xs: "20px", sm: "30px", md: "50px" } }}>
+        <Button
+          sx={{
+            fontSize: { xs: "12px", sm: "15px", md: "17px" },
+            color: "#E8EDF2",
+            backgroundColor: "#791818",
+            borderRadius: "5px",
+            mr: { xs: "20px", sm: "30px", md: "50px" },
+            width: { xs: "150px", sm: "200px", md: "250px" },
+            "&:hover": {
+              backgroundColor: "#bc4949",
+              transform: "scale(1.05)",
+            },
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          sx={{
+            fontSize: { xs: "12px", sm: "15px", md: "17px" },
+            color: "#E8EDF2",
+            backgroundColor: "#242C54",
+            borderRadius: "5px",
+            width: { xs: "150px", sm: "200px", md: "250px" },
+            "&:hover": {
+              backgroundColor: "#4f5d9e",
+              transform: "scale(1.05)",
+            },
+          }}
+          onClick={() => setOpen(true)}
+        >
+          Save Changes
+        </Button>
         <Dialog open={open} onClose={() => setOpen(false)}>
-            <DialogTitle>Success</DialogTitle>
-            <DialogContent>
+          <DialogTitle>Success</DialogTitle>
+          <DialogContent>
             <Typography>Student information has been successfully changed.</Typography>
-            </DialogContent>
-            <DialogActions>
+          </DialogContent>
+          <DialogActions>
             <Button onClick={() => setOpen(false)} variant="contained" color="primary">
-                OK
+              OK
             </Button>
-            </DialogActions>
+          </DialogActions>
         </Dialog>
-        </Box>
+      </Box>
     </Box>
   );
 }

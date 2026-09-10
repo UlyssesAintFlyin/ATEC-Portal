@@ -82,10 +82,10 @@ function App() {
                 <Route path="facultyEvaluation/editFaculty/:id" element={<EditFaculty />} />
                 <Route path="facultyEvaluation/evaluation/:id" element={<AdminEval />} />
                 <Route path="sections" element={<Sections />} />
-                <Route path="sections/:id" element={<SelectedSection />} />
-                <Route path="sections/:id/addStudent" element={<EnrolleeQueue />} />
-                <Route path="section/thisSection/:id" element={<EditStudent />} />
-                <Route path="section/thisSection/thisStudent/editGrade" element={<EditGrade />} />
+                <Route path="sections/:sectionName" element={<SelectedSection />} />
+                <Route path="sections/:sectionName/addStudent" element={<EnrolleeQueue />} />
+                <Route path="section/:sectionName/:studentId" element={<EditStudent />} />
+                <Route path="section/:sectionName/:studentId/editGrade" element={<EditGrade />} />
                 <Route path="systemSettings" element={<SystemSettings />} />
                 <Route path="systemSettings/termConfig" element={<TermConfig />} />
                 <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />

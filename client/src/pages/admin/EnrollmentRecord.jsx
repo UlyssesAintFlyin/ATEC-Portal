@@ -8,7 +8,6 @@ export default function EnrollmentRecord() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [enrollee, setEnrollee] = useState(null);
-
  useEffect(() => {
     fetch(`http://localhost:5000/api/admin/enrollees/${id}`)
       .then((res) => res.json())
