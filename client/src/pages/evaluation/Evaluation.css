@@ -32,7 +32,7 @@
 .evaluation p {
     font-family: sans-serif;
     font-size: clamp(13px, 2vw, 15px);
-    color: #5f5f5f;
+    color: #bbbaba;
     text-shadow: 1px 1px 10px #85858549;
     margin: 0;
 }
@@ -264,8 +264,8 @@
     position: static;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 14px;
-    color: rgb(235, 235, 235);
-    text-shadow: 1px 1px 10px rgb(27, 23, 23);
+    color: white;
+    text-shadow: 1px 1px 1px rgb(27, 23, 23);
     animation: textIn 2s ease forwards;
     margin: 0;
 }

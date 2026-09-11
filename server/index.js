@@ -9,6 +9,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const systemSettingsRoutes = require('./routes/systemRoutes');
 const curriculumRoutes = require('./routes/curriculumRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
+const evaluationRoutes = require('./routes/evalRoutes'); //eva;
 
 const app = express(); //Creates the Express application instance.
 
@@ -19,7 +20,7 @@ app.use('/api/auth', authRoutes); //organizes api routes
 app.use('/api/enrollment', enrollmentRoutes);
 app.use('/api/admin', adminRoutes);
 // app.use('/api/grades', gradeRoutes);
-// app.use('/api/evaluation', evaluationRoutes);
+app.use('/api/evaluation', evaluationRoutes); //eval
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/carousel', carouselRoutes);

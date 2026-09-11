@@ -12,6 +12,18 @@ export default function Evaluation() {
   const [evaluationOpen, setEvaluationOpen] = useState(false);
   const [termLabel, setTermLabel] = useState("");
 
+  const [facultyList, setFacultyList] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [selectedFaculty, setSelectedFaculty] = useState(null);
+
+  const CHOICES = [
+    "Strongly Disagree",
+    "Disagree",
+    "Neutral",
+    "Agree",
+    "Strongly Agree",
+  ];
+
   useEffect(() => {
     fetch("http://localhost:5000/api/system-settings")
       .then((res) => res.json())
@@ -27,101 +39,74 @@ export default function Evaluation() {
       .finally(() => setSettingsLoading(false));
   }, []);
 
+  useEffect(() => {
+    fetch("http://localhost:5000/api/evaluation/faculty")
+      .then((res) => res.json())
+      .then((data) => setFacultyList(data.faculty || []))
+      .catch((err) => console.error("Failed to load faculty:", err));
+
+    fetch("http://localhost:5000/api/evaluation/questions")
+      .then((res) => res.json())
+      .then((data) => setSections(data.sections || []))
+      .catch((err) => console.error("Failed to load questions:", err));
+  }, []);
+
   if (settingsLoading) {
     return null;
   }
 
-  if (!evaluationOpen) {
-    return (
-      <Blockade
-        userName={user?.name} // pull from your AuthContext
-        messageDetail={
-          termLabel
-            ? `Evaluation for ${termLabel} is currently closed.`
+   if (!evaluationOpen) {
+     return (
+       <Blockade
+         userName={user?.name}
+         messageDetail={
+           termLabel
+             ? `Evaluation for ${termLabel} is currently closed.`
             : "This page is currently unavailable as evaluation is temporarily closed."
         }
         statusDetail="Evaluation Closed"
       />
-    );
-  }
+     );
+ }
 
-  const CHOICES = [
-    "Strongly Disagree",
-    "Disagree",
-    "Neutral",
-    "Agree",
-    "Strongly Agree",
-  ];
-
-  const SECTIONS = [
-    {
-      title: "I - Personality and Appearance",
-      questions: [
-        "Shows a pleasant personality, happy disposition in life and behave professionally as a teacher.",
-        "Talks clearly and audibly",
-        "Approachable and accommodating.",
-        "Shows evidence of love for his/her work.",
-        "Displays no irritating speech mannerisms.",
-      ],
-    },
-    {
-      title: "II - Teaching Methodology",
-      questions: [
-        "Performs regular monitoring of attendance.",
-        "Shows mastery on his/her subject matter.",
-        "Presents the lesson clearly, logically and orderly.",
-        "Answers student's questions satisfactorily.",
-        "Uses methods/techniques appropriate for the lessons.",
-        "Sustains student's interest and participation from the beginning up to the end of the online class.",
-        "Sometimes asks challenging and thought provoking questions to exercise students' critical thinking.",
-        "Evaluates student's learning for the day through quiz, activities or oral recitation.",
-        "Explains lessons (either in English or Filipino).",
-        "Has correct diction and pronunciation when explaining the lesson.",
-        "Uses instructional aides. (PPT/Photos/video/Audio/Tools & Materials)",
-        "Starts and ends up his/her classes on time.",
-        "Always present on his/her class.",
-      ],
-    },
-    {
-      title: "III - Class & Classroom Management",
-      questions: [
-        "Did you learn a lot from this teacher?",
-        "Entertains problems of students & gives advice.",
-        "Shows concern for student.",
-        "Manages class discipline in the classroom during class.",
-        "Gives everyone an equal chance.",
-        "Acknowledges student's responses and questions.",
-      ],
-    },
-    {
-      title: "IV - Child Protection Policy Implementation",
-      questions: [
-        "Protects student's confidentiality especially when you shared sensitive information.",
-        "Never say/use/mention malicious words during class, break time or any time in school vicinity.",
-        "Never show or display any malicious acts.",
-        "Never give a joke that may offend a student or any individual.",
-        "Never bully a student or any individual.",
-      ],
-    },
-  ];
-
-  const handleSelect = (key, choice) => {
-    setAnswers((prev) => ({ ...prev, [key]: choice }));
+  const handleSelect = (questionId, choice) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: choice }));
   };
 
-  const handleSubmit = () => {
-    const totalQuestions = 29;
+  const totalQuestions = sections.reduce((sum, s) => sum + s.questions.length, 0);
+
+  const handleSubmit = async () => {
     const answeredCount = Object.keys(answers).length;
 
     if (answeredCount < totalQuestions) {
-      alert(
-        `Please answer all questions. (${answeredCount}/${totalQuestions} completed)`,
-      );
+      alert(`Please answer all questions. (${answeredCount}/${totalQuestions} completed)`);
       return;
     }
 
-    console.log("Submitted evaluation:", answers);
-    setShowEval(false);
+    try {
+      const response = await fetch("http://localhost:5000/api/evaluation/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          evaluationId: selectedFaculty.evaluation_ID,
+          studentId: user?.id,
+          answers
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Evaluation submitted successfully!");
+        setShowEval(false);
+        setAnswers({});
+      } else {
+        alert(data.message || "Failed to submit evaluation.");
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
+      alert("Cannot connect to the server.");
+    }
   };
 
   return (
@@ -135,29 +120,24 @@ export default function Evaluation() {
       </div>
 
       <div className="professorsDiv">
-        <div className="professor" onClick={() => setShowEval(true)}>
-          <div className="circle">4.5</div>
-          <div>
-            <h3>Professor 1</h3>
-            <h6>Mathematics</h6>
+        {facultyList.map((fac) => (
+          <div
+            className="professor"
+            key={fac.faculty_ID}
+            onClick={() => {
+              setSelectedFaculty(fac);
+              setShowEval(true);
+            }}
+          >
+            <div className="circle">-</div>
+            <div>
+              <h3>{fac.f_Name} {fac.l_Name}</h3>
+            </div>
           </div>
-        </div>
-        <div className="professor" onClick={() => setShowEval(true)}>
-          <div className="circle">4.5</div>
-          <div>
-            <h3>Professor 2</h3>
-            <h6>Science</h6>
-          </div>
-        </div>
-        <div className="professor"></div>
-        <div className="professor"></div>
-        <div className="professor"></div>
-        <div className="professor"></div>
-        <div className="professor"></div>
-        <div className="professor"></div>
+        ))}
       </div>
 
-      {showEval && (
+      {showEval && selectedFaculty && (
         <div className="Evaluationform">
           <button className="backButton" onClick={() => setShowEval(false)}>
             Back
@@ -166,9 +146,7 @@ export default function Evaluation() {
           <div className="formInner">
             <div className="formHeader">
               <div className="formHeaderText">
-                <h6>
-                  <i>Evaluation Form</i>
-                </h6>
+                <h6><i>Evaluation Form</i></h6>
                 <p>
                   Below is the list of faculty members you need to evaluate.
                   <br />
@@ -177,50 +155,33 @@ export default function Evaluation() {
               </div>
 
               <div className="current">
-                <p>Currently Evaluating - Professor 1</p>
+                <p>Currently Evaluating - {selectedFaculty.f_Name} {selectedFaculty.l_Name}</p>
               </div>
             </div>
 
             <div className="grade">
               <div className="main">
-                {SECTIONS.map((section, sectionIndex) => (
-                  <div key={section.title} className="sectionBlock">
-                    <h6>{section.title}</h6>
-                    {section.questions.map((question, questionIndex) => {
-                      const key = `${sectionIndex}-${questionIndex}`;
-                      return (
-                        <div className="questions" key={key}>
-                          <p>
-                            {questionIndex + 1}. {question}
-                          </p>
-                          <div className="choices">
-                            {CHOICES.map((choice) => (
-                              <button
-                                key={choice}
-                                className={
-                                  answers[key] === choice ? "selected" : ""
-                                }
-                                onClick={() => handleSelect(key, choice)}
-                              >
-                                {choice}
-                              </button>
-                            ))}
-                          </div>
+                {sections.map((section) => (
+                  <div key={section.category_ID} className="sectionBlock">
+                    <h6>{section.category_Name}</h6>
+                    {section.questions.map((question, idx) => (
+                      <div className="questions" key={question.question_ID}>
+                        <p>{idx + 1}. {question.question_text}</p>
+                        <div className="choices">
+                          {CHOICES.map((choice) => (
+                            <button
+                              key={choice}
+                              className={answers[question.question_ID] === choice ? "selected" : ""}
+                              onClick={() => handleSelect(question.question_ID, choice)}
+                            >
+                              {choice}
+                            </button>
+                          ))}
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
                 ))}
-                <form>
-                  <label htmlFor="comments">Additional comments:</label>
-                  <textarea
-                    id="comments"
-                    name="comments"
-                    rows="5"
-                    cols="50"
-                    placeholder="Type here..."
-                  ></textarea>
-                </form>
                 <button className="submitButton" onClick={handleSubmit}>
                   Submit Evaluation
                 </button>

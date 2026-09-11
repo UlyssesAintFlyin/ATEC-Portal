@@ -227,6 +227,7 @@ export const Header = () => {
           {/*add real profile photos, you'd just pass src={user.photoUrl} to the same Avatar*/}
           <List>
             {!user && (
+              <>
               <ListItem
                 button
                 component={Link}
@@ -235,6 +236,7 @@ export const Header = () => {
               >
                 <ListItemText primary="Enrollment" />
               </ListItem>
+              </>
             )}
             {user?.role === "Student" && (
               <>
