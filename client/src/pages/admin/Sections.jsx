@@ -12,6 +12,7 @@ import {
   Autocomplete
 } from "@mui/material";
 
+const API_URL = process.env.REACT_APP_API_URL; 
 
 import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
@@ -31,7 +32,7 @@ export default function Sections() {
   useEffect(() => {
     const fetchSections = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/admin/sections/loadSections");
+        const res = await fetch(`${API_URL}/admin/sections/loadSections`);
         const data = await res.json();
         setRows(data);
       } catch (err) {
@@ -44,7 +45,7 @@ export default function Sections() {
 
   const handleAdd = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/admin/sections/addSection", {
+      const res = await fetch(`${API_URL}/admin/sections/addSection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSection),
@@ -61,7 +62,7 @@ export default function Sections() {
 
   const handleRemoveSelected = async () => {
     try {
-      await fetch("http://localhost:5000/api/admin/sections/deleteSections", {
+      await fetch(`${API_URL}/admin/sections/deleteSections`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: selectedIds }),

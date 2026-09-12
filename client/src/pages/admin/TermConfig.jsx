@@ -12,6 +12,7 @@ import {
   Autocomplete
 } from "@mui/material";
 
+const API_URL = process.env.REACT_APP_API_URL; 
 
 import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
@@ -19,7 +20,7 @@ export default function TermConfig() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   useEffect(() => {
-    fetch("http://localhost:5000/api/admin/loadAcademicYear")
+    fetch(`${API_URL}/admin/loadAcademicYear`)
       .then((res) => res.json())
       .then((data) => setRows(data))
       .catch((err) => console.error(err));
@@ -30,7 +31,7 @@ export default function TermConfig() {
 
   const handleAddRecords = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/addAcademicYear", {
+      const response = await fetch(`${API_URL}/admin/addAcademicYear`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTerm),
@@ -42,7 +43,7 @@ export default function TermConfig() {
 
       await response.json();
 
-      const reload = await fetch("http://localhost:5000/api/admin/loadAcademicYear");
+      const reload = await fetch(`${API_URL}/admin/loadAcademicYear`);
       const updatedData = await reload.json();
       setRows(updatedData);
       setOpen(false);
@@ -61,7 +62,7 @@ const handleSetAY = async () => {
   try {
     const ayId = parseInt(selectedIds[0], 10); // ensure integer
 
-    const response = await fetch("http://localhost:5000/api/admin/setAY", {
+    const response = await fetch(`${API_URL}/admin/setAY`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ AY_ID: ayId }),
@@ -81,7 +82,7 @@ const handleSetAY = async () => {
 
   const handleRemoveSelected = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/removeAcademicYears", {
+      const response = await fetch(`${API_URL}/admin/removeAcademicYears`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: selectedIds }),

@@ -14,7 +14,7 @@ import {
 import { EditableTable } from "../../components/EditableTable";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "http://localhost:5000/api"; // adjust to your server's base URL
+const API_URL = process.env.REACT_APP_API_URL; // adjust to your server's base URL
 
 export default function CurriculumConfig() {
   const navigate = useNavigate();

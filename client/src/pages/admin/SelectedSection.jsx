@@ -13,6 +13,8 @@ import {
 import { Table } from "../../components/Table";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL; 
+
 export default function SelectedSection() {
   const navigate = useNavigate();
   const { sectionName } = useParams();
@@ -24,7 +26,7 @@ export default function SelectedSection() {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/admin/sections/${sectionId}/students`);
+        const res = await fetch(`${API_URL}/admin/sections/${sectionId}/students`);
         const data = await res.json();
         setRows(data);
       } catch (err) {

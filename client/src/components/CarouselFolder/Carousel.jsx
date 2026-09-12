@@ -3,7 +3,7 @@ import Carousel from "react-material-ui-carousel";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import Item from "./Item";
 
-const API_BASE = "http://localhost:5000"; // move to an env var when deploying
+const API_URL = process.env.REACT_APP_API_URL; // move to an env var when deploying
 
 function CarouselComponent() {
   const [items, setItems] = useState([]);
@@ -13,14 +13,14 @@ function CarouselComponent() {
   useEffect(() => {
     async function fetchCarouselPages() {
       try {
-        const res = await fetch(`${API_BASE}/api/carousel`);
+        const res = await fetch(`${API_URL}/carousel`);
         if (!res.ok) throw new Error("Failed to load carousel pages");
         const data = await res.json();
 
         const mapped = data.map((page) => ({
           name: page.caoursel_title,
           description: page.caoursel_description,
-          image: page.carousel_image ? `${API_BASE}${page.carousel_image}` : undefined,
+          image: page.carousel_image ? `${API_URL}${page.carousel_image}` : undefined,
         }));
 
         setItems(mapped);

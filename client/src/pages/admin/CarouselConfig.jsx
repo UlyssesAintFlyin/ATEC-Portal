@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
-const API_BASE = "http://localhost:5000"; // move to an env var when deploying
+const API_URL = process.env.REACT_APP_API_URL; 
 
 function makeEmptyPage() {
   return {
@@ -40,7 +40,7 @@ function CarouselConfig() {
   useEffect(() => {
     async function fetchPages() {
       try {
-        const res = await fetch(`${API_BASE}/api/carousel`);
+        const res = await fetch(`${API_URL}/carousel`);
         if (!res.ok) throw new Error("Failed to load carousel pages");
         const data = await res.json();
 
@@ -101,7 +101,7 @@ function CarouselConfig() {
     const token = localStorage.getItem("token");
     setDeleting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/carousel/${deleteTarget.carousel_ID}`, {
+      const res = await fetch(`${API_URL}/carousel/${deleteTarget.carousel_ID}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -153,8 +153,8 @@ function CarouselConfig() {
 
         const isUpdate = Boolean(page.carousel_ID);
         const url = isUpdate
-          ? `${API_BASE}/api/carousel/${page.carousel_ID}`
-          : `${API_BASE}/api/carousel`;
+          ? `${API_URL}/carousel/${page.carousel_ID}`
+          : `${API_URL}/carousel`;
 
         const res = await fetch(url, {
           method: isUpdate ? "PUT" : "POST",

@@ -13,6 +13,8 @@ export default function Enrollment() {
   const [statusResult, setStatusResult] = useState(null);
   const [statusError, setStatusError] = useState("");
 
+  const API_URL = process.env.REACT_APP_API_URL;
+  
   const handleCloseStatusModal = () => {
     setShowStatusModal(false);
     setStatusCodeInput("");
@@ -119,7 +121,7 @@ export default function Enrollment() {
     const enrollmentData = { studentDetails, studentType, programTerm };
 
     try {
-      const response = await fetch("http://localhost:5000/api/enrollment", {
+      const response = await fetch(`${API_URL}/enrollment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(enrollmentData),
@@ -150,7 +152,7 @@ export default function Enrollment() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/enrollment/status/${statusCodeInput.trim()}`,
+        `${API_URL}/enrollment/status/${statusCodeInput.trim()}`,
       );
       const data = await response.json();
 
@@ -170,7 +172,7 @@ export default function Enrollment() {
   const [termLabel, setTermLabel] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/system-settings")
+    fetch(`${API_URL}/system-settings`)
       .then((res) => res.json())
       .then((data) => {
         setEnrollmentOpen(Boolean(data.enrollment_settings_value));

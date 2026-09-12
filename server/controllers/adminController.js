@@ -62,13 +62,27 @@ async function removeAcademicYears(req, res) {
 // Load Enrollees
 async function loadEnrollees(req, res) {
   try {
-    const [rows] = await pool.query(
-      `SELECT e.enrollment_ID AS id, 
-              CONCAT(e.f_Name, ' ', e.l_name) AS enrollee, 
-              status
-       FROM enrollment_table e
-       WHERE status = 'Pending'`
-    );
+    const { ayId } = req.query; 
+
+    let query = `
+      SELECT e.enrollment_ID AS id, 
+             CONCAT(e.f_Name, ' ', e.l_name) AS enrollee, 
+             status
+      FROM enrollment_table e
+    `;
+    const params = [];
+
+    if (ayId) {
+      query += `
+        JOIN academic_year_semester_table ays ON e.AYS_ID = ays.AYS_ID
+        WHERE ays.AY_ID = ? AND status = 'Pending'
+      `;
+      params.push(ayId);
+    } else {
+      query += ` WHERE status = 'Pending' `;
+    }
+
+    const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
     console.error("Error loading enrollees:", err);
@@ -78,13 +92,27 @@ async function loadEnrollees(req, res) {
 // Load Validated Enrollees
 async function loadValidatedEnrollees(req, res) {
   try {
-    const [rows] = await pool.query(
-      `SELECT e.enrollment_ID AS id, 
-              CONCAT(e.f_Name, ' ', e.l_name) AS enrollee, 
-              status 
-       FROM enrollment_table e
-       WHERE status = 'Validated'`
-    );
+    const { ayId } = req.query;
+
+    let query = `
+      SELECT e.enrollment_ID AS id, 
+             CONCAT(e.f_Name, ' ', e.l_name) AS enrollee, 
+             status
+      FROM enrollment_table e
+    `;
+    const params = [];
+
+    if (ayId) {
+      query += `
+        JOIN academic_year_semester_table ays ON e.AYS_ID = ays.AYS_ID
+        WHERE ays.AY_ID = ? AND status = 'Validated'
+      `;
+      params.push(ayId);
+    } else {
+      query += ` WHERE status = 'Validated' `;
+    }
+
+    const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
     console.error("Error loading validated enrollees:", err);
@@ -128,21 +156,27 @@ async function setAY(req, res) {
 // Set Semester
 async function setSemester(req, res) {
   try {
-    const { semester_ID } = req.body || {}
+    const { semester_ID } = req.body || {};
+
+    // Get current AYS_ID from system settings
     const [settings] = await pool.query(
       `SELECT enrollment_AYS_ID 
        FROM system_settings_table 
        WHERE system_settings_ID = 1`
     );
-
     const { enrollment_AYS_ID } = settings[0];
 
+    // Find AY_ID
     const [ayRow] = await pool.query(
-      `SELECT AY_ID FROM academic_year_semester_table WHERE AYS_ID = ?`,
+      `SELECT AY_ID, semester_ID 
+       FROM academic_year_semester_table 
+       WHERE AYS_ID = ?`,
       [enrollment_AYS_ID]
     );
     const ayId = ayRow[0].AY_ID;
+    const currentSemesterId = ayRow[0].semester_ID; //this is the saved semester
 
+    // Load all semesters for this AY
     const [semRows] = await pool.query(
       `SELECT sem.semester_ID, sem.semester_name, ays.AYS_ID
        FROM academic_year_semester_table ays
@@ -151,21 +185,25 @@ async function setSemester(req, res) {
       [ayId]
     );
 
+    // If PUT with semester_ID → update system_settings
     if (semester_ID) {
       const match = semRows.find(r => r.semester_ID === semester_ID);
-      await pool.query(
-        `UPDATE system_settings_table 
-         SET enrollment_AYS_ID = ?, evaluation_AYS_ID = ?
-         WHERE system_settings_ID = 1`,
-        [match.AYS_ID, match.AYS_ID]
-      );
+      if (match) {
+        await pool.query(
+          `UPDATE system_settings_table 
+           SET enrollment_AYS_ID = ?, evaluation_AYS_ID = ?
+           WHERE system_settings_ID = 1`,
+          [match.AYS_ID, match.AYS_ID]
+        );
+      }
     }
+
+    //return the semester saved in system_settings
+    const selectedSemesterName = semRows.find(r => r.semester_ID === (semester_ID || currentSemesterId))?.semester_name;
 
     res.json({
       semesters: semRows.map(r => ({ id: r.semester_ID, name: r.semester_name })),
-      selected: semester_ID
-        ? semRows.find(r => r.semester_ID === semester_ID).semester_name
-        : semRows[0].semester_name
+      selected: selectedSemesterName
     });
   } catch (err) {
     console.error("Error in setSemester:", err);

@@ -11,13 +11,16 @@ import {
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL; 
+
 export default function EditStudent() {
   const { studentId } = useParams();
   const [open, setOpen] = useState(false);
   const [student, setStudent] = useState(null);
+  
   console.log("Student ID from params:", studentId);
   useEffect(() => {
-    fetch(`http://localhost:5000/api/admin/students/${studentId}`)
+    fetch(`${API_URL}/admin/students/${studentId}`)
       .then((res) => res.json())
       .then((data) => {
         setStudent(data);
