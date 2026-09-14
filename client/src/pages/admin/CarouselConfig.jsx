@@ -348,7 +348,7 @@ function CarouselConfig() {
                           src={
                             page.imageFile
                               ? URL.createObjectURL(page.imageFile)
-                              : `${API_BASE}${page.existingImagePath}`
+                              : `${API_URL}${page.existingImagePath}`
                           }
                           alt="Preview"
                           sx={{

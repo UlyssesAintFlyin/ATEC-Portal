@@ -62,7 +62,7 @@ async function removeAcademicYears(req, res) {
 // Load Enrollees
 async function loadEnrollees(req, res) {
   try {
-    const { ayId } = req.query; 
+    const { ayId } = req.query;
 
     let query = `
       SELECT e.enrollment_ID AS id, 
@@ -92,33 +92,54 @@ async function loadEnrollees(req, res) {
 // Load Validated Enrollees
 async function loadValidatedEnrollees(req, res) {
   try {
-    const { ayId } = req.query;
+    const { ayId, sectionId } = req.query;
 
-    let query = `
-      SELECT e.enrollment_ID AS id, 
-             CONCAT(e.f_Name, ' ', e.l_name) AS enrollee, 
-             status
-      FROM enrollment_table e
-    `;
-    const params = [];
+    const [sectionRows] = await pool.query(
+      `SELECT department FROM section_table WHERE section_ID = ?`,
+      [sectionId]
+    );
 
-    if (ayId) {
-      query += `
-        JOIN academic_year_semester_table ays ON e.AYS_ID = ays.AYS_ID
-        WHERE ays.AY_ID = ? AND status = 'Validated'
-      `;
-      params.push(ayId);
-    } else {
-      query += ` WHERE status = 'Validated' `;
+    if (sectionRows.length === 0) {
+      return res.json([]);
     }
 
+    const department = sectionRows[0].department;
+
+    let query = `
+      SELECT e.enrollment_ID AS id,
+             CONCAT(
+               e.l_Name, ', ',
+               e.f_Name, ' ',
+               CASE 
+                 WHEN e.m_Name IS NOT NULL AND e.m_Name <> '' 
+                 THEN CONCAT(LEFT(e.m_Name,1), '.')
+                 ELSE ''
+               END
+             ) AS enrollee,
+             e.status,
+             e.student_type
+      FROM enrollment_table e
+      JOIN academic_year_semester_table ays ON e.AYS_ID = ays.AYS_ID
+      WHERE e.status = 'Validated'
+        AND LOWER(e.student_type) = LOWER(?)
+    `;
+    const params = [department];
+
+    if (ayId) {
+      query += ` AND ays.AY_ID = ?`;
+      params.push(ayId);
+    }
+
+    query += ` ORDER BY e.l_Name ASC`;
+
     const [rows] = await pool.query(query, params);
+
     res.json(rows);
   } catch (err) {
-    console.error("Error loading validated enrollees:", err);
     res.status(500).json({ error: "Failed to load validated enrollees" });
   }
 }
+
 // Set Academic Year
 async function setAY(req, res) {
   try {
@@ -249,7 +270,7 @@ async function toggleEnrollment(req, res) {
 async function getSystemSettings(req, res) {
   try {
     const [rows] = await pool.query(
-      `SELECT evaluation_settings_value, enrollment_settings_value 
+      `SELECT evaluation_settings_value, enrollment_settings_value, enrollment_AYS_ID, evaluation_AYS_ID 
        FROM system_settings_table 
        WHERE system_settings_ID = 1`
     );
@@ -366,6 +387,7 @@ async function getEnrolleeById(req, res) {
 
 //Convert Enrolee to Student
 async function convertEnrollees(req, res) {
+  console.log("Request body:", req.body);
   const { sectionId, enrolleeIds, AYS_ID } = req.body;
 
   try {
@@ -383,7 +405,7 @@ async function convertEnrollees(req, res) {
         `INSERT INTO student_table 
          (f_Name, m_Name, l_Name, gender, contact_Number, email, address, birthdate, 
           father_Name, father_Contact, mother_Name, mother_Contact, guardian_Name, guardian_Contact, password) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "password123")`,
         [
           enrollee.f_Name,
           enrollee.m_Name,
@@ -399,7 +421,7 @@ async function convertEnrollees(req, res) {
           enrollee.mother_Contact,
           enrollee.guardian_Name,
           enrollee.guardian_Contact,
-          enrollee.email // or generate a default password
+
         ]
       );
 
@@ -437,17 +459,26 @@ async function convertEnrollees(req, res) {
 // Load Section
 async function loadSections(req, res) {
   try {
+    const { AYS_ID } = req.query;
+
     const [rows] = await pool.query(
-      `SELECT Section_ID AS id, Section_Name AS sectionName, 
-              gradeLevel, department
-       FROM section_table`
+      `SELECT section_ID AS id,
+              section_Name AS sectionName,
+              gradeLevel,
+              department,
+              AYS_ID
+       FROM section_table
+       WHERE AYS_ID = ?`,
+      [AYS_ID]
     );
+
     res.json(rows);
   } catch (err) {
-    console.error("Error loading sections:", err);
+    console.error("Error loading sections:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to load sections" });
   }
 }
+
 
 // Create Section
 async function createSection(req, res) {
@@ -501,40 +532,63 @@ async function deleteSections(req, res) {
 async function loadStudentsBySection(req, res) {
   try {
     const { sectionId } = req.params;
+    const { AYS_ID } = req.query;
+
+    console.log("🔍 Loading students for section:", sectionId, "AYS_ID:", AYS_ID);
 
     const [rows] = await pool.query(
       `SELECT s.student_ID AS id,
-              CONCAT(s.f_Name, ' ', s.m_Name, ' ', s.l_Name) AS studentName,
+              CONCAT(
+         s.l_Name, ', ',
+         s.f_Name, ' ',
+         CASE 
+           WHEN s.m_Name IS NOT NULL AND s.m_Name <> '' 
+           THEN CONCAT(LEFT(s.m_Name,1), '.')
+           ELSE ''
+         END
+       ) AS studentName,
               s.gender,
-              YEAR(CURDATE()) - YEAR(s.birthdate) AS age,
-              syr.program
+              TIMESTAMPDIFF(YEAR, s.birthdate, CURDATE()) AS age,
+              syr.program,
+              syr.specialization,
+              syr.department,
+              syr.AYS_ID
        FROM student_year_record_table syr
        JOIN student_table s ON syr.student_ID = s.student_ID
-       WHERE syr.section_ID = ?`,
-      [sectionId]
+       WHERE syr.section_ID = ? AND syr.AYS_ID = ?
+       ORDER BY s.l_Name ASC`,
+      [sectionId, AYS_ID]
     );
-
     res.json(rows);
   } catch (err) {
-    console.error("Error loading students:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to load students" });
   }
 }
 
+
 //getStudent Info by ID
 async function getStudentById(req, res) {
   try {
+    const { AYS_ID } = req.query;
     const { id } = req.params;
     const [rows] = await pool.query(
-      `SELECT 
-        f_Name, m_Name, l_Name, gender, contact_Number, email, address,
-        father_Name, father_Contact, mother_Name, mother_Contact,
-        guardian_Name, guardian_Contact,
-        birthdate, account_type_ID, created_at
-       FROM student_table
-       WHERE student_ID = ?`,
-      [id]
-    );
+  `SELECT 
+      s.f_Name, s.m_Name, s.l_Name, s.gender, s.contact_Number, s.email, s.address,
+      s.father_Name, s.father_Contact, s.mother_Name, s.mother_Contact,
+      s.guardian_Name, s.guardian_Contact,
+      s.birthdate, s.age, s.lrn, s.password,
+      syr.department, syr.program,
+      sec.section_Name, sec.gradeLevel, sec.section_ID
+   FROM student_table s
+   JOIN student_year_record_table syr 
+     ON s.student_ID = syr.student_ID
+   JOIN section_table sec 
+     ON syr.section_ID = sec.section_ID
+   WHERE s.student_ID = ? AND syr.AYS_ID = ?`,
+  [id, AYS_ID]
+);
+
+
 
     if (rows.length === 0) {
       return res.status(404).json({ error: "Student not found" });
@@ -544,6 +598,47 @@ async function getStudentById(req, res) {
   } catch (err) {
     console.error("Error fetching student info:", err);
     res.status(500).json({ error: "Failed to fetch student info" });
+  }
+}
+
+
+async function updateStudentById(req, res) {
+  try {
+    const { id } = req.params;
+    const { AYS_ID } = req.body;
+
+    const {
+      f_Name, m_Name, l_Name, gender, contact_Number, email, address,
+      father_Name, father_Contact, mother_Name, mother_Contact,
+      guardian_Name, guardian_Contact,
+      birthdate, age, lrn, password,
+      department, program, section_ID
+    } = req.body;
+
+    await pool.query(
+      `UPDATE student_table
+       SET f_Name = ?, m_Name = ?, l_Name = ?, gender = ?, contact_Number = ?, email = ?, address = ?,
+           father_Name = ?, father_Contact = ?, mother_Name = ?, mother_Contact = ?,
+           guardian_Name = ?, guardian_Contact = ?, birthdate = ?, age = ?, lrn = ?, password = ?
+       WHERE student_ID = ?`,
+      [
+        f_Name, m_Name, l_Name, gender, contact_Number, email, address,
+        father_Name, father_Contact, mother_Name, mother_Contact,
+        guardian_Name, guardian_Contact, birthdate, age, lrn, password, id
+      ]
+    );
+
+    await pool.query(
+      `UPDATE student_year_record_table
+       SET department = ?, program = ?, section_ID = ?
+       WHERE student_ID = ? AND AYS_ID = ?`,
+      [department, program, section_ID, id, AYS_ID]
+    );
+
+    res.json({ success: true, message: "Student updated successfully" });
+  } catch (err) {
+    console.error("Error updating student:", err);
+    res.status(500).json({ error: "Failed to update student" });
   }
 }
 
@@ -568,5 +663,6 @@ module.exports = {
   deleteSections,
   loadStudentsBySection,
   convertEnrollees,
-  getStudentById
+  getStudentById,
+  updateStudentById
 };

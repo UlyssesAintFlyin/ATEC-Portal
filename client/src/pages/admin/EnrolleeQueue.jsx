@@ -15,51 +15,72 @@ export default function EnrolleeQueue() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [currentAYS, setCurrentAYS] = useState(null); // { AYS_ID, AY_ID, AY_Name }
 
-  const fetchCurrentAY = async () => {
+  useEffect(() => {
+    const fetchCurrentAY = async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/currentAcademicYear`);
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const data = await res.json();
+
+        if (!data || Object.keys(data).length === 0) {
+          setCurrentAYS(null);
+          setRows([]);
+          return;
+        }
+
+        setCurrentAYS(data);
+      } catch (err) {
+        setCurrentAYS(null);
+        setRows([]);
+      }
+    };
+
+    fetchCurrentAY();
+  }, []);
+  
+  const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
+
+useEffect(() => {
+  const fetchSystemSettings = async () => {
     try {
-      const res = await fetch(`${API_URL}/admin/currentAcademicYear`);
+      const res = await fetch(`${API_URL}/admin/systemSettings`);
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data = await res.json();
 
-      if (!data || Object.keys(data).length === 0) {
-        setCurrentAYS(null);
-        setRows([]);
-        return;
-      }
-
-      setCurrentAYS(data); // expects { AYS_ID, AY_ID, AY_Name } from the endpoint
+      setCurrentAYS_ID(data.enrollment_AYS_ID);
     } catch (err) {
-      console.error(err);
-      setCurrentAYS(null);
-      setRows([]);
+      console.error("Error loading system settings:", err);
+      setCurrentAYS_ID(null);
     }
   };
 
-  const fetchValidatedEnrollees = async (ayId) => {
+  fetchSystemSettings();
+}, []);
+
+useEffect(() => {
+  const fetchValidatedEnrollees = async () => {
     try {
-      const url = ayId
-        ? `${API_URL}/admin/loadValidatedEnrollees?ayId=${ayId}`
+      const url = currentAYS_ID
+        ? `${API_URL}/admin/loadValidatedEnrollees?aysId=${currentAYS_ID}&sectionId=${sectionId}`
         : `${API_URL}/admin/loadValidatedEnrollees`;
       const res = await fetch(url);
       const data = await res.json();
       setRows(data);
     } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchCurrentAY();
-  }, []);
-
-  useEffect(() => {
-    if (currentAYS) {
-      fetchValidatedEnrollees(currentAYS.AY_ID);
-    } else {
+      console.error("Error loading validated enrollees:", err);
       setRows([]);
     }
     setSelectedIds([]);
-  }, [currentAYS]);
+  };
+
+  if (currentAYS_ID && sectionId) {
+    fetchValidatedEnrollees();
+  } else {
+    setRows([]);
+    setSelectedIds([]);
+  }
+}, [currentAYS_ID, sectionId]);
+
 
   const columns = [
     { field: "enrollee", headerName: "Enrollee Name", flex: 1 },
@@ -67,7 +88,7 @@ export default function EnrolleeQueue() {
   ];
 
   const handleTransfer = async () => {
-    if (!currentAYS) return; // guard: no active AY to convert into
+    if (!currentAYS_ID) return; 
     try {
       const res = await fetch(`${API_URL}/admin/sections/convertEnrollees`, {
         method: "POST",
@@ -75,7 +96,7 @@ export default function EnrolleeQueue() {
         body: JSON.stringify({
           sectionId,
           enrolleeIds: selectedIds,
-          AYS_ID: currentAYS.AYS_ID,
+          AYS_ID: currentAYS_ID,
         }),
       });
       const data = await res.json();
@@ -104,7 +125,7 @@ export default function EnrolleeQueue() {
           </Box>
           <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
             <Button variant="contained" color="primary"
-              onClick={handleTransfer} disabled={selectedIds.length === 0 || !currentAYS}>
+              onClick={handleTransfer} disabled={selectedIds.length === 0 || !currentAYS_ID}>
               Add Student to {sectionName}
             </Button>
           </Box>

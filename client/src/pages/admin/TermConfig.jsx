@@ -12,10 +12,9 @@ import {
   Autocomplete
 } from "@mui/material";
 
-const API_URL = process.env.REACT_APP_API_URL; 
-
 import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
+const API_URL = process.env.REACT_APP_API_URL; 
 export default function TermConfig() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);

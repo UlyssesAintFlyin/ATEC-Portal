@@ -20,7 +20,8 @@ const {
   deleteSections,
   loadStudentsBySection,
   convertEnrollees,
-  getStudentById
+  getStudentById,
+  updateStudentById
 } = require('../controllers/adminController');
 
 router.get('/loadAcademicYear', loadAcademicYear); //this pulls in the loadAcademicYear function
@@ -45,6 +46,7 @@ router.delete('/sections/deleteSections', deleteSections); //this pulls in the d
 router.get('/sections/:sectionId/students', loadStudentsBySection); //this pulls in the loadStudentsBySection function
 router.post('/sections/convertEnrollees', convertEnrollees); //this pulls in the convertEnrollees function
 router.get('/students/:id', getStudentById); //this pulls in the getStudentById function
+router.put("/students/:id/update", updateStudentById);
 //calls adminController during an API request   
 
 module.exports = router;

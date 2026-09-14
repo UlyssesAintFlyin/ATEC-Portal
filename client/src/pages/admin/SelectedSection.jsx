@@ -22,19 +22,48 @@ export default function SelectedSection() {
   const gradeLevel = location.state?.gradeLevel;
   const sectionId = location.state?.section_ID; // passed from Sections.jsx
   const [rows, setRows] = useState([]);
+const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const res = await fetch(`${API_URL}/admin/sections/${sectionId}/students`);
-        const data = await res.json();
-        setRows(data);
-      } catch (err) {
-        console.error("Error loading students:", err);
-      }
-    };
-    if (sectionId) fetchStudents();
-  }, [sectionId]);
+useEffect(() => {
+  const fetchSystemSettings = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/systemSettings`);
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const data = await res.json();
+
+      // backend should return enrollment_AYS_ID
+      setCurrentAYS_ID(data.enrollment_AYS_ID);
+    } catch (err) {
+      console.error("Error loading system settings:", err);
+      setCurrentAYS_ID(null);
+    }
+  };
+
+  fetchSystemSettings();
+}, []);
+
+useEffect(() => {
+  const fetchStudents = async () => {
+    try {
+      const res = await fetch(
+        `${API_URL}/admin/sections/${sectionId}/students?AYS_ID=${currentAYS_ID}`
+      );
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const data = await res.json();
+      setRows(data);
+    } catch (err) {
+      console.error("Error loading students:", err);
+      setRows([]);
+    }
+  };
+
+  if (sectionId && currentAYS_ID) {
+    fetchStudents();
+  } else {
+    setRows([]);
+  }
+}, [sectionId, currentAYS_ID]);
+
 
 
   const columns = [

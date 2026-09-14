@@ -11,37 +11,48 @@ import {
   TextField,
   Autocomplete
 } from "@mui/material";
-
-const API_URL = process.env.REACT_APP_API_URL; 
-
 import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
+const API_URL = process.env.REACT_APP_API_URL;
 export default function Sections() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [open, setOpen] = useState(false);
- const [newSection, setNewSection] = useState({
-  gradeLevel: null,
-  sectionName: "",
-  department: null,
-});
+  const [newSection, setNewSection] = useState({
+    gradeLevel: null,
+    sectionName: "",
+    department: null,
+  });
 
   const [selectedIds, setSelectedIds] = useState([]);
 
+  const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
+
+  useEffect(() => {
+    const fetchSystemSettings = async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/systemSettings`);
+        const data = await res.json();
+        setCurrentAYS_ID(data.enrollment_AYS_ID);
+      } catch (err) {
+        console.error("Error loading system settings:", err);
+      }
+    };
+    fetchSystemSettings();
+  }, []);
 
   useEffect(() => {
     const fetchSections = async () => {
       try {
-        const res = await fetch(`${API_URL}/admin/sections/loadSections`);
+        const res = await fetch(`${API_URL}/admin/sections/loadSections?AYS_ID=${currentAYS_ID}`);
         const data = await res.json();
         setRows(data);
       } catch (err) {
         console.error("Error loading sections:", err);
       }
     };
-    fetchSections();
-  }, []);
-
+    if (currentAYS_ID) fetchSections();
+  }, [currentAYS_ID]);
 
   const handleAdd = async () => {
     try {
