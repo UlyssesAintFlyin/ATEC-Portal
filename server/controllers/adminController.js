@@ -572,7 +572,7 @@ async function getStudentById(req, res) {
     const { AYS_ID } = req.query;
     const { id } = req.params;
     const [rows] = await pool.query(
-  `SELECT 
+      `SELECT 
       s.f_Name, s.m_Name, s.l_Name, s.gender, s.contact_Number, s.email, s.address,
       s.father_Name, s.father_Contact, s.mother_Name, s.mother_Contact,
       s.guardian_Name, s.guardian_Contact,
@@ -585,8 +585,8 @@ async function getStudentById(req, res) {
    JOIN section_table sec 
      ON syr.section_ID = sec.section_ID
    WHERE s.student_ID = ? AND syr.AYS_ID = ?`,
-  [id, AYS_ID]
-);
+      [id, AYS_ID]
+    );
 
 
 
@@ -615,6 +615,12 @@ async function updateStudentById(req, res) {
       department, program, section_ID
     } = req.body;
 
+    let hashedPassword = null;
+    if (password) {
+      const saltRounds = 10;
+      hashedPassword = await bcrypt.hash(password, saltRounds);
+    }
+
     await pool.query(
       `UPDATE student_table
        SET f_Name = ?, m_Name = ?, l_Name = ?, gender = ?, contact_Number = ?, email = ?, address = ?,
@@ -624,7 +630,7 @@ async function updateStudentById(req, res) {
       [
         f_Name, m_Name, l_Name, gender, contact_Number, email, address,
         father_Name, father_Contact, mother_Name, mother_Contact,
-        guardian_Name, guardian_Contact, birthdate, age, lrn, password, id
+        guardian_Name, guardian_Contact, birthdate, age, lrn, hashedPassword, id
       ]
     );
 
