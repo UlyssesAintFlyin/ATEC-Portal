@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import {
   DataGrid,
   GridToolbarContainer,
@@ -10,30 +9,16 @@ import {
 } from "@mui/x-data-grid";
 import Paper from "@mui/material/Paper";
 
-{
-  /*Table toolbar*/
-}
-function CustomToolbar() {
+function CustomToolbar({ csvOptions, printOptions }) {
   return (
-    <GridToolbarContainer
-      sx={{
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: 1,
-        p: 1,
-      }}
-    >
+    <GridToolbarContainer sx={{ justifyContent: "space-between", flexWrap: "wrap", gap: 1, p: 1 }}>
       <div>
         <GridToolbarColumnsButton />
         <GridToolbarFilterButton />
         <GridToolbarDensitySelector />
         <GridToolbarExport
-          csvOptions={{
-            allColumns: true,
-            fileName: "grade-report",
-            delimiter: ";",
-            utf8WithBom: true,
-          }}
+          csvOptions={csvOptions}
+          printOptions={printOptions}
         />
       </div>
       <GridToolbarQuickFilter sx={{ width: { xs: "100%", sm: "auto" } }} />
@@ -41,13 +26,7 @@ function CustomToolbar() {
   );
 }
 
-export const EditableTable = ({
-  rows,
-  columns,
-  paginationModel,
-  onSelectionModelChange,
-  ...props
-}) => {
+export const EditableTable = ({ rows, columns, paginationModel, csvOptions, printOptions, ...props }) => {
   return (
     <Paper sx={{ width: "100%" }}>
       <div style={{ display: "flex", flexDirection: "column", height: 540 }}>
@@ -57,9 +36,9 @@ export const EditableTable = ({
           pageSize={paginationModel?.pageSize || 5}
           rowsPerPageOptions={[5, 10]}
           checkboxSelection
-          disableMultipleRowSelection
-          onSelectionModelChange={onSelectionModelChange}
-          components={{ Toolbar: CustomToolbar }}
+          components={{
+            Toolbar: () => <CustomToolbar csvOptions={csvOptions} printOptions={printOptions} />,
+          }}
           sx={{ border: 0 }}
           {...props}
         />

@@ -29,10 +29,15 @@ function CustomToolbar() {
         <GridToolbarDensitySelector />
         <GridToolbarExport
           csvOptions={{
-            allColumns: true,
-            fileName: "grade-report",
-            delimiter: ";",
-            utf8WithBom: true,
+            allColumns: true, 
+            fileName: "ATEC-report", 
+            delimiter: ",", 
+            utf8WithBom: true, 
+          }}
+          printOptions={{
+            hideToolbar: true, 
+            hideFooter: true, 
+            allColumns: false,
           }}
         />
       </div>
