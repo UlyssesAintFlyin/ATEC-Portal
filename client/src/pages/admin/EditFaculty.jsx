@@ -35,6 +35,7 @@ export default function EditFaculty() {
         const res = await fetch(`${API_URL}/faculty/getFacultyById/${id}`);
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
+
         setFormData({
           f_Name: data.f_Name || "",
           l_Name: data.l_Name || "",
@@ -42,6 +43,16 @@ export default function EditFaculty() {
           birthdate: data.birthdate ? data.birthdate.split("T")[0] : "",
           gender: data.gender || "",
           email: data.email || "",
+          age: data.age || "",
+          gender: data.gender || "",
+          address: data.address || "",
+          contact_Number: data.contact_Number || "",
+          position: data.position || "",
+          status: data.status || "",
+          faculty_ID: data.faculty_ID || "",
+          password: data.password || "",
+          emergency_Name: data.emergency_Name || "",
+          emergency_Number: data.emergency_Number || ""
         });
       } catch (err) {
         console.error(err);
@@ -52,6 +63,7 @@ export default function EditFaculty() {
     fetchFaculty();
   }, [id]);
 
+  console.log("Faculty data:", formData);
   const handleChange = (field) => (e) => {
     setFormData({ ...formData, [field]: e.target.value });
   };
@@ -163,20 +175,26 @@ export default function EditFaculty() {
             <TextField
               label="First Name"
               fullWidth
-              value={formData.f_Name}
-              onChange={handleChange("f_Name")}
+              value={formData.f_Name ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, f_Name: e.target.value })
+              }
             />
             <TextField
               label="Middle Name"
               fullWidth
-              value={formData.m_Name}
-              onChange={handleChange("m_Name")}
+              value={formData.m_Name ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, m_Name: e.target.value })
+              }
             />
             <TextField
               label="Surname"
               fullWidth
-              value={formData.l_Name}
-              onChange={handleChange("l_Name")}
+              value={formData.l_Name ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, l_Name: e.target.value })
+              }
             />
           </Box>
 
@@ -188,13 +206,37 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Age" type="number" fullWidth />
-            <TextField label="Gender" fullWidth />
+            <TextField
+              label="Age"
+              type="number"
+              fullWidth
+              value={formData.age === null || formData.age === undefined ? "" : formData.age}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFormData({
+                  ...formData,
+                  age: val === "" ? null : Number(val)
+                });
+              }}
+              InputProps={{ inputProps: { min: 0 } }}
+            />
+            <TextField
+              label="Gender"
+              fullWidth
+              value={formData.gender ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, gender: e.target.value })
+              }
+            />
             <TextField
               label="Birthdate"
               type="date"
-              InputLabelProps={{ shrink: true }}
               fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={formData.birthdate}
+              onChange={(e) =>
+                setFormData({ ...formData, birthdate: e.target.value })
+              }
             />
           </Box>
           <Box
@@ -205,7 +247,14 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Home Address" fullWidth />
+            <TextField
+              label="Home Address"
+              fullWidth
+              value={formData.address ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+            />
           </Box>
         </Box>
 
@@ -240,8 +289,22 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Email Adress" fullWidth />
-            <TextField label="Contact Number" fullWidth />
+            <TextField
+              label="Email Address"
+              fullWidth
+              value={formData.email ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+            />
+            <TextField
+              label="Contact Number"
+              fullWidth
+              value={formData.contact_Number ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, contact_Number: e.target.value })
+              }
+            />
           </Box>
         </Box>
         {/* Family information */}
@@ -277,11 +340,94 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Emergency Contact's Name" fullWidth />
-            <TextField label="Emergency Contact's Number" fullWidth />
+            <TextField
+              label="Emergency Contact's Name"
+              fullWidth
+              value={formData.emergency_Name ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, emergency_Name: e.target.value })
+              }
+            />
+            <TextField
+              label="Emergency Contact's Number"
+              fullWidth
+              onChange={(e) =>
+                setFormData({ ...formData, emergency_Number: e.target.value })
+              }
+            />
           </Box>
         </Box>
+        <Box sx={{
+          backgroundColor: "#F3F9FF",
+          width: "100%",
+          minHeight: { xs: "auto", md: "180px" },
+          borderRadius: "5px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          py: { xs: 3, md: 0 },
+        }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              color: "#242C54",
+              fontWeight: "bold",
+              fontSize: "30px",
+              margin: "10px 20px -15px",
+            }}
+          >
+            Affiliation Status
+          </Typography>
 
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 4,
+              margin: "0 20px",
+              alignItems: "stretch",
+            }}
+          >
+            <Autocomplete
+              options={[
+                "Teacher",
+                "Academic Head",
+                "Discipline Officer",
+                "IT Administrator",
+                "Admin"
+              ]}
+              fullWidth
+              value={formData.position || null}
+              onChange={(event, newValue) =>
+                setFormData({ ...formData, position: newValue })
+              }
+              isOptionEqualToValue={(option, value) => option === value}
+              renderInput={(params) => (
+                <TextField {...params} label="Position" fullWidth size="medium" />
+              )}
+            />
+
+
+            <Autocomplete
+              options={[
+                "Active",
+                "Inactive",
+                "On Leave",
+                "Resigned",
+              ]}
+              fullWidth
+              value={formData.status ?? null}
+              onChange={(event, newValue) =>
+                setFormData({ ...formData, status: newValue ?? "" })
+              }
+              isOptionEqualToValue={(option, value) => option === value}
+              renderInput={(params) => (
+                <TextField {...params} label="Status" fullWidth size="medium" />
+              )}
+            />
+          </Box>
+        </Box>
         <Box
           sx={{
             backgroundColor: "#F3F9FF",
@@ -313,11 +459,23 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Employee ID " fullWidth />
-            <TextField label="Password" fullWidth type="password" />
+            <TextField
+              label="Employee ID "
+              fullWidth
+              value={formData.faculty_ID ?? ""}
+              inputProps={{ readOnly: true }}
+            />
+            <TextField
+              label="Password"
+              fullWidth
+              type="password"
+              value={formData.password ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+            />
           </Box>
         </Box>
-
         <Box
           sx={{
             width: "100%",
@@ -340,7 +498,10 @@ export default function EditFaculty() {
                 transform: "scale(1.05)",
               },
             }}
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setOpen(true)
+              handleSave();
+            }}
           >
             Save Changes
           </Button>

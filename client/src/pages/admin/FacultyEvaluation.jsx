@@ -22,57 +22,18 @@ export default function FacultyEvaluation() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [academicYears, setAcademicYears] = useState([]);
-  const [selectedAY, setSelectedAY] = useState(null);
-
-  const fetchCurrentAY = async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/currentAcademicYear`);
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      const data = await res.json();
-
-      if (!data || Object.keys(data).length === 0) {
-        setSelectedAY(null);
-        setRows([]);
-        return;
-      }
-
-      setSelectedAY({ id: data.AY_ID, AY_Name: data.AY_Name });
-    } catch (err) {
-      console.error(err);
-      setSelectedAY(null);
-      setRows([]);
-    }
-  };
-
-  const fetchFaculties = async (AYS_ID) => {
-    try {
-      const res = await fetch(
-        `${API_URL}/faculty/getAllFaculties?AYS_ID=${AYS_ID}`,
-      );
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      const data = await res.json();
-      setRows(data);
-    } catch (err) {
-      console.error(err);
-      setRows([]);
-    }
-  };
-
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      await fetchCurrentAY();
-      setLoading(false);
-    };
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (selectedAY) {
-      fetchFaculties(selectedAY.id);
-    }
-  }, [selectedAY]);
+      const fetchFaculty = async () => {
+        try {
+          const res = await fetch(`${API_URL}/faculty/getAllFaculties`);
+          const data = await res.json();
+          setRows(data);
+        } catch (err) {
+          console.error("Error loading faculty:", err);
+        }
+      };
+      fetchFaculty();
+    },[]);
 
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
@@ -101,7 +62,6 @@ export default function FacultyEvaluation() {
       body: JSON.stringify({
         ...newFaculty,
         birthdate: newFaculty.birthdate || null, 
-        AYS_ID: selectedAY?.id,
       }),
     });
     if (!res.ok) {
@@ -111,7 +71,6 @@ export default function FacultyEvaluation() {
 
     setOpen(false);
     setNewFaculty({ f_Name: "", l_Name: "", m_Name: "", birthdate: "", gender: "", email: "", contact_Number: "", address: "" });
-    if (selectedAY) fetchFaculties(selectedAY.id);
   } catch (err) {
     console.error(err);
   }
@@ -121,58 +80,38 @@ export default function FacultyEvaluation() {
   const [selectedIds, setSelectedIds] = useState([]);
 
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
-    {
-      field: "facultyName",
-      headerName: "Faculty Name",
-      flex: 1,
-      minWidth: 150,
-    },
-    {
-      field: "age",
-      headerName: "Age",
-      type: "number",
-      flex: 0.5,
-      minWidth: 80,
-    },
-    { field: "gender", headerName: "Gender", flex: 0.5, minWidth: 80 },
-    { field: "advisory", headerName: "Advisory", flex: 0.5, minWidth: 120 },
+    { field: "facultyName", headerName: "Faculty Name", flex: 1 },
+    { field: "age", headerName: "Age", type: "number", flex: 0.5 },
+    { field: "gender", headerName: "Gender", flex: 0.5 },
+    { field: "position", headerName: "Position", flex: 0.5},
+    { field: "status", headerName: "Position", flex: 0.5},
     {
       field: "action",
       headerName: "Action",
       flex: 1,
-      minWidth: 150,
       renderCell: (params) => (
-        <>
-          <Button
-            variant="contained"
-            color="inherit"
-            onClick={() =>
-              navigate(`/admin/facultyEvaluation/editFaculty/${params.row.id}`)
-            }
-            sx={{
-              fontSize: { xs: "12px", sm: "15px", md: "15px" },
-              width: { xs: "80px", sm: "120px", md: "100px" },
-            }}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="contained"
-            color="inherit"
-            onClick={() => navigate(`./evaluation/:id`)}
-            sx={{
-              marginLeft: "10px",
-              fontSize: { xs: "12px", sm: "15px", md: "15px" },
-              width: { xs: "80px", sm: "120px", md: "100px" },
-            }}
-          >
+        <><Button
+          variant="contained"
+          color="inherit"
+          onClick={() => navigate(`/admin/facultyEvaluation/editFaculty/${params.row.id}`)}
+          sx={{ fontSize: { xs: "12px", sm: "15px", md: "15px" }, width: { xs: "80px", sm: "120px", md: "100px" } }}
+        >
+          Edit
+        </Button><Button
+          variant="contained"
+          color="inherit"
+          onClick={() => navigate(`./evaluation-:id`)}
+          sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px" ,} ,width: { xs: "80px", sm: "120px", md: "100px" }}}
+        >
             Evaluation
-          </Button>
-        </>
+          </Button></>
       ),
+
     },
+    
   ];
+
+
 
   return (
     <Box

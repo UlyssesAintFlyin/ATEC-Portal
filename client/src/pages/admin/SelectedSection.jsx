@@ -31,7 +31,6 @@ useEffect(() => {
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data = await res.json();
 
-      // backend should return enrollment_AYS_ID
       setCurrentAYS_ID(data.enrollment_AYS_ID);
     } catch (err) {
       console.error("Error loading system settings:", err);

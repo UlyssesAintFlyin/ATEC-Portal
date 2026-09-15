@@ -534,7 +534,7 @@ async function loadStudentsBySection(req, res) {
     const { sectionId } = req.params;
     const { AYS_ID } = req.query;
 
-    console.log("🔍 Loading students for section:", sectionId, "AYS_ID:", AYS_ID);
+    
 
     const [rows] = await pool.query(
       `SELECT s.student_ID AS id,
@@ -564,7 +564,6 @@ async function loadStudentsBySection(req, res) {
     res.status(500).json({ error: "Failed to load students" });
   }
 }
-
 
 //getStudent Info by ID
 async function getStudentById(req, res) {
@@ -648,6 +647,35 @@ async function updateStudentById(req, res) {
   }
 }
 
+
+async function loadFaculty(req, res) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT faculty_ID AS id,
+              CONCAT(
+         l_Name, ', ',
+         f_Name, ' ',
+         CASE 
+           WHEN m_Name IS NOT NULL AND m_Name <> '' 
+           THEN CONCAT(LEFT(m_Name,1), '.')
+           ELSE ''
+         END
+       ) AS facultyName,
+            age,
+            gender,
+            position,
+            status
+       FROM faculty_table `
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error loading faculty:", err.sqlMessage || err);
+    res.status(500).json({ error: "Failed to load sections" });
+  }
+}
+
+
 // Export functions
 module.exports = {
   loadAcademicYear,
@@ -670,5 +698,6 @@ module.exports = {
   loadStudentsBySection,
   convertEnrollees,
   getStudentById,
-  updateStudentById
+  updateStudentById, 
+  loadFaculty
 };
