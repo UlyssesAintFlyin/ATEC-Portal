@@ -1,5 +1,25 @@
 const pool = require('../config/db');
 
+const generateEnrollmentCode = async () => {
+    const currentYear = new Date().getFullYear();
+    let code;
+    let exists = true;
+
+    while (exists) {
+        const randomNum = Math.floor(Math.random() * 100000);
+        const padded = String(randomNum).padStart(5, '0');
+        code = `ATEC-${currentYear}-${padded}`;
+
+        const [rows] = await pool.query(
+            'SELECT enrollment_ID FROM enrollment_table WHERE enrollment_code = ?',
+            [code]
+        );
+        exists = rows.length > 0;
+    }
+
+    return code;
+};
+
 const createEnrollment = async (req, res) => {
     try {
         const { studentDetails, studentType, programTerm } = req.body;
@@ -10,33 +30,33 @@ const createEnrollment = async (req, res) => {
         if (!studentDetails.email || !studentDetails.firstName || !studentDetails.lastName) {
             return res.status(400).json({ message: 'Missing required fields.' });
         }
-        if (!programTerm.term) {
+        if (studentType === 'college' && !programTerm.term) {
             return res.status(400).json({ message: 'Please select a term.' });
         }
+        if (studentType === 'seniorHigh' && !programTerm.gradeLevel) {
+            return res.status(400).json({ message: 'Please select a grade level.' });
+        }
 
-        // Look up AYS_ID by joining academic_year_table + semester_table
-        // through the academic_year_semester_table junction
-        const [aysRows] = await pool.query(
-        `SELECT ays.AYS_ID 
-         FROM academic_year_semester_table ays 
-         JOIN academic_year_table ay 
-         ON ays.AY_ID = ay.AY_ID 
-         JOIN semester_table sem 
-         ON ays.semester_ID = sem.semester_ID 
-         WHERE ay.AY_Name = ? 
-         AND sem.semester_name = ?`,    
-        ['A.Y. 2025-2026', programTerm.term]
+        // Pull the currently active AYS_ID from system settings,
+        // set by the admin via setAY/setSemester
+        const [settingsRows] = await pool.query(
+            `SELECT enrollment_AYS_ID FROM system_settings_table WHERE system_settings_ID = 1`
         );
 
-        const AYS_ID = aysRows.length > 0 ? aysRows[0].AYS_ID : null;
+        const AYS_ID = settingsRows.length > 0 ? settingsRows[0].enrollment_AYS_ID : null;
+
+        if (!AYS_ID) {
+            return res.status(400).json({ message: 'Enrollment period is not currently configured. Please contact the registrar.' });
+        }
+
         const sql = `
             INSERT INTO enrollment_table
             (f_Name, m_Name, l_Name, gender, age, contact_Number, email, address,
              father_Name, father_Contact, mother_Name, mother_Contact,
              guardian_Name, guardian_Contact,
              birthdate, transferring_from, AYS_ID,
-             student_type, term, year_level, track, program)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             student_type, term, year_level, grade_level, track, program)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const values = [
@@ -58,17 +78,16 @@ const createEnrollment = async (req, res) => {
             studentDetails.prevSchool,
             AYS_ID,
             studentType,
-            programTerm.term,
-            programTerm.year,
-            programTerm.track,
-            programTerm.program
+            studentType === 'college' ? programTerm.term : null,
+            studentType === 'college' ? programTerm.year : null,
+            studentType === 'seniorHigh' ? programTerm.gradeLevel : null,
+            studentType === 'seniorHigh' ? programTerm.track : null,
+            studentType === 'college' ? programTerm.program : null
         ];
 
         const [result] = await pool.query(sql, values);
 
-        const currentYear = new Date().getFullYear();
-        const paddedId = String(result.insertId).padStart(5, '0');
-        const enrollmentCode = `ATEC-${currentYear}-${paddedId}`;
+        const enrollmentCode = await generateEnrollmentCode();
 
         await pool.query(
             'UPDATE enrollment_table SET enrollment_code = ? WHERE enrollment_ID = ?',
@@ -110,9 +129,5 @@ const getEnrollmentStatus = async (req, res) => {
         res.status(500).json({ message: 'Failed to check status', error: error.message });
     }
 };
-
-
-
-
 
 module.exports = { createEnrollment, getEnrollmentStatus };

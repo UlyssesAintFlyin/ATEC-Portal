@@ -39,9 +39,10 @@ export default function Enrollment() {
     guardiansContact: "",
   });
 
-  const [programTerm, setProgramTerm] = useState({
+    const [programTerm, setProgramTerm] = useState({
     term: "",
     year: "",
+    gradeLevel: "",
     track: "",
     program: "",
   });
@@ -68,6 +69,19 @@ export default function Enrollment() {
 
   const handleProgramSubmit = (e) => {
     e.preventDefault();
+
+    if (studentType === "college") {
+        if (!programTerm.term || !programTerm.year || !programTerm.program) {
+            alert("Please fill out all fields: Term, Year, and Program.");
+            return;
+        }
+    } else if (studentType === "seniorHigh") {
+        if (!programTerm.gradeLevel || !programTerm.track) {
+            alert("Please fill out all fields: Grade Level and Track & Specialization.");
+            return;
+        }
+    }
+
     setStep(4);
   };
 
@@ -108,10 +122,12 @@ export default function Enrollment() {
     setProgramTerm({
       term: "",
       year: "",
+      gradeLevel: "",
       track: "",
       program: "",
     });
   };
+
 
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
@@ -188,19 +204,19 @@ export default function Enrollment() {
     return null;
   }
 
-  if (!enrollmentOpen) {
-    return (
-      <Blockade
-        greeting="Pleasant Day, Aspiring Atecian!"
-        messageDetail={
-          termLabel
-            ? `Enrollment for ${termLabel} is currently closed.`
-            : "This page is currently unavailable as enrollment is temporarily closed."
-        }
-        statusDetail="Enrollment Closed"
-      />
-    );
-  }
+  // if (!enrollmentOpen) {
+  //   return (
+  //     <Blockade
+  //       greeting="Pleasant Day, Aspiring Atecian!"
+  //       messageDetail={
+  //         termLabel
+  //           ? `Enrollment for ${termLabel} is currently closed.`
+  //           : "This page is currently unavailable as enrollment is temporarily closed."
+  //       }
+  //       statusDetail="Enrollment Closed"
+  //     />
+  //   );
+  // }
 
   const fullName =
     `${studentDetails.firstName} ${studentDetails.middleName} ${studentDetails.lastName}`.trim();
@@ -466,6 +482,13 @@ export default function Enrollment() {
               <div className="divider"></div>
 
               <div className="btnRow">
+                <button
+                  type="button"
+                  className="backBtn"
+                  onClick={() => handleBack(1)}
+                >
+                  Back
+                </button>
                 <button type="submit" className="continueBtn">
                   Continue
                 </button>
@@ -476,103 +499,126 @@ export default function Enrollment() {
       )}
 
       {step === 3 && (
-        <div className="child">
-          <p className="stepLabel">Step 2 of 3</p>
-          <h6>Program and Term</h6>
-          <p>Please select your program and term.</p>
-          <p className="typeTag">
-            {studentType === "college" ? "College" : "Senior High School"}
-          </p>
-          <div className="studentForm">
-            <form onSubmit={handleProgramSubmit}>
-              <div className="formRow">
-                <div className="formGroup">
-                  <label htmlFor="term">Term</label>
-                  <select
-                    id="term"
-                    name="term"
-                    value={programTerm.term}
-                    onChange={handleProgramChange}
-                  >
-                    <option value="">Select Term</option>
-                    <option value="1st Semester">1st Semester</option>
-                    <option value="2nd Semester">2nd Semester</option>
-                    <option value="Summer">Summer</option>
-                  </select>
-                </div>
-                <div className="formGroup">
-                  <label htmlFor="year">Year</label>
-                  <select
-                    id="year"
-                    name="year"
-                    value={programTerm.year}
-                    onChange={handleProgramChange}
-                  >
-                    <option value="">Select Year</option>
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                  </select>
-                </div>
-                {studentType === "seniorHigh" ? (
-                  <div className="formGroup">
-                    <label htmlFor="track">Track & Specialization</label>
-                    <select
-                      id="track"
-                      name="track"
-                      value={programTerm.track}
-                      onChange={handleProgramChange}
-                    >
-                      <option value="">Select Track & Specialization</option>
-                      <option value="STEM">STEM</option>
-                      <option value="ABM">ABM</option>
-                      <option value="HUMSS">HUMSS</option>
-                      <option value="TVL">TVL</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div className="formGroup">
-                    <label htmlFor="program">Program</label>
-                    <select
-                      id="program"
-                      name="program"
-                      value={programTerm.program}
-                      onChange={handleProgramChange}
-                    >
-                      <option value="">Select Program</option>
-                      <option value="BS Information Technology">
-                        BS Information Technology
-                      </option>
-                      <option value="BS Computer Science">
-                        BS Computer Science
-                      </option>
-                      <option value="BS Business Administration">
-                        BS Business Administration
-                      </option>
-                    </select>
-                  </div>
-                )}
-              </div>
+      <div className="child">
+        <p className="stepLabel">Step 2 of 3</p>
+        <h6>Program and Term</h6>
+        <p>Please select your program and term.</p>
+        <p className="typeTag">
+          {studentType === "college" ? "College" : "Senior High School"}
+        </p>
+    <div className="studentForm">
+      <form onSubmit={handleProgramSubmit}>
+        <div className="formRow">
+          {studentType === "college" && (
+            <div className="formGroup">
+              <label htmlFor="term">Term</label>
+              <select
+                id="term"
+                name="term"
+                value={programTerm.term}
+                onChange={handleProgramChange}
+              >
+                <option value="">Select Term</option>
+                <option value="1st Semester">1st Semester</option>
+                <option value="2nd Semester">2nd Semester</option>
+                <option value="Summer">Summer</option>
+              </select>
+            </div>
+          )}
 
-              <div className="divider"></div>
-
-              <div className="btnRow">
-                <button
-                  type="button"
-                  className="backBtn"
-                  onClick={() => handleBack(2)}
+            {studentType === "college" ? (
+              <div className="formGroup">
+                <label htmlFor="year">Year</label>
+                <select
+                  id="year"
+                  name="year"
+                  value={programTerm.year}
+                  onChange={handleProgramChange}
                 >
-                  Back
-                </button>
-                <button type="submit" className="continueBtn">
-                  Continue{" "}
-                </button>
+                  <option value="">Select Year</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                </select>
               </div>
-            </form>
-          </div>
+            ) : (
+              <div className="formGroup">
+                <label htmlFor="gradeLevel">Grade Level</label>
+                <select
+                  id="gradeLevel"
+                  name="gradeLevel"
+                  value={programTerm.gradeLevel}
+                  onChange={handleProgramChange}
+                >
+                  <option value="">Select Grade Level</option>
+                  <option value="Grade 11">Grade 11</option>
+                  <option value="Grade 12">Grade 12</option>
+                </select>
+              </div>
+            )}
+
+          {studentType === "seniorHigh" ? (
+            <div className="formGroup">
+              <label htmlFor="track">Track & Specialization</label>
+              <select
+                id="track"
+                name="track"
+                value={programTerm.track}
+                onChange={handleProgramChange}
+              >
+                <option value="">Select Track & Specialization</option>
+                <option value="STEM">Art, Social Sciences and Humanities(ASSH)</option>
+                <option value="ABM">Accountancy, Business and Management(ABM)</option>
+                <option value="HUMSS">Science, Technology, Engineering and Mathematics(STEM)</option>
+                <option value="TVL">Information, Communication and Technology(TVL)</option>
+              </select>
+            </div>
+          ) : (
+            <div className="formGroup">
+              <label htmlFor="program">Program</label>
+              <select
+                id="program"
+                name="program"
+                value={programTerm.program}
+                onChange={handleProgramChange}
+              >
+                <option value="">Select Program</option>
+                <option value="Diploma in Information Technology">
+                  Diploma in Information Technology
+                </option>
+                <option value="Diploma in Restaurant Technology">
+                  Diploma in Restaurant Technology
+                </option>
+                <option value="Diploma in Hospitality Technology">
+                  Diploma in Hospitality Technology
+                </option>
+              </select>
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="divider"></div>
+
+        <div className="btnRow">
+          <button
+            type="button"
+            className="backBtn"
+            onClick={() => handleBack(2)}
+          >
+            Back
+          </button>
+          <button 
+            type="submit" 
+            className="continueBtn"
+            >
+            Continue{" "}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
       {step === 4 && (
         <div className="child">
@@ -642,29 +688,29 @@ export default function Enrollment() {
                 <div className="reviewDivider"></div>
 
                 <div className="reviewRight">
+                {studentType === "college" && (
                   <div className="formGroup">
                     <label>Term</label>
                     <input type="text" value={programTerm.term} readOnly />
                   </div>
-                  <div className="formGroup">
-                    <label>Year</label>
-                    <input type="text" value={programTerm.year} readOnly />
-                  </div>
-                  <div className="formGroup">
-                    <label>
-                      {studentType === "seniorHigh" ? "Track" : "Program"}
-                    </label>
-                    <input
-                      type="text"
-                      value={
-                        studentType === "seniorHigh"
-                          ? programTerm.track
-                          : programTerm.program
-                      }
-                      readOnly
-                    />
-                  </div>
+                )}
+                <div className="formGroup">
+                  <label>{studentType === "seniorHigh" ? "Grade Level" : "Year"}</label>
+                  <input
+                    type="text"
+                    value={studentType === "seniorHigh" ? programTerm.gradeLevel : programTerm.year}
+                    readOnly
+                  />
                 </div>
+                <div className="formGroup">
+                  <label>{studentType === "seniorHigh" ? "Track" : "Program"}</label>
+                  <input
+                    type="text"
+                    value={studentType === "seniorHigh" ? programTerm.track : programTerm.program}
+                    readOnly
+                  />
+                </div>
+              </div>
               </div>
 
               <div className="divider"></div>

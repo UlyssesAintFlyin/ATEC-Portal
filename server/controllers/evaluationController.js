@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 
-// Map choice text to numeric rating
 const RATING_MAP = {
     'Strongly Disagree': 1,
     'Disagree': 2,
@@ -10,14 +9,27 @@ const RATING_MAP = {
 };
 
 // GET /api/evaluation/faculty
-// Returns faculty members with their evaluation_ID for the current term
+// Returns faculty members, but only their evaluation_table row for the
+// currently active AYS_ID (from system_settings_table.evaluation_AYS_ID)
 const getFacultyList = async (req, res) => {
     try {
-        const [rows] = await pool.query(`
-            SELECT e.evaluation_ID, f.faculty_ID, f.f_Name, f.l_Name
-            FROM evaluation_table e
-            JOIN faculty_table f ON e.faculty_ID = f.faculty_ID
-        `);
+        const [settingsRows] = await pool.query(
+            `SELECT evaluation_AYS_ID FROM system_settings_table WHERE system_settings_ID = 1`
+        );
+
+        const AYS_ID = settingsRows.length > 0 ? settingsRows[0].evaluation_AYS_ID : null;
+
+        if (!AYS_ID) {
+            return res.status(400).json({ message: 'Evaluation period is not currently configured.' });
+        }
+
+        const [rows] = await pool.query(
+            `SELECT e.evaluation_ID, f.faculty_ID, f.f_Name, f.l_Name
+             FROM evaluation_table e
+             JOIN faculty_table f ON e.faculty_ID = f.faculty_ID
+             WHERE e.AYS_ID = ?`,
+            [AYS_ID]
+        );
 
         res.json({ faculty: rows });
     } catch (error) {
@@ -29,9 +41,6 @@ const getFacultyList = async (req, res) => {
     }
 };
 
-
-// GET /api/evaluation/questions
-// Returns all categories with their questions nested
 const getQuestions = async (req, res) => {
     try {
         const [categories] = await pool.query('SELECT * FROM evaluation_category_table');
@@ -50,8 +59,6 @@ const getQuestions = async (req, res) => {
     }
 };
 
-// POST /api/evaluation/submit
-// Body: { evaluationId, studentId, answers: { [question_ID]: "Strongly Agree", ... } }
 const submitEvaluation = async (req, res) => {
     const connection = await pool.getConnection();
     try {
@@ -64,7 +71,6 @@ const submitEvaluation = async (req, res) => {
 
         await connection.beginTransaction();
 
-        // Insert each individual answer
         for (const [questionId, choiceText] of Object.entries(answers)) {
             const ratingValue = RATING_MAP[choiceText];
             if (!ratingValue) continue;
@@ -75,7 +81,6 @@ const submitEvaluation = async (req, res) => {
             );
         }
 
-        // Compute category means and insert into student_evaluation_table
         const [questionRows] = await connection.query('SELECT question_ID, category_ID FROM question_table');
         const categoryMap = {};
         questionRows.forEach(q => {
