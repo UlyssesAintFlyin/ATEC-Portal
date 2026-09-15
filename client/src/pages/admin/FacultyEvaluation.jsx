@@ -10,9 +10,8 @@ import {
   TextField,
   Autocomplete,
 } from "@mui/material";
-import { EditableTable } from "../../components/EditableTable";
+import { StandardTable } from "../../components/StandardTable";
 import { Link, useNavigate } from "react-router-dom";
-
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -23,17 +22,17 @@ export default function FacultyEvaluation() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   useEffect(() => {
-      const fetchFaculty = async () => {
-        try {
-          const res = await fetch(`${API_URL}/faculty/getAllFaculties`);
-          const data = await res.json();
-          setRows(data);
-        } catch (err) {
-          console.error("Error loading faculty:", err);
-        }
-      };
-      fetchFaculty();
-    },[]);
+    const fetchFaculty = async () => {
+      try {
+        const res = await fetch(`${API_URL}/faculty/getAllFaculties`);
+        const data = await res.json();
+        setRows(data);
+      } catch (err) {
+        console.error("Error loading faculty:", err);
+      }
+    };
+    fetchFaculty();
+  }, []);
 
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
@@ -49,69 +48,100 @@ export default function FacultyEvaluation() {
   });
 
   const handleAdd = async () => {
-  if (!newFaculty.f_Name || !newFaculty.l_Name || !newFaculty.email ||
-      !newFaculty.contact_Number || !newFaculty.address) {
-    console.error("Missing required fields");
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API_URL}/faculty/createFaculty`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...newFaculty,
-        birthdate: newFaculty.birthdate || null, 
-      }),
-    });
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      throw new Error(errBody.error || `Request failed: ${res.status}`);
+    if (
+      !newFaculty.f_Name ||
+      !newFaculty.l_Name ||
+      !newFaculty.email ||
+      !newFaculty.contact_Number ||
+      !newFaculty.address
+    ) {
+      console.error("Missing required fields");
+      return;
     }
 
-    setOpen(false);
-    setNewFaculty({ f_Name: "", l_Name: "", m_Name: "", birthdate: "", gender: "", email: "", contact_Number: "", address: "" });
-  } catch (err) {
-    console.error(err);
-  }
-};
+    try {
+      const res = await fetch(`${API_URL}/faculty/createFaculty`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newFaculty,
+          birthdate: newFaculty.birthdate || null,
+        }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || `Request failed: ${res.status}`);
+      }
 
-  // Track selected rows from Table (Supposedly)
-  const [selectedIds, setSelectedIds] = useState([]);
+      setOpen(false);
+      setNewFaculty({
+        f_Name: "",
+        l_Name: "",
+        m_Name: "",
+        birthdate: "",
+        gender: "",
+        email: "",
+        contact_Number: "",
+        address: "",
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const columns = [
-    { field: "facultyName", headerName: "Faculty Name", flex: 1 },
-    { field: "age", headerName: "Age", type: "number", flex: 0.5 },
-    { field: "gender", headerName: "Gender", flex: 0.5 },
-    { field: "position", headerName: "Position", flex: 0.5},
-    { field: "status", headerName: "Position", flex: 0.5},
+    {
+      field: "facultyName",
+      headerName: "Faculty Name",
+      flex: 1,
+      minWidth: 150,
+    },
+    {
+      field: "age",
+      headerName: "Age",
+      type: "number",
+      flex: 0.5,
+      minWidth: 80,
+    },
+    { field: "gender", headerName: "Gender", flex: 0.5, minWidth: 100 },
+    { field: "position", headerName: "Position", flex: 0.5, minWidth: 120 },
+    { field: "status", headerName: "Status", flex: 0.5, minWidth: 120 },
     {
       field: "action",
       headerName: "Action",
       flex: 1,
+      minWidth: 200,
       renderCell: (params) => (
-        <><Button
-          variant="contained"
-          color="inherit"
-          onClick={() => navigate(`/admin/facultyEvaluation/editFaculty/${params.row.id}`)}
-          sx={{ fontSize: { xs: "12px", sm: "15px", md: "15px" }, width: { xs: "80px", sm: "120px", md: "100px" } }}
-        >
-          Edit
-        </Button><Button
-          variant="contained"
-          color="inherit"
-          onClick={() => navigate(`./evaluation-:id`)}
-          sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px" ,} ,width: { xs: "80px", sm: "120px", md: "100px" }}}
-        >
+        <>
+          <Button
+            variant="contained"
+            color="inherit"
+            onClick={() =>
+              navigate(`/admin/facultyEvaluation/editFaculty/${params.row.id}`)
+            }
+            sx={{
+              fontSize: { xs: "12px", sm: "15px", md: "15px" },
+              width: { xs: "80px", sm: "120px", md: "100px" },
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="contained"
+            color="inherit"
+            onClick={() => navigate(`/admin/facultyEvaluation/evaluation/${params.row.id}`)}
+            sx={{
+              ml: 1,
+              fontSize: { xs: "12px", sm: "15px", md: "15px" },
+              width: { xs: "80px", sm: "120px", md: "100px" },
+            }}
+          >
             Evaluation
-          </Button></>
+          </Button>
+        </>
       ),
-
     },
-    
   ];
-
-
 
   return (
     <Box
@@ -137,9 +167,9 @@ export default function FacultyEvaluation() {
         <Box
           sx={{
             display: "flex",
-            flexDirection: "row",
+            flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
             marginBottom: "30px",
@@ -149,7 +179,7 @@ export default function FacultyEvaluation() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              alignItems: { xs: "center", md: "flex-start" },
+              alignItems: {xs:"center", md:"flex-start"}
             }}
           >
             <Typography
@@ -157,8 +187,7 @@ export default function FacultyEvaluation() {
                 color: "#242c54",
                 fontWeight: "bold",
                 fontSize: { xs: "16px", md: "35px" },
-                textAlign: { xs: "center", md: "left" },
-                marginLeft: { xs: "0", md: "50px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
             >
               Faculty Management
@@ -168,8 +197,7 @@ export default function FacultyEvaluation() {
               sx={{
                 color: "#242c54",
                 fontSize: { xs: "12px", md: "16px" },
-                textAlign: { xs: "center", md: "left" },
-                marginLeft: { xs: "0", md: "50px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
             >
               Manage faculty evaluations and their respective information.
@@ -201,18 +229,6 @@ export default function FacultyEvaluation() {
               >
                 Add Faculty
               </Button>
-              <Button
-                variant="contained"
-                disabled={selectedIds.length === 0}
-                sx={{
-                  fontSize: { xs: "12px", sm: "14px", md: "16px" },
-                  padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
-                  color: "#E8EDF2",
-                  backgroundColor: "#242C54",
-                }}
-              >
-                Migrate Selected
-              </Button>
             </Box>
           </Box>
         </Box>
@@ -226,17 +242,11 @@ export default function FacultyEvaluation() {
           }}
         >
           {/*Table Component*/}
-          <EditableTable
+          <StandardTable
             rows={rows}
             columns={columns}
-            csvOptions={{
-              fileName: "faculty-report",
-              utf8WithBom: true,
-              fields: ["facultyName", "age", "gender"],
-            }}
-            printOptions={{
-              fields: ["facultyName", "advisory"],
-            }}
+            fileName="faculty-masterlist"
+            printFields={["facultyName", "position", "status"]}
           />
         </Box>
       </Box>

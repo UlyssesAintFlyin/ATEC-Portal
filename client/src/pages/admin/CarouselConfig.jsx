@@ -10,19 +10,20 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Snackbar,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
-const API_URL = process.env.REACT_APP_API_URL; 
+const API_URL = process.env.REACT_APP_API_URL;
 
 function makeEmptyPage() {
   return {
     localKey: `new-${Date.now()}-${Math.random()}`,
-    carousel_ID: null, // null = not yet saved to the DB
+    carousel_ID: null, 
     title: "",
     description: "",
-    imageFile: null, // newly selected file, not yet uploaded
-    existingImagePath: null, // path already on the server, e.g. /uploads/carousel/x.jpg
+    imageFile: null, 
+    existingImagePath: null,
   };
 }
 
@@ -31,7 +32,19 @@ function CarouselConfig() {
   const [loadingPages, setLoadingPages] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pageErrors, setPageErrors] = useState({}); // { localKey: "message" }
-  const [globalMessage, setGlobalMessage] = useState(null); // { type: "error"|"success", text }
+
+  // Snackbar replaces the old full-width global Alert so messages no longer
+  // push the layout around when they appear/disappear.
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
+  const showMessage = (severity, message) => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const closeSnackbar = (_event, reason) => {
+    if (reason === "clickaway") return;
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
 
   const [deleteTarget, setDeleteTarget] = useState(null); // page object pending deletion
   const [deleting, setDeleting] = useState(false);
@@ -56,7 +69,7 @@ function CarouselConfig() {
         );
       } catch (err) {
         console.error(err);
-        setGlobalMessage({ type: "error", text: "Could not load existing carousel pages." });
+        showMessage("error", "Could not load existing carousel pages.");
       } finally {
         setLoadingPages(false);
       }
@@ -111,21 +124,21 @@ function CarouselConfig() {
       }
       setPages((prev) => prev.filter((p) => p.localKey !== deleteTarget.localKey));
       setDeleteTarget(null);
+      showMessage("success", "Carousel page deleted.");
     } catch (err) {
       console.error(err);
-      setGlobalMessage({ type: "error", text: err.message || "Failed to delete carousel page." });
+      showMessage("error", err.message || "Failed to delete carousel page.");
     } finally {
       setDeleting(false);
     }
   };
 
   const handleSaveAll = async () => {
-    setGlobalMessage(null);
     setPageErrors({});
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setGlobalMessage({ type: "error", text: "You must be logged in as an admin to save changes." });
+      showMessage("error", "You must be logged in as an admin to save changes.");
       return;
     }
 
@@ -138,7 +151,7 @@ function CarouselConfig() {
     });
     if (Object.keys(errors).length > 0) {
       setPageErrors(errors);
-      setGlobalMessage({ type: "error", text: "Fix the highlighted pages before saving." });
+      showMessage("error", "Fix the highlighted pages before saving.");
       return;
     }
 
@@ -197,12 +210,12 @@ function CarouselConfig() {
     setSaving(false);
 
     if (Object.keys(newErrors).length === 0) {
-      setGlobalMessage({ type: "success", text: `All ${successCount} page(s) saved successfully.` });
+      showMessage("success", `All ${successCount} page(s) saved successfully.`);
     } else {
-      setGlobalMessage({
-        type: "error",
-        text: `${successCount} page(s) saved, ${Object.keys(newErrors).length} failed. See details below.`,
-      });
+      showMessage(
+        "error",
+        `${successCount} page(s) saved, ${Object.keys(newErrors).length} failed. See details below.`
+      );
     }
   };
 
@@ -253,12 +266,6 @@ function CarouselConfig() {
             component
           </Typography>
         </Box>
-
-        {globalMessage && (
-          <Alert severity={globalMessage.type} sx={{ mt: 2, width: "90%" }}>
-            {globalMessage.text}
-          </Alert>
-        )}
 
         {loadingPages ? (
           <Box sx={{ mt: 4 }}>
@@ -422,7 +429,9 @@ function CarouselConfig() {
 
               {pageErrors[page.localKey] && (
                 <Box sx={{ width: "90%", pb: 1 }}>
-                  <Alert severity="error">{pageErrors[page.localKey]}</Alert>
+                  <Alert severity="error" sx={{ py: 0 }}>
+                    {pageErrors[page.localKey]}
+                  </Alert>
                 </Box>
               )}
             </Box>
@@ -487,6 +496,17 @@ function CarouselConfig() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={closeSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

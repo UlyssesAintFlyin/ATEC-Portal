@@ -84,12 +84,13 @@ export default function EnrollmentManagement() {
   }, [selectedAY]);
 
   const columns = [
-    { field: "enrollee", headerName: "Enrollee Name", flex: 1 },
-    { field: "status", headerName: "Status", flex: 1 },
+    { field: "enrollee", headerName: "Enrollee Name", flex: 1, minWidth: 150 },
+    { field: "status", headerName: "Status", flex: 1, minWidth: 100 },
     {
       field: "action",
       headerName: "Action",
       flex: 1,
+      minWidth: 100,
       renderCell: (params) => (
         <Button
           variant="contained"
@@ -97,6 +98,10 @@ export default function EnrollmentManagement() {
           onClick={() =>
             navigate(`/admin/enrollmentList/enrollmentRecord/${params.row.id}`)
           }
+          sx={{
+            fontSize: { xs: "12px", sm: "15px", md: "15px" },
+            width: { xs: "80px", sm: "120px", md: "100px" },
+          }}
         >
           View Record
         </Button>
@@ -114,7 +119,9 @@ export default function EnrollmentManagement() {
 
       if (!response.ok) throw new Error("Failed to reject enrollees");
 
-      setRows((prevRows) => prevRows.filter((r) => !selectedIds.includes(r.id)));
+      setRows((prevRows) =>
+        prevRows.filter((r) => !selectedIds.includes(r.id)),
+      );
       setSelectedIds([]);
     } catch (err) {
       console.error("Error rejecting enrollees:", err);
@@ -145,9 +152,9 @@ export default function EnrollmentManagement() {
         <Box
           sx={{
             display: "flex",
-            flexDirection: "row",
+            flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
             marginBottom: "30px",
@@ -157,7 +164,7 @@ export default function EnrollmentManagement() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              alignItems: { xs: "center", md: "flex-start" },
+              alignItems: {xs:"center", md:"flex-start"}
             }}
           >
             <Typography
@@ -165,8 +172,7 @@ export default function EnrollmentManagement() {
                 color: "#242c54",
                 fontWeight: "bold",
                 fontSize: { xs: "16px", md: "35px" },
-                textAlign: { xs: "center", md: "left" },
-                marginLeft: { xs: "0", md: "50px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
             >
               Enrollment Management
@@ -176,8 +182,7 @@ export default function EnrollmentManagement() {
               sx={{
                 color: "#242c54",
                 fontSize: { xs: "12px", md: "16px" },
-                textAlign: { xs: "center", md: "left" },
-                marginLeft: { xs: "0", md: "50px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
             >
               Here is a list of all enrollment records.
@@ -186,9 +191,13 @@ export default function EnrollmentManagement() {
           <Box
             sx={{
               display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
               flexDirection: "row",
               gap: 2,
+              marginTop: { xs: "10px", md: "0" },
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
+              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
             <Button

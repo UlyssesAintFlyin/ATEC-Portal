@@ -64,7 +64,7 @@ export default function EnrollmentRecord() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              alignItems: { xs: "center", md: "flex-start" },
+              alignItems: "flex-start",
             }}
           >
             <Typography
@@ -72,7 +72,8 @@ export default function EnrollmentRecord() {
                 color: "#242c54",
                 fontWeight: "bold",
                 fontSize: { xs: "16px", md: "35px" },
-                textAlign: { xs: "center", md: "left" },
+                textAlign: "left",
+                marginLeft: { xs: "20px", md: 0 },
               }}
             >
               Enrollee Information
@@ -82,7 +83,8 @@ export default function EnrollmentRecord() {
               sx={{
                 color: "#242c54",
                 fontSize: { xs: "12px", md: "16px" },
-                textAlign: { xs: "center", md: "left" },
+                textAlign: "left",
+                marginLeft: { xs: "20px", md: 0},
               }}
             >
               Here is the information for the selected enrollee.
@@ -91,13 +93,15 @@ export default function EnrollmentRecord() {
           <Box
             sx={{
               display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
               flexDirection: "row",
               gap: 2,
+              marginRight: { xs: "20px", md: 0},
             }}
           >
             <Button
               sx={{
-                fontSize: { xs: "12px", sm: "15px", md: "17px" },
                 color: "#E8EDF2",
                 backgroundColor: "#242C54",
                 borderRadius: "5px",
@@ -105,6 +109,8 @@ export default function EnrollmentRecord() {
                   backgroundColor: "#4f5d9e",
                   transform: "scale(1.05)",
                 },
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
               }}
               onClick={() => {
                 fetch(

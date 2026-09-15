@@ -2,7 +2,7 @@ import React from "react";
 import { Typography, Box, Button } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
-import { Table } from "../../components/Table";
+import { StandardTable } from "../../components/StandardTable";
 
 function GradeReport() {
   //Array for dropdown
@@ -13,26 +13,64 @@ function GradeReport() {
 
   //Array for table column
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
-    { field: "subjectName", headerName: "Subject Name", flex: 1, minWidth: 160 },
+    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60},
+    {
+      field: "subjectName",
+      headerName: "Subject Name",
+      flex: 1,
+      minWidth: 160,
+    },
     { field: "instructor", headerName: "Instructor", flex: 1, minWidth: 140 },
-    { field: "grade", headerName: "Final Grade", type: "number", flex: 0.7, minWidth: 110 },
+    {
+      field: "grade",
+      headerName: "Final Grade",
+      type: "number",
+      flex: 0.7,
+      minWidth: 110,
+      headerAlign: "center",
+      align: "center",
+    },
   ];
 
   //Array for table records
   const rows = [
-    { id: 1, subjectName: "Genereal Mathematics", instructor: "Carlo Dimasili", grade: 98.00 },
-    { id: 2, subjectName: "English Literary", instructor: "Jhepoy Labangon", grade: 99.00 },
-    { id: 3, subjectName: "Basic Calculus", instructor: "Jenny Javier", grade: 97.00 },
-    { id: 4, subjectName: "Eart and Life Science", instructor: "Erving Santos", grade: 99.00 },
-    { id: 5, subjectName: "Purposive Communication", instructor: "Catherine Lasos", grade: 99.00 },
+    {
+      id: 1,
+      subjectName: "Genereal Mathematics",
+      instructor: "Carlo Dimasili",
+      grade: 98.0,
+    },
+    {
+      id: 2,
+      subjectName: "English Literary",
+      instructor: "Jhepoy Labangon",
+      grade: 99.0,
+    },
+    {
+      id: 3,
+      subjectName: "Basic Calculus",
+      instructor: "Jenny Javier",
+      grade: 97.0,
+    },
+    {
+      id: 4,
+      subjectName: "Eart and Life Science",
+      instructor: "Erving Santos",
+      grade: 99.0,
+    },
+    {
+      id: 5,
+      subjectName: "Purposive Communication",
+      instructor: "Catherine Lasos",
+      grade: 99.0,
+    },
   ];
 
   return (
     <Box
       sx={{
         backgroundColor: "#BAC5D1",
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
@@ -41,7 +79,7 @@ function GradeReport() {
       <Box
         sx={{
           backgroundColor: "#E8EDF2",
-          height: "100%",
+          minHeight: "100vh",
           width: { xs: "100%", sm: "600px", md: "1200px" },
           margin: "0 auto",
           display: "flex",
@@ -49,19 +87,36 @@ function GradeReport() {
           justifyContent: "flex-start",
         }}
       >
-        <Typography
-          variant="h2"
+        <Box
           sx={{
-            color: "#242c54",
-            fontWeight: "bold",
-            marginTop: "20px",
-            marginBottom: "20px",
-            fontSize: { xs: "28px", md: "35px" },
-            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center"
           }}
         >
-          Grade Report
-        </Typography>
+          <Typography
+            sx={{
+              color: "#242c54",
+              fontWeight: "bold",
+              fontSize: { xs: "16px", md: "35px" },
+              textAlign: { xs: "center", md: "left" },
+              marginLeft: { xs: "0", md: "50px" },
+            }}
+          >
+            Grade Report
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "#242c54",
+              fontSize: { xs: "12px", md: "16px" },
+              textAlign: { xs: "center", md: "left" },
+              marginLeft: { xs: "0", md: "50px" },
+            }}
+          >
+            View your grade summary for the semester.
+          </Typography>
+        </Box>
 
         <Box
           sx={{
@@ -126,12 +181,19 @@ function GradeReport() {
           sx={{
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
-            height: { xs: "600px", md: "420px" },
-            minWidth: 0,
+            marginBottom: { xs: "20px", md: "50px" },
+            maxWidth: "100%",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           {/*Table Component*/}
-          <Table rows={rows} columns={columns} />
+          <StandardTable
+            rows={rows}
+            columns={columns}
+            fileName="grade-report"
+            printFields={["subjectName", "instructor", "grade"]}
+          />
         </Box>
       </Box>
     </Box>

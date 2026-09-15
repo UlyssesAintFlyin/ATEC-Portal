@@ -247,7 +247,7 @@ export default function CurriculumConfig() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              alignItems: { xs: "center", md: "flex-start" },
+              alignItems: {xs:"center", md:"flex-start"}
             }}
           >
             <Typography
@@ -255,8 +255,7 @@ export default function CurriculumConfig() {
                 color: "#242c54",
                 fontWeight: "bold",
                 fontSize: { xs: "16px", md: "35px" },
-                textAlign: { xs: "center", md: "left" },
-                marginLeft: { xs: "0", md: "50px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
             >
               Curriculum Management
@@ -266,8 +265,7 @@ export default function CurriculumConfig() {
               sx={{
                 color: "#242c54",
                 fontSize: { xs: "12px", md: "16px" },
-                textAlign: { xs: "center", md: "left" },
-                marginLeft: { xs: "0", md: "50px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
             >
               Manage your curricula here.

@@ -43,8 +43,6 @@ async function getFacultyById(req, res) {
     }
 };
 
-
-
 async function updateFaculty(req, res) {
     const { id } = req.params;
     const { f_Name, l_Name, m_Name, birthdate, gender, email } = req.body;
