@@ -14,7 +14,7 @@ import {
 import { EditableTable } from "../../components/EditableTable";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "http://localhost:5000/api"; // adjust to your server's base URL
+const API_URL = process.env.REACT_APP_API_URL; // adjust to your server's base URL
 
 export default function CurriculumConfig() {
   const navigate = useNavigate();
@@ -247,7 +247,7 @@ export default function CurriculumConfig() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              alignItems: { xs: "center", md: "flex-start" },
+              alignItems: {xs:"center", md:"flex-start"}
             }}
           >
             <Typography
@@ -255,8 +255,7 @@ export default function CurriculumConfig() {
                 color: "#242c54",
                 fontWeight: "bold",
                 fontSize: { xs: "16px", md: "35px" },
-                textAlign: { xs: "center", md: "left" },
-                marginLeft: { xs: "0", md: "50px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
             >
               Curriculum Management
@@ -266,8 +265,7 @@ export default function CurriculumConfig() {
               sx={{
                 color: "#242c54",
                 fontSize: { xs: "12px", md: "16px" },
-                textAlign: { xs: "center", md: "left" },
-                marginLeft: { xs: "0", md: "50px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
             >
               Manage your curricula here.

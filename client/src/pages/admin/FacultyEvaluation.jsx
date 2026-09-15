@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -10,114 +10,138 @@ import {
   TextField,
   Autocomplete,
 } from "@mui/material";
-import { Table } from "../../components/Table";
+import { StandardTable } from "../../components/StandardTable";
 import { Link, useNavigate } from "react-router-dom";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function FacultyEvaluation() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      facultyName: "Albert Einstein",
-      age: 50,
-      gender: "Male",
-      position: "Academic Head",
-    },
-    {
-      id: 2,
-      facultyName: "Maria Montessori",
-      age: 29,
-      gender: "Female",
-      position: "Teacher",
-    },
-    {
-      id: 3,
-      facultyName: "Bobby Lopez",
-      age: 39,
-      gender: "Male",
-      position: "Teacher",
-    },
-    {
-      id: 4,
-      facultyName: "Belno Light",
-      age: 24,
-      gender: "Female",
-      position: "Teacher",
-    },
-    {
-      id: 5,
-      facultyName: "Jose Rizal",
-      age: 23,
-      gender: "Male",
-      position: "Teacher",
-    },
-    {
-      id: 6,
-      facultyName: "Pedro Ramirez Cruz",
-      age: 42,
-      gender: "Male",
-      position: "Academic Head",
-    },
-    {
-      id: 7,
-      facultyName: "Osamu Dazai",
-      age: 32,
-      gender: "Male",
-      position: "Teacher",
+
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    const fetchFaculty = async () => {
+      try {
+        const res = await fetch(`${API_URL}/faculty/getAllFaculties`);
+        const data = await res.json();
+        setRows(data);
+      } catch (err) {
+        console.error("Error loading faculty:", err);
+      }
+    };
+    fetchFaculty();
+  }, []);
+
+  // Adding Student Dialog State
+  const [open, setOpen] = useState(false);
+  const [newFaculty, setNewFaculty] = useState({
+    f_Name: "",
+    l_Name: "",
+    m_Name: "",
+    birthdate: "",
+    gender: "",
+    email: "",
+    contact_Number: "",
+    address: "",
+  });
+
+  const handleAdd = async () => {
+    if (
+      !newFaculty.f_Name ||
+      !newFaculty.l_Name ||
+      !newFaculty.email ||
+      !newFaculty.contact_Number ||
+      !newFaculty.address
+    ) {
+      console.error("Missing required fields");
+      return;
     }
 
-  ]);
-  // Adding Student Dialog State
-      const [open, setOpen] = useState(false);
-      const [newFaculty, setNewFaculty] = useState({ facultyName: "", age: "", gender: "", position: "" });
-    
-      const handleAdd = () => {
-        const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
-        setRows([...rows, { id: nextId, ...newFaculty }]);
-        setOpen(false);
-        setNewFaculty({ facultyName: "", age: "", gender: "", position: "" });
-      };
-    
-      // Track selected rows from Table (Supposedly)
-      const [selectedIds, setSelectedIds] = useState([]);
-    
-      const handleRemoveSelected = () => {
-        setRows(rows.filter((r) => !selectedIds.includes(r.id)));
-        setSelectedIds([]);
-      };
+    try {
+      const res = await fetch(`${API_URL}/faculty/createFaculty`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newFaculty,
+          birthdate: newFaculty.birthdate || null,
+        }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || `Request failed: ${res.status}`);
+      }
+
+      setOpen(false);
+      setNewFaculty({
+        f_Name: "",
+        l_Name: "",
+        m_Name: "",
+        birthdate: "",
+        gender: "",
+        email: "",
+        contact_Number: "",
+        address: "",
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
-    { field: "facultyName", headerName: "Faculty Name", flex: 1 },
-    { field: "age", headerName: "Age", type: "number", flex: 0.5 },
-    { field: "gender", headerName: "Gender", flex: 0.5 },
-    { field: "position", headerName: "Position", flex: 0.5},
+    {
+      field: "facultyName",
+      headerName: "Faculty Name",
+      flex: 1,
+      minWidth: 150,
+    },
+    {
+      field: "age",
+      headerName: "Age",
+      type: "number",
+      flex: 0.5,
+      minWidth: 80,
+    },
+    { field: "gender", headerName: "Gender", flex: 0.5, minWidth: 100 },
+    { field: "position", headerName: "Position", flex: 0.5, minWidth: 120 },
+    { field: "status", headerName: "Status", flex: 0.5, minWidth: 120 },
     {
       field: "action",
       headerName: "Action",
       flex: 1,
+      minWidth: 200,
       renderCell: (params) => (
-        <><Button
-          variant="contained"
-          color="inherit"
-          onClick={() => navigate(`/admin/facultyEvaluation/editFaculty/${params.row.id}`)}
-          sx={{ fontSize: { xs: "12px", sm: "15px", md: "15px" }, width: { xs: "80px", sm: "120px", md: "100px" } }}
-        >
-          Edit
-        </Button><Button
-          variant="contained"
-          color="inherit"
-          onClick={() => navigate(`./evaluation-:id`)}
-          sx={{ marginLeft: "10px", fontSize: { xs: "12px", sm: "15px", md: "15px" ,} ,width: { xs: "80px", sm: "120px", md: "100px" }}}
-        >
+        <>
+          <Button
+            variant="contained"
+            color="inherit"
+            onClick={() =>
+              navigate(`/admin/facultyEvaluation/editFaculty/${params.row.id}`)
+            }
+            sx={{
+              fontSize: { xs: "12px", sm: "15px", md: "15px" },
+              width: { xs: "80px", sm: "120px", md: "100px" },
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="contained"
+            color="inherit"
+            onClick={() => navigate(`/admin/facultyEvaluation/evaluation/${params.row.id}`)}
+            sx={{
+              ml: 1,
+              fontSize: { xs: "12px", sm: "15px", md: "15px" },
+              width: { xs: "80px", sm: "120px", md: "100px" },
+            }}
+          >
             Evaluation
-          </Button></>
+          </Button>
+        </>
       ),
-
     },
-    
   ];
-
-  
 
   return (
     <Box
@@ -143,55 +167,69 @@ export default function FacultyEvaluation() {
         <Box
           sx={{
             display: "flex",
-            flexDirection: "row",
+            flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
             marginBottom: "30px",
           }}
         >
-          <Typography
-            sx={{
-              color: "#242c54",
-              fontWeight: "bold",
-              fontSize: { xs: "22px", md: "35px" },
-              textAlign: "center",
-              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
-            }}
-          >
-            Faculty
-          </Typography>
           <Box
             sx={{
               display: "flex",
-              flexDirection: "row",
-              gap: 2,
-              marginRight: { xs: "20px", sm: "30px", md: "50px" },
+              flexDirection: "column",
+              alignItems: {xs:"center", md:"flex-start"}
             }}
           >
-            <Box sx={{ display: "flex", gap: 2, }}>
-              <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
-                Add Faculty
-              </Button>
-              <Button variant="contained" color="error" onClick={handleRemoveSelected} disabled={selectedIds.length === 0}>
-                Remove Selected
-              </Button>
-            </Box>
-            <Button
+            <Typography
               sx={{
-                fontSize: { xs: "12px", sm: "15px", md: "17px" },
-                color: "#E8EDF2",
-                backgroundColor: "#242C54",
-                borderRadius: "5px",
-                "&:hover": {
-                  backgroundColor: "#4f5d9e",
-                  transform: "scale(1.05)",
-                },
+                color: "#242c54",
+                fontWeight: "bold",
+                fontSize: { xs: "16px", md: "35px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
             >
-              Configure Evaluation
-            </Button>
+              Faculty Management
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#242c54",
+                fontSize: { xs: "12px", md: "16px" },
+                marginLeft: { xs: 0, md: "50px" },
+              }}
+            >
+              Manage faculty evaluations and their respective information.
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "row",
+              gap: 2,
+              marginTop: { xs: "10px", md: "0" },
+              marginRight: { xs: "20px", sm: "30px", md: "50px" },
+              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setOpen(true)}
+                sx={{
+                  fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                  padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                  color: "#E8EDF2",
+                  backgroundColor: "#3B4788",
+                }}
+              >
+                Add Faculty
+              </Button>
+            </Box>
           </Box>
         </Box>
 
@@ -204,58 +242,100 @@ export default function FacultyEvaluation() {
           }}
         >
           {/*Table Component*/}
-          <Table rows={rows} columns={columns} />
+          <StandardTable
+            rows={rows}
+            columns={columns}
+            fileName="faculty-masterlist"
+            printFields={["facultyName", "position", "status"]}
+          />
         </Box>
       </Box>
       <Dialog open={open} onClose={() => setOpen(false)}>
-              <DialogTitle>Add New Faculty</DialogTitle>
-              <DialogContent>
-                <TextField 
-                margin="dense" 
-                label="Faculty Name" 
-                fullWidth value={newFaculty.facultyName} 
-                onChange={(e) => setNewFaculty({ ...newFaculty, facultyName: e.target.value })} 
-                />
-                <TextField 
-                margin="dense" 
-                label="Age" type="number" 
-                fullWidth value={newFaculty.age} 
-                onChange={(e) => setNewFaculty({ ...newFaculty, age: e.target.value })} 
-                />
-                <Autocomplete
-                  options={[
-                    "Male",
-                    "Female"
-                  ]}
-                  value={newFaculty.gender}
-                  onChange={(event, newValue) =>
-                    setNewFaculty({ ...newFaculty, gender: newValue })
-                  }
-                  renderInput={(params) => (
-                    <TextField {...params} margin="dense" label="Gender" fullWidth />
-                  )}
-                />
-                <Autocomplete
-                  options={[
-                    "Teacher",
-                    "Academic Head",
-                    "Department Head",
-                    "Program Head"
-                  ]}
-                  value={newFaculty.position}
-                  onChange={(event, newValue) =>
-                    setNewFaculty({ ...newFaculty, position: newValue })
-                  }
-                  renderInput={(params) => (
-                    <TextField {...params} margin="dense" label="Position" fullWidth />
-                  )}
-                />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setOpen(false)}>Cancel</Button>
-                <Button onClick={handleAdd} variant="contained">Add</Button>
-              </DialogActions>
-            </Dialog>   
+        <DialogTitle>Add New Faculty</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            label="First Name"
+            fullWidth
+            value={newFaculty.f_Name}
+            onChange={(e) =>
+              setNewFaculty({ ...newFaculty, f_Name: e.target.value })
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Middle Name"
+            fullWidth
+            value={newFaculty.m_Name}
+            onChange={(e) =>
+              setNewFaculty({ ...newFaculty, m_Name: e.target.value })
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Last Name"
+            fullWidth
+            value={newFaculty.l_Name}
+            onChange={(e) =>
+              setNewFaculty({ ...newFaculty, l_Name: e.target.value })
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Birthdate"
+            type="date"
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            value={newFaculty.birthdate}
+            onChange={(e) =>
+              setNewFaculty({ ...newFaculty, birthdate: e.target.value })
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Email"
+            fullWidth
+            value={newFaculty.email}
+            onChange={(e) =>
+              setNewFaculty({ ...newFaculty, email: e.target.value })
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Contact Number"
+            fullWidth
+            value={newFaculty.contact_Number}
+            onChange={(e) =>
+              setNewFaculty({ ...newFaculty, contact_Number: e.target.value })
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Address"
+            fullWidth
+            value={newFaculty.address}
+            onChange={(e) =>
+              setNewFaculty({ ...newFaculty, address: e.target.value })
+            }
+          />
+          <Autocomplete
+            options={["Male", "Female"]}
+            value={newFaculty.gender}
+            onChange={(event, newValue) =>
+              setNewFaculty({ ...newFaculty, gender: newValue })
+            }
+            renderInput={(params) => (
+              <TextField {...params} margin="dense" label="Gender" fullWidth />
+            )}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleAdd} variant="contained">
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

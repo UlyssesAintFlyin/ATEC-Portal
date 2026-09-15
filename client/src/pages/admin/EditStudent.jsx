@@ -11,32 +11,67 @@ import {
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function EditStudent() {
   const { studentId } = useParams();
   const [open, setOpen] = useState(false);
   const [student, setStudent] = useState(null);
+  const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
+
+  useEffect(() => {
+    const fetchSystemSettings = async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/systemSettings`);
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const data = await res.json();
+        setCurrentAYS_ID(data.enrollment_AYS_ID);
+      } catch (err) {
+        console.error("Error loading system settings:", err);
+        setCurrentAYS_ID(null);
+      }
+    };
+
+    fetchSystemSettings();
+  }, []);
+
+
   console.log("Student ID from params:", studentId);
   useEffect(() => {
-    fetch(`http://localhost:5000/api/admin/students/${studentId}`)
+    if (!currentAYS_ID) return;
+
+    fetch(`${API_URL}/admin/students/${studentId}?AYS_ID=${currentAYS_ID}`)
       .then((res) => res.json())
       .then((data) => {
         setStudent(data);
       })
       .catch((err) => console.error("Error loading student:", err));
-  }, [studentId]);
+  }, [studentId, currentAYS_ID]);
   console.log("Student data:", student);
-  const handleSave = () => {
-    // Backend logic to save changes for the student with the given ID
-    setOpen(false);
-    console.log("Changes saved for student ID:", studentId);
-  };
-  
-   const formatDateLocal = (isoString) => {
+
+  const formatDateLocal = (isoString) => {
     if (!isoString) return "";
     const d = new Date(isoString);
     // Use local year, month, day
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   };
+
+  const handleSave = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/students/${studentId}/update`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...student, birthdate: formatDateLocal(student?.birthdate), AYS_ID: currentAYS_ID }),
+      });
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+      const updated = await res.json();
+      console.log("Student updated:", updated);
+    } catch (err) {
+      console.error("Error saving student:", err);
+    }
+  };
+
+
 
 
   return (
@@ -130,10 +165,10 @@ export default function EditStudent() {
               onChange={(e) => setStudent({ ...student, f_Name: e.target.value })}
               fullWidth
             />
-            <TextField 
-            label="Middle Name"
-              value={student ? student.m_Name : ''}
-              onChange={(e) => setStudent({ ...student, m_Name: e.target.value })}
+            <TextField
+              label="Middle Name"
+             value={student?.m_Name ?? " "}
+              onChange={(e) => setStudent({ ...(student || {}), m_Name: e.target.value })}
               fullWidth />
             <TextField label="Surname"
               value={student ? student.l_Name : ''}
@@ -149,16 +184,23 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Age" type="number" fullWidth />
-            <TextField 
-            label="Gender" 
-            value={student ? student.gender : ''}
-            fullWidth />
+            <TextField
+              label="Age"
+              type="number"
+              value={student ? student.age : ''}
+              onChange={(e) => setStudent({ ...student, age: e.target.value })}
+              fullWidth />
+            <TextField
+              label="Gender"
+              value={student ? student.gender : ''}
+              onChange={(e) => setStudent({ ...student, gender: e.target.value })}
+              fullWidth />
             <TextField
               label="Birthdate"
               type="date"
               InputLabelProps={{ shrink: true }}
               value={formatDateLocal(student?.birthdate)}
+              onChange={(e) => setStudent({ ...student, birthdate: e.target.value })}
               fullWidth
             />
           </Box>
@@ -170,11 +212,11 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField 
-            label="Home Address" 
-            value={student ? student.address : ''}
-            onChange={(e) => setStudent({ ...student, address: e.target.value })}
-            fullWidth />
+            <TextField
+              label="Home Address"
+              value={student ? student.address : ''}
+              onChange={(e) => setStudent({ ...student, address: e.target.value })}
+              fullWidth />
           </Box>
         </Box>
 
@@ -209,14 +251,16 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField 
-            label="Email Adress" 
-            value={student ? student.email : ''}
-            fullWidth />
-            <TextField 
-            label="Contact Number" 
-            value={student ? student.contact_Number : ''}
-            fullWidth />
+            <TextField
+              label="Email Adress"
+              value={student ? student.email : ''}
+              onChange={(e) => setStudent({ ...student, email: e.target.value })}
+              fullWidth />
+            <TextField
+              label="Contact Number"
+              value={student ? student.contact_Number : ''}
+              onChange={(e) => setStudent({ ...student, contact_Number: e.target.value })}
+              fullWidth />
           </Box>
         </Box>
         {/* Family information */}
@@ -251,14 +295,17 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField 
-            label="Father's Name" 
-            value={student ? student.father_Name : ''}
-            fullWidth />
-            <TextField 
-            label="Father's Contact Number" 
-            value={student ? student.father_Contact : ''}
-            fullWidth />
+            <TextField
+              label="Father's Name"
+              value={student?.father_Name ?? " "}
+              onChange={(e) => setStudent({ ...(student || {}), father_Name: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Father's Contact Number"
+              value={student?.father_Contact ?? " "}
+              onChange={(e) => setStudent({ ...(student || {}), father_Contact: e.target.value })}
+              fullWidth />
           </Box>
           <Box
             sx={{
@@ -268,14 +315,16 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField 
-            label="Mother's Maiden Name" 
-            value={student ? student.mother_Name : ''}
-            fullWidth />
-            <TextField 
-            label="Mother's Contact Number" 
-            value={student ? student.mother_Contact : ''}
-            fullWidth />
+            <TextField
+              label="Mother's Maiden Name"
+              value={student?.mother_Name ?? " "}
+              onChange={(e) => setStudent({ ...(student || {}), mother_Name: e.target.value })}
+              fullWidth />
+            <TextField
+              label="Mother's Contact Number"
+              value={student?.mother_Contact ?? " "}
+              onChange={(e) => setStudent({ ...(student || {}), mother_Contact: e.target.value })}
+              fullWidth />
           </Box>
           <Box
             sx={{
@@ -285,14 +334,16 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField 
-            label="Guardian's Name" 
-            value={student ? student.guardian_Name : ''}
-            fullWidth />
-            <TextField 
-            label="Guardian's Contact Number" 
-            value={student ? student.guardian_Contact : ''}
-            fullWidth />
+            <TextField
+              label="Guardian's Name"
+              value={student?.guardian_Name ?? " "}
+              onChange={(e) => setStudent({ ...(student || {}), guardian_Name: e.target.value })}
+              fullWidth />
+            <TextField
+              label="Guardian's Contact Number"
+              value={student?.guardian_Contact ?? " "}
+              onChange={(e) => setStudent({ ...(student || {}), guardian_Contact: e.target.value })}
+              fullWidth />
           </Box>
         </Box>
 
@@ -327,9 +378,21 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Program" fullWidth />
-            <TextField label="Program Type" fullWidth />
-            <TextField label="Section" fullWidth />
+            <TextField
+              label="Department"
+              value={student ? student.department : ''}
+              inputProps={{ readOnly: true }}
+              fullWidth />
+            <TextField
+              label="Course/Track"
+              value={student ? student.program : ''}
+              inputProps={{ readOnly: true }}
+              fullWidth />
+            <TextField
+              label="Year Level & Section"
+              value={student ? `${student.gradeLevel} - ${student.section_Name}` : ''}
+              inputProps={{ readOnly: true }}
+              fullWidth />
           </Box>
         </Box>
 
@@ -364,8 +427,17 @@ export default function EditStudent() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Student ID (LRN)" fullWidth />
-            <TextField label="Password" fullWidth type="password" />
+            <TextField
+              label="Learner's Reference Number"
+              value={student?.lrn ?? " "}
+              onChange={(e) => setStudent({ ...(student || {}), lrn: e.target.value })}
+              fullWidth />
+            <TextField
+              label="Password"
+              value={student ? student.password : ''}
+              onChange={(e) => setStudent({ ...(student || {}), password: e.target.value })}
+              fullWidth
+              type="password" />
           </Box>
         </Box>
       </Box>
@@ -398,7 +470,10 @@ export default function EditStudent() {
               transform: "scale(1.05)",
             },
           }}
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            setOpen(true)
+            handleSave();
+          }}
         >
           Save Changes
         </Button>

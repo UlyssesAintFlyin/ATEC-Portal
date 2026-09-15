@@ -24,8 +24,10 @@ export default function Evaluation() {
     "Strongly Agree",
   ];
 
+  const API_URL = process.env.REACT_APP_API_URL;
+
   useEffect(() => {
-    fetch("http://localhost:5000/api/system-settings")
+    fetch(`${API_URL}/system-settings`)
       .then((res) => res.json())
       .then((data) => {
         setEvaluationOpen(Boolean(data.evaluation_settings_value));
@@ -40,12 +42,12 @@ export default function Evaluation() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/evaluation/faculty")
+    fetch(`${API_URL}/evaluation/faculty`)
       .then((res) => res.json())
       .then((data) => setFacultyList(data.faculty || []))
       .catch((err) => console.error("Failed to load faculty:", err));
 
-    fetch("http://localhost:5000/api/evaluation/questions")
+    fetch(`${API_URL}/evaluation/questions`)
       .then((res) => res.json())
       .then((data) => setSections(data.sections || []))
       .catch((err) => console.error("Failed to load questions:", err));
@@ -84,7 +86,7 @@ export default function Evaluation() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/evaluation/submit", {
+      const response = await fetch(`${API_URL}/evaluation/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

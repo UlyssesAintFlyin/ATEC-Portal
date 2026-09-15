@@ -11,18 +11,17 @@ import {
 import { Table } from "../../components/Table";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function SystemSettings() {
     const navigate = useNavigate();
-
-
-
     const [semesters, setSemesters] = useState([]);
     const [selectedSemester, setSelectedSemester] = useState("");
 
     useEffect(() => {
         const fetchSemesters = async () => {
             try {
-                const response = await fetch("http://localhost:5000/api/admin/setSemester");
+                const response = await fetch(`${API_URL}/admin/setSemester`);
                 const data = await response.json();
                 setSemesters(data.semesters.map(s => s.name));
                 setSelectedSemester(data.selected);
@@ -39,7 +38,7 @@ export default function SystemSettings() {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const response = await fetch("http://localhost:5000/api/admin/systemSettings");
+                const response = await fetch(`${API_URL}/admin/systemSettings`);
                 const data = await response.json();
 
                 // ✅ Use correct column names
@@ -73,7 +72,7 @@ export default function SystemSettings() {
                             setSelectedSemester(newValue);
                             const semester_ID = newValue === "1st Semester" ? 1 : 2;
 
-                            await fetch("http://localhost:5000/api/admin/setSemester", {
+                            await fetch(`${API_URL}/admin/setSemester`, {
                                 method: "PUT",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ semester_ID }),
@@ -98,7 +97,7 @@ export default function SystemSettings() {
                                 onChange={async (e) => {
                                     const newValue = e.target.checked;
                                     setEvaluationEnabled(newValue);
-                                    await fetch("http://localhost:5000/api/admin/toggleEvaluation", {
+                                    await fetch(`${API_URL}/admin/toggleEvaluation`, {
                                         method: "PUT",
                                         headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({ enabled: newValue }),
@@ -121,7 +120,7 @@ export default function SystemSettings() {
                                 onChange={async (e) => {
                                     const newValue = e.target.checked;
                                     setEnrollmentEnabled(newValue);
-                                    await fetch("http://localhost:5000/api/admin/toggleEnrollment", {
+                                    await fetch(`${API_URL}/admin/toggleEnrollment`, {
                                         method: "PUT",
                                         headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({ enabled: newValue }),
@@ -136,12 +135,13 @@ export default function SystemSettings() {
                 <Box
                     sx={{
                         display: "flex",
+                        flexDirection: { xs: "column", md: "row" },
                         justifyContent: "space-between",
                         alignItems: "center",
-                        ml: { xs: "20px", sm: "30px", md: "85px" },
-                        mr: { xs: "20px", sm: "30px", md: "85px" },
                         mb: { xs: "20px", sm: "30px", md: "50px" },
-                        gap: '1'
+                        gap: { xs: "20px", md: "20px" },
+                        mr: { xs: "20px", sm: "30px", md: "50px" }, 
+                        ml: { xs: "20px", sm: "30px", md: "50px" } 
                     }}
                 >
                     {/* Left button */}

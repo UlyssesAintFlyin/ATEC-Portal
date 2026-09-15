@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -7,36 +7,86 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Autocomplete
+  Autocomplete,
 } from "@mui/material";
 import { Table } from "../../components/Table";
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function EditFaculty() {
   const { id } = useParams();
   const [open, setOpen] = useState(false);
   const [config, setConfig] = useState(false);
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      gradeLevel: "Grade 11",
-      sectionName: "Commitment",
-    },
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    f_Name: "",
+    l_Name: "",
+    m_Name: "",
+    birthdate: "",
+    gender: "",
+    email: "",
+  });
 
-  ]);
-  const handleSave = () => {
-    // Backend logic to save changes for the faculty member with the given ID
-    setOpen(false);
-    console.log("Changes saved for faculty ID:", id);
+  useEffect(() => {
+    const fetchFaculty = async () => {
+      try {
+        const res = await fetch(`${API_URL}/faculty/getFacultyById/${id}`);
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const data = await res.json();
+
+        setFormData({
+          f_Name: data.f_Name || "",
+          l_Name: data.l_Name || "",
+          m_Name: data.m_Name || "",
+          birthdate: data.birthdate ? data.birthdate.split("T")[0] : "",
+          gender: data.gender || "",
+          email: data.email || "",
+          age: data.age || "",
+          gender: data.gender || "",
+          address: data.address || "",
+          contact_Number: data.contact_Number || "",
+          position: data.position || "",
+          status: data.status || "",
+          faculty_ID: data.faculty_ID || "",
+          password: data.password || "",
+          emergency_Name: data.emergency_Name || "",
+          emergency_Number: data.emergency_Number || ""
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFaculty();
+  }, [id]);
+
+  console.log("Faculty data:", formData);
+  const handleChange = (field) => (e) => {
+    setFormData({ ...formData, [field]: e.target.value });
   };
+
+  const handleSave = async () => {
+    try {
+      const res = await fetch(`${API_URL}/faculty/updateFaculty/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      setOpen(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const columns = [
     { field: "id", headerName: "Section ID", flex: 0, minWidth: 60 },
     { field: "gradeLevel", headerName: "Grade Level", flex: 0.5, minWidth: 60 },
     { field: "sectionName", headerName: "Section Name", flex: 1 },
   ];
-
-
 
   return (
     <Box
@@ -88,8 +138,7 @@ export default function EditFaculty() {
               gap: 2,
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
             }}
-          >
-          </Box>
+          ></Box>
         </Box>
         {/* Personal information */}
         <Box
@@ -123,9 +172,30 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="First Name" fullWidth />
-            <TextField label="Middle Name" fullWidth />
-            <TextField label="Surname" fullWidth />
+            <TextField
+              label="First Name"
+              fullWidth
+              value={formData.f_Name ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, f_Name: e.target.value })
+              }
+            />
+            <TextField
+              label="Middle Name"
+              fullWidth
+              value={formData.m_Name ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, m_Name: e.target.value })
+              }
+            />
+            <TextField
+              label="Surname"
+              fullWidth
+              value={formData.l_Name ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, l_Name: e.target.value })
+              }
+            />
           </Box>
 
           <Box
@@ -136,13 +206,37 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Age" type="number" fullWidth />
-            <TextField label="Gender" fullWidth />
+            <TextField
+              label="Age"
+              type="number"
+              fullWidth
+              value={formData.age === null || formData.age === undefined ? "" : formData.age}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFormData({
+                  ...formData,
+                  age: val === "" ? null : Number(val)
+                });
+              }}
+              InputProps={{ inputProps: { min: 0 } }}
+            />
+            <TextField
+              label="Gender"
+              fullWidth
+              value={formData.gender ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, gender: e.target.value })
+              }
+            />
             <TextField
               label="Birthdate"
               type="date"
-              InputLabelProps={{ shrink: true }}
               fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={formData.birthdate}
+              onChange={(e) =>
+                setFormData({ ...formData, birthdate: e.target.value })
+              }
             />
           </Box>
           <Box
@@ -153,7 +247,14 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Home Address" fullWidth />
+            <TextField
+              label="Home Address"
+              fullWidth
+              value={formData.address ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+            />
           </Box>
         </Box>
 
@@ -188,8 +289,22 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Email Adress" fullWidth />
-            <TextField label="Contact Number" fullWidth />
+            <TextField
+              label="Email Address"
+              fullWidth
+              value={formData.email ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+            />
+            <TextField
+              label="Contact Number"
+              fullWidth
+              value={formData.contact_Number ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, contact_Number: e.target.value })
+              }
+            />
           </Box>
         </Box>
         {/* Family information */}
@@ -217,7 +332,6 @@ export default function EditFaculty() {
             Incase of Emergency Contact Information
           </Typography>
 
-
           <Box
             sx={{
               display: "flex",
@@ -226,11 +340,23 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Emergency Contact's Name" fullWidth />
-            <TextField label="Emergency Contact's Number" fullWidth />
+            <TextField
+              label="Emergency Contact's Name"
+              fullWidth
+              value={formData.emergency_Name ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, emergency_Name: e.target.value })
+              }
+            />
+            <TextField
+              label="Emergency Contact's Number"
+              fullWidth
+              onChange={(e) =>
+                setFormData({ ...formData, emergency_Number: e.target.value })
+              }
+            />
           </Box>
         </Box>
-
         <Box sx={{
           backgroundColor: "#F3F9FF",
           width: "100%",
@@ -251,7 +377,7 @@ export default function EditFaculty() {
               margin: "10px 20px -15px",
             }}
           >
-            Department Information
+            Affiliation Status
           </Typography>
 
           <Box
@@ -263,44 +389,45 @@ export default function EditFaculty() {
               alignItems: "stretch",
             }}
           >
-            <TextField label="Department" fullWidth size="medium" />
-
             <Autocomplete
               options={[
-                "Oral Communication",
-                "Reading and Writing",
-                "General Mathematics",
-                "Earth and Life Science",
-                "Physical Science",
-                "Contemporary Arts",
-                "Media and Information Literacy",
-                "21st Century Literature",
-                "Understanding Culture, Society, and Politics",
-                "Physical Education and Health",
-                "Personal Development",
-                "Introduction to Philosophy of the Human Person",
+                "Teacher",
+                "Academic Head",
+                "Discipline Officer",
+                "IT Administrator",
+                "Admin"
               ]}
               fullWidth
+              value={formData.position || null}
+              onChange={(event, newValue) =>
+                setFormData({ ...formData, position: newValue })
+              }
+              isOptionEqualToValue={(option, value) => option === value}
               renderInput={(params) => (
-                <TextField {...params} label="Subject" fullWidth size="medium" />
+                <TextField {...params} label="Position" fullWidth size="medium" />
               )}
             />
 
+
             <Autocomplete
               options={[
-                "11 - Commitment",
-                "12 - Compassion",
-                "11 - Integrity",
-                "12 - Intelligence",
+                "Active",
+                "Inactive",
+                "On Leave",
+                "Resigned",
               ]}
               fullWidth
+              value={formData.status ?? null}
+              onChange={(event, newValue) =>
+                setFormData({ ...formData, status: newValue ?? "" })
+              }
+              isOptionEqualToValue={(option, value) => option === value}
               renderInput={(params) => (
-                <TextField {...params} label="Advisory Section" fullWidth size="medium" />
+                <TextField {...params} label="Status" fullWidth size="medium" />
               )}
             />
           </Box>
         </Box>
-
         <Box
           sx={{
             backgroundColor: "#F3F9FF",
@@ -332,105 +459,72 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <TextField label="Employee ID " fullWidth />
-            <TextField label="Password" fullWidth type="password" />
+            <TextField
+              label="Employee ID "
+              fullWidth
+              value={formData.faculty_ID ?? ""}
+              inputProps={{ readOnly: true }}
+            />
+            <TextField
+              label="Password"
+              fullWidth
+              type="password"
+              value={formData.password ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+            />
           </Box>
         </Box>
-      </Box>
-
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-start",
-          ml: { xs: "20px", sm: "30px", md: "85px" },
-          mb: 1,
-        }}
-      >
-        <Typography
+        <Box
           sx={{
-            color: "#242C54",
-            fontWeight: "bold",
-            fontSize: { xs: "16px", md: "20px" },
+            width: "100%",
+            minHeight: { xs: "auto", md: "340px" },
+            display: "flex",
+            alignItems: "center",
+            flexDirection: "column",
+            py: { xs: 3, md: 0 },
           }}
         >
-          Sections under Instructor:
-        </Typography>
-      </Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between", 
-          alignItems: "center",
-          ml: { xs: "20px", sm: "30px", md: "85px" },
-          mr: { xs: "20px", sm: "30px", md: "85px" },
-          mb: { xs: "20px", sm: "30px", md: "50px" },
-        }}
-      >
-        {/* Left button */}
-        <Button
-          sx={{
-            fontSize: { xs: "12px", sm: "15px", md: "17px" },
-            color: "#E8EDF2",
-            backgroundColor: "#242C54",
-            borderRadius: "5px",
-            width: { xs: "150px", sm: "200px", md: "250px" },
-            "&:hover": {
-              backgroundColor: "#4f5d9e",
-              transform: "scale(1.05)",
-            },
-          }}
-          onClick={() => setConfig(true)}
-        >
-          Configure Sections
-        </Button>
-
-        {/* Right button */}
-        <Button
-          sx={{
-            fontSize: { xs: "12px", sm: "15px", md: "17px" },
-            color: "#E8EDF2", // light gray text
-            backgroundColor: "#242C54",
-            borderRadius: "5px",
-            width: { xs: "150px", sm: "200px", md: "250px" },
-            "&:hover": {
-              backgroundColor: "#4f5d9e",
-              transform: "scale(1.05)",
-            },
-          }}
-          onClick={() => setOpen(true)}
-        >
-          Save Changes
-        </Button>
+          <Button
+            sx={{
+              fontSize: { xs: "12px", sm: "15px", md: "17px" },
+              color: "#E8EDF2", // light gray text
+              backgroundColor: "#242C54",
+              borderRadius: "5px",
+              width: { xs: "150px", sm: "200px", md: "250px" },
+              "&:hover": {
+                backgroundColor: "#4f5d9e",
+                transform: "scale(1.05)",
+              },
+            }}
+            onClick={() => {
+              setOpen(true)
+              handleSave();
+            }}
+          >
+            Save Changes
+          </Button>
+        </Box>
       </Box>
       {/*Saved Changes Dialog*/}
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Success</DialogTitle>
         <DialogContent>
-          <Typography>Faculty information has been successfully changed.</Typography>
+          <Typography>
+            Faculty information has been successfully changed.
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)} variant="contained" color="primary">
+          <Button
+            onClick={() => setOpen(false)}
+            variant="contained"
+            color="primary"
+          >
             OK
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={config} onClose={() => setConfig(false)} maxWidth="sm" fullWidth >
-        <DialogTitle>Choose Section Under Instructor</DialogTitle>
-        <DialogContent
-          sx={{
-            height: "400px",
-            overflowY: "auto",
-          }}
-        >
-          <Table rows={rows} columns={columns} />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfig(false)} variant="contained" color="primary">
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-
     </Box>
   );
 }

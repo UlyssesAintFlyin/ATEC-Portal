@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Typography,
@@ -9,17 +8,19 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Autocomplete
+  Snackbar,
+  Alert,
 } from "@mui/material";
-
-
 import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
+
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function TermConfig() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   useEffect(() => {
-    fetch("http://localhost:5000/api/admin/loadAcademicYear")
+    fetch(`${API_URL}/admin/loadAcademicYear`)
       .then((res) => res.json())
       .then((data) => setRows(data))
       .catch((err) => console.error(err));
@@ -27,10 +28,12 @@ export default function TermConfig() {
 
   const [open, setOpen] = useState(false);
   const [newTerm, setTerm] = useState({ term: "" });
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const handleAddRecords = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/addAcademicYear", {
+      const response = await fetch(`${API_URL}/admin/addAcademicYear`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTerm),
@@ -42,7 +45,7 @@ export default function TermConfig() {
 
       await response.json();
 
-      const reload = await fetch("http://localhost:5000/api/admin/loadAcademicYear");
+      const reload = await fetch(`${API_URL}/admin/loadAcademicYear`);
       const updatedData = await reload.json();
       setRows(updatedData);
       setOpen(false);
@@ -52,63 +55,35 @@ export default function TermConfig() {
     }
   };
 
-
-
   const [selectedIds, setSelectedIds] = useState([]);
 
-
-const handleSetAY = async () => {
-  try {
-    const ayId = parseInt(selectedIds[0], 10); // ensure integer
-
-    const response = await fetch("http://localhost:5000/api/admin/setAY", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ AY_ID: ayId }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to set academic year");
-    }
-
-    const result = await response.json();
-  } catch (err) {
-    console.error("Error setting academic year:", err);
-  }
-};
-
-
-
-  const handleRemoveSelected = async () => {
+  const handleSetAY = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/removeAcademicYears", {
-        method: "DELETE",
+      const ayId = parseInt(selectedIds[0], 10);
+
+      const response = await fetch(`${API_URL}/admin/setAY`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selectedIds }),
+        body: JSON.stringify({ AY_ID: ayId }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to remove terms");
+        throw new Error("Failed to set academic year");
       }
 
-      const result = await response.json();
+      await response.json();
 
-
-      setRows((prevRows) => prevRows.filter((r) => !selectedIds.includes(r.id)));
-      setSelectedIds([]);
+      // Show success popup
+      setSnackbarMessage("Academic Year successfully set!");
+      setSnackbarOpen(true);
     } catch (err) {
-      console.error("Error removing terms:", err);
+      console.error("Error setting academic year:", err);
+      setSnackbarMessage("Error setting Academic Year");
+      setSnackbarOpen(true);
     }
   };
 
-
-  const columns = [
-
-    { field: "AY_Name", headerName: "Term", flex: 1.5 },
-
-  ];
-
-
+  const columns = [{ field: "AY_Name", headerName: "Term", flex: 1.5 }];
 
   return (
     <Box
@@ -142,17 +117,36 @@ const handleSetAY = async () => {
             marginBottom: "30px",
           }}
         >
-          <Typography
+          <Box
             sx={{
-              color: "#242c54",
-              fontWeight: "bold",
-              fontSize: { xs: "22px", md: "35px" },
-              textAlign: "center",
-              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
             }}
           >
-            Term Management
-          </Typography>
+            <Typography
+              sx={{
+                color: "#242c54",
+                fontWeight: "bold",
+                fontSize: { xs: "16px", md: "35px" },
+                textAlign: "left",
+                marginLeft: { xs: "20px", md: "50px" },
+              }}
+            >
+              Term Management
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#242c54",
+                fontSize: { xs: "12px", md: "16px" },
+                textAlign: "left",
+                marginLeft: { xs: "20px", md: "50px" },
+              }}
+            >
+              Choose and manage Academic Term.
+            </Typography>
+          </Box>
           <Box
             sx={{
               display: "flex",
@@ -161,10 +155,27 @@ const handleSetAY = async () => {
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
-            <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
-
-
-              <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "row",
+                gap: 2,
+                marginTop: { xs: "10px", md: "0" },
+              }}
+            >
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setOpen(true)}
+                sx={{
+                  fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                  padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                  color: "#E8EDF2",
+                  backgroundColor: "#245442",
+                }}
+              >
                 Add Term
               </Button>
               <Button
@@ -172,16 +183,14 @@ const handleSetAY = async () => {
                 color="primary"
                 onClick={handleSetAY}
                 disabled={selectedIds.length !== 1}
+                sx={{
+                  fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                  padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                  color: "#E8EDF2",
+                  backgroundColor: "#1c2e49",
+                }}
               >
                 Set Selected
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={handleRemoveSelected}
-                disabled={selectedIds.length === 0}
-              >
-                Remove Selected
               </Button>
             </Box>
           </Box>
@@ -214,15 +223,32 @@ const handleSetAY = async () => {
           <TextField
             margin="dense"
             label="Term"
-            fullWidth value={newTerm.term}
+            fullWidth
+            value={newTerm.term}
             onChange={(e) => setTerm({ ...newTerm, term: e.target.value })}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleAddRecords} variant="contained">Add</Button>
+          <Button onClick={handleAddRecords} variant="contained">
+            Add
+          </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

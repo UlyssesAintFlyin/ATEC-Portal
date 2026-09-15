@@ -3,16 +3,16 @@ import { Typography, Box, Button } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function EnrollmentRecord() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [enrollee, setEnrollee] = useState(null);
- useEffect(() => {
-    fetch(`http://localhost:5000/api/admin/enrollees/${id}`)
+  useEffect(() => {
+    fetch(`${API_URL}/admin/enrollees/${id}`)
       .then((res) => res.json())
       .then((data) => {
-     
         if (data.status === "Validated") {
           navigate(`/admin/enrollmentList`);
         } else {
@@ -21,8 +21,6 @@ export default function EnrollmentRecord() {
       })
       .catch((err) => console.error("Error loading enrollee:", err));
   }, [id, navigate]);
-
-  
 
   const formatDateLocal = (isoString) => {
     if (!isoString) return "";
@@ -62,28 +60,48 @@ export default function EnrollmentRecord() {
             marginTop: "20px",
           }}
         >
-          <Typography
-            sx={{
-              color: "#242c54",
-              fontWeight: "bold",
-              fontSize: { xs: "22px", md: "35px" },
-              textAlign: "center",
-              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
-            }}
-          >
-            Enrollee's Information
-          </Typography>
           <Box
             sx={{
               display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+            }}
+          >
+            <Typography
+              sx={{
+                color: "#242c54",
+                fontWeight: "bold",
+                fontSize: { xs: "16px", md: "35px" },
+                textAlign: "left",
+                marginLeft: { xs: "20px", md: 0 },
+              }}
+            >
+              Enrollee Information
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#242c54",
+                fontSize: { xs: "12px", md: "16px" },
+                textAlign: "left",
+                marginLeft: { xs: "20px", md: 0},
+              }}
+            >
+              Here is the information for the selected enrollee.
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
               flexDirection: "row",
               gap: 2,
-              marginRight: { xs: "20px", sm: "30px", md: "50px" },
+              marginRight: { xs: "20px", md: 0},
             }}
           >
             <Button
               sx={{
-                fontSize: { xs: "12px", sm: "15px", md: "17px" },
                 color: "#E8EDF2",
                 backgroundColor: "#242C54",
                 borderRadius: "5px",
@@ -91,32 +109,25 @@ export default function EnrollmentRecord() {
                   backgroundColor: "#4f5d9e",
                   transform: "scale(1.05)",
                 },
-              }}
-            >
-              Turn-off Enrollment
-            </Button>
-            <Button
-              sx={{
-                fontSize: { xs: "12px", sm: "15px", md: "17px" },
-                color: "#E8EDF2",
-                backgroundColor: "#242C54",
-                borderRadius: "5px",
-                "&:hover": {
-                  backgroundColor: "#4f5d9e",
-                  transform: "scale(1.05)",
-                },
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
               }}
               onClick={() => {
-                fetch(`http://localhost:5000/api/admin/enrollees/${id}/validate`, {
-                  method: "PUT",
-                })
+                fetch(
+                  `${API_URL}/admin/enrollees/${id}/validate`,
+                  {
+                    method: "PUT",
+                  },
+                )
                   .then((res) => res.json())
                   .then((data) => {
                     console.log("Enrollee validated:", data);
-                    setEnrollee((prev) => ({ ...prev, status: "Accepted" } ));
-                    navigate(`/admin/enrollmentList`)
+                    setEnrollee((prev) => ({ ...prev, status: "Accepted" }));
+                    navigate(`/admin/enrollmentList`);
                   })
-                  .catch((err) => console.error("Error validating enrollee:", err));
+                  .catch((err) =>
+                    console.error("Error validating enrollee:", err),
+                  );
               }}
             >
               Validate Enrollment
@@ -393,9 +404,9 @@ export default function EnrollmentRecord() {
             }}
           >
             <TextField
-              label="Program"
+              label="Department"
               fullWidth
-              value={enrollee?.program || ""}
+              
               InputProps={{
                 readOnly: true,
               }}

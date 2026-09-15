@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Typography,
@@ -9,42 +8,62 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Autocomplete
+  Autocomplete,
 } from "@mui/material";
-
-
 import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
+
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function Sections() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [open, setOpen] = useState(false);
- const [newSection, setNewSection] = useState({
-  gradeLevel: null,
-  sectionName: "",
-  department: null,
-});
+  const [newSection, setNewSection] = useState({
+    gradeLevel: null,
+    sectionName: "",
+    department: null,
+  });
 
   const [selectedIds, setSelectedIds] = useState([]);
 
+  // Confirmation dialog for deleting the selected sections
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
+
+  useEffect(() => {
+    const fetchSystemSettings = async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/systemSettings`);
+        const data = await res.json();
+        setCurrentAYS_ID(data.enrollment_AYS_ID);
+      } catch (err) {
+        console.error("Error loading system settings:", err);
+      }
+    };
+    fetchSystemSettings();
+  }, []);
 
   useEffect(() => {
     const fetchSections = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/admin/sections/loadSections");
+        const res = await fetch(
+          `${API_URL}/admin/sections/loadSections?AYS_ID=${currentAYS_ID}`,
+        );
         const data = await res.json();
         setRows(data);
       } catch (err) {
         console.error("Error loading sections:", err);
       }
     };
-    fetchSections();
-  }, []);
-
+    if (currentAYS_ID) fetchSections();
+  }, [currentAYS_ID]);
 
   const handleAdd = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/admin/sections/addSection", {
+      const res = await fetch(`${API_URL}/admin/sections/addSection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSection),
@@ -58,36 +77,65 @@ export default function Sections() {
     }
   };
 
+  const requestRemoveSelected = () => {
+    if (selectedIds.length === 0) return;
+    setConfirmDeleteOpen(true);
+  };
 
-  const handleRemoveSelected = async () => {
+  const cancelRemoveSelected = () => {
+    if (deleting) return; // don't allow closing mid-request
+    setConfirmDeleteOpen(false);
+  };
+
+  const confirmRemoveSelected = async () => {
+    setDeleting(true);
     try {
-      await fetch("http://localhost:5000/api/admin/sections/deleteSections", {
+      await fetch(`${API_URL}/admin/sections/deleteSections`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: selectedIds }),
       });
       setRows(rows.filter((r) => !selectedIds.includes(r.id)));
       setSelectedIds([]);
+      setConfirmDeleteOpen(false);
     } catch (err) {
       console.error("Error deleting sections:", err);
+    } finally {
+      setDeleting(false);
     }
   };
 
   const columns = [
-    { field: "department", headerName: "Department", flex: 1, minWidth: 100 },
-    { field: "gradeLevel", headerName: "Grade Level", flex: 0.5, minWidth: 60 },
-    { field: "sectionName", headerName: "Section Name", flex: 1 },
+    { field: "department", headerName: "Department", flex: 1, minWidth: 120 },
+    {
+      field: "gradeLevel",
+      headerName: "Grade Level",
+      flex: 0.5,
+      minWidth: 100,
+    },
+    {
+      field: "sectionName",
+      headerName: "Section Name",
+      flex: 1,
+      minWidth: 120,
+    },
     {
       field: "action",
       headerName: "Action",
       flex: 1,
+      minWidth: 100,
       renderCell: (params) => (
         <Button
           variant="contained"
           color="inherit"
-          onClick={() => navigate(`/admin/sections/${params.row.sectionName}`, {
-            state: { gradeLevel: params.row.gradeLevel, section_ID: params.row.id }
-          })}
+          onClick={() =>
+            navigate(`/admin/sections/${params.row.sectionName}`, {
+              state: {
+                gradeLevel: params.row.gradeLevel,
+                section_ID: params.row.id,
+              },
+            })
+          }
           sx={{
             marginLeft: "10px",
             fontSize: { xs: "12px", sm: "15px", md: "15px" },
@@ -124,41 +172,81 @@ export default function Sections() {
         <Box
           sx={{
             display: "flex",
-            flexDirection: "row",
+            flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
             marginBottom: "30px",
           }}
         >
-          <Typography
-            sx={{
-              color: "#242c54",
-              fontWeight: "bold",
-              fontSize: { xs: "22px", md: "35px" },
-              textAlign: "center",
-              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
-            }}
-          >
-            Sections
-          </Typography>
           <Box
             sx={{
               display: "flex",
-              flexDirection: "row",
-              gap: 2,
-              marginRight: { xs: "20px", sm: "30px", md: "50px" },
+              flexDirection: "column",
+              alignItems: { xs: "center", md: "flex-start" },
             }}
           >
-            <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
-              <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
-                Add Section
-              </Button>
-              <Button variant="contained" color="error" onClick={handleRemoveSelected} disabled={selectedIds.length === 0}>
-                Remove Selected
-              </Button>
-            </Box>
+            <Typography
+              sx={{
+                color: "#242c54",
+                fontWeight: "bold",
+                fontSize: { xs: "16px", md: "35px" },
+                marginLeft: { xs: 0, md: "50px" },
+              }}
+            >
+              Sections Masterlist
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#242c54",
+                fontSize: { xs: "12px", md: "16px" },
+                marginLeft: { xs: 0, md: "50px" },
+              }}
+            >
+              Manage the list of sections.
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "row",
+              gap: 2,
+              marginTop: { xs: "10px", md: "0" },
+              marginRight: { xs: "20px", sm: "30px", md: "50px" },
+              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
+            }}
+          >
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setOpen(true)}
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#245442",
+              }}
+            >
+              Add Section
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={requestRemoveSelected}
+              disabled={selectedIds.length === 0}
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#54242b",
+              }}
+            >
+              Remove Selected
+            </Button>
           </Box>
         </Box>
 
@@ -190,10 +278,19 @@ export default function Sections() {
             options={["Senior High School", "College"]}
             value={newSection.department}
             onChange={(event, newValue) =>
-              setNewSection({ ...newSection, department: newValue, gradeLevel: null })
+              setNewSection({
+                ...newSection,
+                department: newValue,
+                gradeLevel: null,
+              })
             }
             renderInput={(params) => (
-              <TextField {...params} margin="dense" label="Department" fullWidth />
+              <TextField
+                {...params}
+                margin="dense"
+                label="Department"
+                fullWidth
+              />
             )}
           />
           <Autocomplete
@@ -206,19 +303,57 @@ export default function Sections() {
             onChange={(event, newValue) =>
               setNewSection({ ...newSection, gradeLevel: newValue })
             }
-            renderInput={(params) => <TextField {...params} margin="dense" label="Grade Level" fullWidth />}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                margin="dense"
+                label="Grade Level"
+                fullWidth
+              />
+            )}
           />
           <TextField
             margin="dense"
             label="Section Name"
             fullWidth
             value={newSection.sectionName}
-            onChange={(e) => setNewSection({ ...newSection, sectionName: e.target.value })}
+            onChange={(e) =>
+              setNewSection({ ...newSection, sectionName: e.target.value })
+            }
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleAdd} variant="contained">Add</Button>
+          <Button onClick={handleAdd} variant="contained">
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirmation before deleting the selected sections */}
+      <Dialog open={confirmDeleteOpen} onClose={cancelRemoveSelected}>
+        <DialogTitle>
+          Delete selected section{selectedIds.length !== 1 ? "s" : ""}?
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            {`This will permanently remove ${selectedIds.length} section${
+              selectedIds.length !== 1 ? "s" : ""
+            } and can't be undone.`}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelRemoveSelected} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmRemoveSelected}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

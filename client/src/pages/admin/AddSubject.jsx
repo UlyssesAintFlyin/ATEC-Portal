@@ -167,13 +167,13 @@ export default function AddSubject() {
   };
 
   const columns = [
-    { field: "subject", headerName: "Subjects", flex: 1 },
-    { field: "subject_code", headerName: "Code", flex: 0.5 },
-    { field: "units", headerName: "Units", flex: 0.3 },
+    { field: "subject", headerName: "Subjects", flex: 1, minWidth: 120  },
+    { field: "subject_code", headerName: "Code", flex: 0.5, minWidth: 100  },
+    { field: "units", headerName: "Units", flex: 0.3, minWidth: 80  },
     {
       field: "assigned",
       headerName: "Status",
-      flex: 0.4,
+      flex: 0.4, minWidth: 120,
       renderCell: (params) =>
         assignedIds.includes(params.row.id) ? (
           <Chip label="Assigned" color="success" size="small" />

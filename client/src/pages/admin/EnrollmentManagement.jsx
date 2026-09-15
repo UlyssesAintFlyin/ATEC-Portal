@@ -5,28 +5,92 @@ import Autocomplete from "@mui/material/Autocomplete";
 import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function EnrollmentManagement() {
   const navigate = useNavigate();
 
-
-
   const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  const [academicYears, setAcademicYears] = useState([]);
+  const [selectedAY, setSelectedAY] = useState(null);
+
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  const fetchCurrentAY = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/currentAcademicYear`);
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const data = await res.json();
+
+      if (!data || Object.keys(data).length === 0) {
+        setSelectedAY(null);
+        setRows([]);
+        return;
+      }
+
+      setSelectedAY({ id: data.AY_ID, AY_Name: data.AY_Name });
+    } catch (err) {
+      console.error(err);
+      setSelectedAY(null);
+      setRows([]);
+    }
+  };
+
+  const fetchAcademicYears = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/loadAcademicYear`);
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const data = await res.json();
+      setAcademicYears(data); // [{ id, AY_Name }, ...]
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchEnrollees = async (ayId) => {
+    setLoading(true);
+    try {
+      const url = ayId
+        ? `${API_URL}/admin/loadEnrollees?ayId=${ayId}`
+        : `${API_URL}/admin/loadEnrollees`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const data = await res.json();
+      setRows(data || []);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load enrollees");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/admin/loadEnrollees")
-      .then((res) => res.json())
-      .then((data) => setRows(data))
-      .catch((err) => console.error(err));
+    fetchCurrentAY();
+    fetchAcademicYears();
   }, []);
 
+  useEffect(() => {
+    if (selectedAY) {
+      fetchEnrollees(selectedAY.id);
+    } else {
+      setRows([]);
+    }
+    setSelectedIds([]); // clear stale selection when AY changes
+  }, [selectedAY]);
+
   const columns = [
-    { field: "enrollee", headerName: "Enrollee Name", flex: 1 },
-    { field: "status", headerName: "Status", flex: 1 },
+    { field: "enrollee", headerName: "Enrollee Name", flex: 1, minWidth: 150 },
+    { field: "status", headerName: "Status", flex: 1, minWidth: 100 },
     {
       field: "action",
       headerName: "Action",
       flex: 1,
+      minWidth: 100,
       renderCell: (params) => (
         <Button
           variant="contained"
@@ -34,37 +98,35 @@ export default function EnrollmentManagement() {
           onClick={() =>
             navigate(`/admin/enrollmentList/enrollmentRecord/${params.row.id}`)
           }
+          sx={{
+            fontSize: { xs: "12px", sm: "15px", md: "15px" },
+            width: { xs: "80px", sm: "120px", md: "100px" },
+          }}
         >
           View Record
         </Button>
       ),
     },
   ];
-  const [selectedIds, setSelectedIds] = useState([]);
 
   const handleRejectSelected = async () => {
-    console.log("Rejecting IDs from frontend:", selectedIds); // Debug
     try {
-      const response = await fetch("http://localhost:5000/api/admin/rejectEnrollees", {
+      const response = await fetch(`${API_URL}/admin/rejectEnrollees`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selectedIds }), // must be { ids: [...] }
+        body: JSON.stringify({ ids: selectedIds }),
       });
 
       if (!response.ok) throw new Error("Failed to reject enrollees");
 
-      const result = await response.json();
-      setRows((prevRows) => prevRows.filter((r) => !selectedIds.includes(r.id)));
+      setRows((prevRows) =>
+        prevRows.filter((r) => !selectedIds.includes(r.id)),
+      );
       setSelectedIds([]);
     } catch (err) {
       console.error("Error rejecting enrollees:", err);
     }
   };
-
-
-
-
-
 
   return (
     <Box
@@ -90,48 +152,54 @@ export default function EnrollmentManagement() {
         <Box
           sx={{
             display: "flex",
-            flexDirection: "row",
+            flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
             marginBottom: "30px",
           }}
         >
-          <Typography
-            sx={{
-              color: "#242c54",
-              fontWeight: "bold",
-              fontSize: { xs: "22px", md: "35px" },
-              textAlign: "center",
-              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
-            }}
-          >
-            List of Enrollees
-          </Typography>
           <Box
             sx={{
               display: "flex",
-              flexDirection: "row",
-              gap: 2,
-              marginRight: { xs: "20px", sm: "30px", md: "50px" },
+              flexDirection: "column",
+              alignItems: {xs:"center", md:"flex-start"}
             }}
           >
-            <Button
+            <Typography
               sx={{
-                fontSize: { xs: "12px", sm: "15px", md: "17px" },
-                color: "#E8EDF2",
-                backgroundColor: "#242C54",
-                borderRadius: "5px",
-                "&:hover": {
-                  backgroundColor: "#4f5d9e",
-                  transform: "scale(1.05)",
-                },
+                color: "#242c54",
+                fontWeight: "bold",
+                fontSize: { xs: "16px", md: "35px" },
+                marginLeft: { xs: 0, md: "50px" },
               }}
-              onClick={() => navigate("/admin/systemSettings")}
             >
-              Configure Enrollment
-            </Button>
+              Enrollment Management
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#242c54",
+                fontSize: { xs: "12px", md: "16px" },
+                marginLeft: { xs: 0, md: "50px" },
+              }}
+            >
+              Here is a list of all enrollment records.
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "row",
+              gap: 2,
+              marginTop: { xs: "10px", md: "0" },
+              marginRight: { xs: "20px", sm: "30px", md: "50px" },
+              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
+            }}
+          >
             <Button
               sx={{
                 fontSize: { xs: "12px", sm: "15px", md: "17px" },
@@ -141,7 +209,6 @@ export default function EnrollmentManagement() {
                 "&:hover": {
                   backgroundColor: "#bc4949",
                   transform: "scale(1.05)",
-
                 },
               }}
               onClick={handleRejectSelected}
@@ -155,7 +222,7 @@ export default function EnrollmentManagement() {
           sx={{
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
-            height: { xs: "600px", md: "500px" },
+            height: { xs: "600px", md: "540px" },
             maxWidth: "100%",
             display: "flex",
             flexDirection: "column",
