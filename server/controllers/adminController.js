@@ -140,97 +140,66 @@ async function loadValidatedEnrollees(req, res) {
   }
 }
 
-// Set Academic Year
-async function setAY(req, res) {
+
+// Set AY and Semester
+async function ays(req, res) {
   try {
-    const { AY_ID } = req.body;
-    if (!AY_ID) {
-      return res.status(400).json({ error: "AY_ID is required" });
+    if (req.method === "GET") {
+      const [rows] = await pool.query(`
+        SELECT ays.AYS_ID, ay.AY_ID, ay.AY_Name, sem.semester_ID, sem.semester_name
+        FROM academic_year_semester_table ays
+        JOIN academic_year_table ay ON ays.AY_ID = ay.AY_ID
+        JOIN semester_table sem ON ays.semester_ID = sem.semester_ID
+        ORDER BY ay.AY_Name, sem.semester_ID
+      `);
+
+      const [settings] = await pool.query(
+        `SELECT enrollment_AYS_ID FROM system_settings_table WHERE system_settings_ID = 1`
+      );
+
+      const currentAYS = settings[0]?.enrollment_AYS_ID;
+      const currentRow = rows.find(r => r.AYS_ID === currentAYS);
+
+      return res.json({
+        academicYears: [...new Map(rows.map(r => [r.AY_ID, { id: r.AY_ID, name: r.AY_Name }])).values()],
+        semesters: [...new Map(rows.map(r => [r.semester_ID, { id: r.semester_ID, name: r.semester_name }])).values()],
+        currentAY: currentRow?.AY_ID,
+        currentSemester: currentRow?.semester_ID
+      });
     }
-    const [rows] = await pool.query(
-      `SELECT AYS_ID 
-       FROM academic_year_semester_table 
-       WHERE AY_ID = ? AND semester_ID = 1`,
-      [AY_ID]
-    );
 
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "No matching AYS_ID found" });
-    }
+    if (req.method === "PUT") {
+      const { ay_ID, semester_ID } = req.body;
 
-    const aysId = rows[0].AYS_ID;
+      const [rows] = await pool.query(
+        `SELECT AYS_ID 
+         FROM academic_year_semester_table 
+         WHERE AY_ID = ? AND semester_ID = ?`,
+        [ay_ID, semester_ID]
+      );
 
-    await pool.query(
-      `UPDATE system_settings_table 
-       SET enrollment_AYS_ID = ?, 
-       evaluation_AYS_ID = ?,
-       updated_at = CURRENT_TIMESTAMP
-       WHERE system_settings_ID = 1`,
-      [aysId, aysId]
-    );
-    res.json({ success: true, enrollment_AYS_ID: aysId });
-  } catch (err) {
-    console.error("Error in setAY:", err);
-    res.status(500).json({ error: "Failed to set academic year" });
-  }
-}
-// Set Semester
-async function setSemester(req, res) {
-  try {
-    const { semester_ID } = req.body || {};
-
-    // Get current AYS_ID from system settings
-    const [settings] = await pool.query(
-      `SELECT enrollment_AYS_ID 
-       FROM system_settings_table 
-       WHERE system_settings_ID = 1`
-    );
-    const { enrollment_AYS_ID } = settings[0];
-
-    // Find AY_ID
-    const [ayRow] = await pool.query(
-      `SELECT AY_ID, semester_ID 
-       FROM academic_year_semester_table 
-       WHERE AYS_ID = ?`,
-      [enrollment_AYS_ID]
-    );
-    const ayId = ayRow[0].AY_ID;
-    const currentSemesterId = ayRow[0].semester_ID; //this is the saved semester
-
-    // Load all semesters for this AY
-    const [semRows] = await pool.query(
-      `SELECT sem.semester_ID, sem.semester_name, ays.AYS_ID
-       FROM academic_year_semester_table ays
-       JOIN semester_table sem ON ays.semester_ID = sem.semester_ID
-       WHERE ays.AY_ID = ?`,
-      [ayId]
-    );
-
-    // If PUT with semester_ID → update system_settings
-    if (semester_ID) {
-      const match = semRows.find(r => r.semester_ID === semester_ID);
-      if (match) {
-        await pool.query(
-          `UPDATE system_settings_table 
-           SET enrollment_AYS_ID = ?, evaluation_AYS_ID = ?
-           WHERE system_settings_ID = 1`,
-          [match.AYS_ID, match.AYS_ID]
-        );
+      if (rows.length === 0) {
+        return res.status(404).json({ error: "No matching AYS_ID found" });
       }
+
+      const aysId = rows[0].AYS_ID;
+
+      await pool.query(
+        `UPDATE system_settings_table 
+         SET enrollment_AYS_ID = ?, evaluation_AYS_ID = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE system_settings_ID = 1`,
+        [aysId, aysId]
+      );
+
+      return res.json({ success: true, aysId });
     }
-
-    //return the semester saved in system_settings
-    const selectedSemesterName = semRows.find(r => r.semester_ID === (semester_ID || currentSemesterId))?.semester_name;
-
-    res.json({
-      semesters: semRows.map(r => ({ id: r.semester_ID, name: r.semester_name })),
-      selected: selectedSemesterName
-    });
   } catch (err) {
-    console.error("Error in setSemester:", err);
-    res.status(500).json({ error: "Failed to set semester" });
+    console.error("Error in ays:", err);
+    res.status(500).json({ error: "Failed to handle AYS" });
   }
 }
+
+
 
 // Toggle evaluation
 async function toggleEvaluation(req, res) {
@@ -683,8 +652,7 @@ module.exports = {
   removeAcademicYears,
   loadEnrollees,
   loadValidatedEnrollees,
-  setAY,
-  setSemester,
+  ays,
   toggleEvaluation,
   toggleEnrollment,
   getSystemSettings,

@@ -15,22 +15,31 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 export default function SystemSettings() {
     const navigate = useNavigate();
+    const [academicYears, setAcademicYears] = useState([]);
     const [semesters, setSemesters] = useState([]);
-    const [selectedSemester, setSelectedSemester] = useState("");
+    const [selectedAY, setSelectedAY] = useState(null);
+    const [selectedSemester, setSelectedSemester] = useState(null);
 
     useEffect(() => {
-        const fetchSemesters = async () => {
-            try {
-                const response = await fetch(`${API_URL}/admin/setSemester`);
-                const data = await response.json();
-                setSemesters(data.semesters.map(s => s.name));
-                setSelectedSemester(data.selected);
-            } catch (err) {
-                console.error("Error fetching semesters:", err);
-            }
+        const fetchData = async () => {
+            const response = await fetch(`${API_URL}/admin/ays`);
+            const data = await response.json();
+            setAcademicYears(data.academicYears);
+            setSemesters(data.semesters);
+            setSelectedAY(data.currentAY);
+            setSelectedSemester(data.currentSemester);
         };
-        fetchSemesters();
+        fetchData();
     }, []);
+
+    const updateSystemSettings = async (ay_ID, semester_ID) => {
+        await fetch(`${API_URL}/admin/ays`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ay_ID, semester_ID }),
+        });
+    };
+
 
     const [evaluationEnabled, setEvaluationEnabled] = useState(false);
     const [enrollmentEnabled, setEnrollmentEnabled] = useState(false);
@@ -41,7 +50,7 @@ export default function SystemSettings() {
                 const response = await fetch(`${API_URL}/admin/systemSettings`);
                 const data = await response.json();
 
-                // ✅ Use correct column names
+                console.log(data)
                 setEvaluationEnabled(data.evaluation_settings_value === 1);
                 setEnrollmentEnabled(data.enrollment_settings_value === 1);
             } catch (err) {
@@ -63,28 +72,41 @@ export default function SystemSettings() {
                 </Box>
                 <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "space-between", marginTop: "10px", marginBottom: "30px" }}>
                     <Typography sx={{ color: "#242c54", fontWeight: "bold", fontSize: "25px", marginLeft: { xs: "20px", sm: "30px", md: "50px" } }}>
-                        Select Semester
+                        Select Term
                     </Typography>
                     <Autocomplete
-                        options={semesters}
-                        value={selectedSemester}
-                        onChange={async (event, newValue) => {
-                            setSelectedSemester(newValue);
-                            const semester_ID = newValue === "1st Semester" ? 1 : 2;
-
-                            await fetch(`${API_URL}/admin/setSemester`, {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ semester_ID }),
-                            });
+                        options={academicYears} 
+                        getOptionLabel={(option) => option.name || ""}
+                        value={academicYears.find(ay => ay.id === selectedAY) || null}
+                        onChange={(event, newValue) => {
+                            setSelectedAY(newValue?.id || null);
+                            updateSystemSettings(newValue?.id, selectedSemester);
                         }}
                         sx={{
                             width: { xs: 150, sm: 250, md: 400 },
+                            marginTop: "10px",
                             marginLeft: { xs: "28px", sm: "38px", md: "58px" }
                         }}
-                        renderInput={(params) => (
-                            <TextField {...params} size="medium" />
-                        )}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                        renderInput={(params) => <TextField {...params} label="Academic Year" />}
+                    />
+
+
+                    <Autocomplete
+                        options={semesters} 
+                        getOptionLabel={(option) => option.name || ""}
+                        value={semesters.find(s => s.id === selectedSemester) || null}
+                        onChange={(event, newValue) => {
+                            setSelectedSemester(newValue?.id || null);
+                            updateSystemSettings(selectedAY, newValue?.id);
+                        }}
+                        sx={{
+                            width: { xs: 150, sm: 250, md: 400 },
+                            marginTop: "10px",
+                            marginLeft: { xs: "28px", sm: "38px", md: "58px" }
+                        }}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                        renderInput={(params) => <TextField {...params} label="Semester" />}
                     />
                     <Typography sx={{ color: "#242c54", fontWeight: "bold", fontSize: "22px", marginLeft: { xs: "28px", sm: "38px", md: "58px" } }}>
                         Configure Evaluation
@@ -140,8 +162,8 @@ export default function SystemSettings() {
                         alignItems: "center",
                         mb: { xs: "20px", sm: "30px", md: "50px" },
                         gap: { xs: "20px", md: "20px" },
-                        mr: { xs: "20px", sm: "30px", md: "50px" }, 
-                        ml: { xs: "20px", sm: "30px", md: "50px" } 
+                        mr: { xs: "20px", sm: "30px", md: "50px" },
+                        ml: { xs: "20px", sm: "30px", md: "50px" }
                     }}
                 >
                     {/* Left button */}

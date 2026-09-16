@@ -57,32 +57,6 @@ export default function TermConfig() {
 
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const handleSetAY = async () => {
-    try {
-      const ayId = parseInt(selectedIds[0], 10);
-
-      const response = await fetch(`${API_URL}/admin/setAY`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ AY_ID: ayId }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to set academic year");
-      }
-
-      await response.json();
-
-      // Show success popup
-      setSnackbarMessage("Academic Year successfully set!");
-      setSnackbarOpen(true);
-    } catch (err) {
-      console.error("Error setting academic year:", err);
-      setSnackbarMessage("Error setting Academic Year");
-      setSnackbarOpen(true);
-    }
-  };
-
   const columns = [{ field: "AY_Name", headerName: "Term", flex: 1.5 }];
 
   return (
@@ -177,20 +151,6 @@ export default function TermConfig() {
                 }}
               >
                 Add Term
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSetAY}
-                disabled={selectedIds.length !== 1}
-                sx={{
-                  fontSize: { xs: "12px", sm: "14px", md: "16px" },
-                  padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
-                  color: "#E8EDF2",
-                  backgroundColor: "#1c2e49",
-                }}
-              >
-                Set Selected
               </Button>
             </Box>
           </Box>

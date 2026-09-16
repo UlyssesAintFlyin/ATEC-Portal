@@ -6,8 +6,7 @@ const {
   removeAcademicYears,
   loadEnrollees,
   loadValidatedEnrollees,
-  setAY,
-  setSemester,
+  ays,
   toggleEvaluation,
   toggleEnrollment,
   getSystemSettings,
@@ -29,9 +28,6 @@ router.post('/addAcademicYear', addAcademicYear); //this pulls in the addAcademi
 router.delete('/removeAcademicYears', removeAcademicYears); //this pulls in the removeAcademicYears function
 router.get('/loadEnrollees', loadEnrollees); //this pulls in the loadEnrollees function
 router.get('/loadValidatedEnrollees', loadValidatedEnrollees); //this pulls in the loadValidatedEnrollees function
-router.put('/setAY', setAY); //this pulls in the setAY function
-router.get('/setSemester', setSemester); //this pulls in the setSemester function
-router.put('/setSemester', setSemester); //this pulls in the setSemester function
 router.put('/toggleEvaluation', toggleEvaluation); //this pulls in the toggleEvaluation function
 router.put('/toggleEnrollment', toggleEnrollment); //this pulls in the toggleEnrollment function
 router.get('/systemSettings', getSystemSettings); //this pulls in the getSystemSettings function
@@ -47,6 +43,8 @@ router.get('/sections/:sectionId/students', loadStudentsBySection); //this pulls
 router.post('/sections/convertEnrollees', convertEnrollees); //this pulls in the convertEnrollees function
 router.get('/students/:id', getStudentById); //this pulls in the getStudentById function
 router.put("/students/:id/update", updateStudentById);
+router.get("/ays", ays);
+router.put("/ays", ays);
 //calls adminController during an API request   
 
 module.exports = router;
