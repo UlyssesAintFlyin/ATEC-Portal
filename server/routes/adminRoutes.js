@@ -15,6 +15,7 @@ const {
   getEnrolleeById,
   validateEnrollee,
   loadSections,
+  getSectionsByDepartment,
   createSection,
   deleteSections,
   loadStudentsBySection,
@@ -45,6 +46,7 @@ router.get('/students/:id', getStudentById); //this pulls in the getStudentById 
 router.put("/students/:id/update", updateStudentById);
 router.get("/ays", ays);
 router.put("/ays", ays);
+router.get("/sections/byDepartment", getSectionsByDepartment);
 //calls adminController during an API request   
 
 module.exports = router;

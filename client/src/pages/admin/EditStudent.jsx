@@ -6,15 +6,17 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Autocomplete,
 } from "@mui/material";
 import TextField from "@mui/material/TextField";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function EditStudent() {
   const { studentId } = useParams();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [student, setStudent] = useState(null);
   const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
@@ -44,10 +46,30 @@ export default function EditStudent() {
       .then((res) => res.json())
       .then((data) => {
         setStudent(data);
+        console.log(data)
       })
       .catch((err) => console.error("Error loading student:", err));
   }, [studentId, currentAYS_ID]);
-  console.log("Student data:", student);
+
+  const [sections, setSections] = useState([]);
+
+  useEffect(() => {
+    console.log("useEffect triggered with student:", student);
+
+    if (student && student.department && currentAYS_ID) {
+      console.log("Fetching sections for:", student.department, currentAYS_ID);
+
+      fetch(`${API_URL}/admin/sections/byDepartment?department=${student.department}&AYS_ID=${currentAYS_ID}`)
+        .then(res => {
+          return res.json();
+        })
+        .then(data => {
+          console.log("Sections:", data);
+          setSections(data);
+        })
+        .catch(err => console.error("Error loading sections:", err));
+    }
+  }, [student, currentAYS_ID]);
 
   const formatDateLocal = (isoString) => {
     if (!isoString) return "";
@@ -70,6 +92,7 @@ export default function EditStudent() {
       console.error("Error saving student:", err);
     }
   };
+
 
 
 
@@ -167,7 +190,7 @@ export default function EditStudent() {
             />
             <TextField
               label="Middle Name"
-             value={student?.m_Name ?? " "}
+              value={student?.m_Name ?? " "}
               onChange={(e) => setStudent({ ...(student || {}), m_Name: e.target.value })}
               fullWidth />
             <TextField label="Surname"
@@ -376,23 +399,45 @@ export default function EditStudent() {
               flexDirection: { xs: "column", md: "row" },
               gap: 4,
               margin: "0 20px",
+              boxSizing: "border-box",
             }}
           >
             <TextField
               label="Department"
               value={student ? student.department : ''}
               inputProps={{ readOnly: true }}
-              fullWidth />
+              fullWidth
+              sx={{ flex: 1 }} />
             <TextField
               label="Course/Track"
               value={student ? student.program : ''}
               inputProps={{ readOnly: true }}
-              fullWidth />
-            <TextField
-              label="Year Level & Section"
-              value={student ? `${student.gradeLevel} - ${student.section_Name}` : ''}
-              inputProps={{ readOnly: true }}
-              fullWidth />
+              fullWidth
+              sx={{ flex: 1 }} />
+            <Autocomplete
+              options={sections}
+              getOptionLabel={(option) => `${option.gradeLevel} - ${option.section_Name}`}
+              value={sections.find(sec => sec.section_ID === student.section_ID) || null}
+              isOptionEqualToValue={(option, value) => option.section_ID === value.section_ID}
+              onChange={(e, value) => {
+                if (value) {
+                  setStudent((prev) => ({
+                    ...prev,
+                    section_ID: value.section_ID,
+                    gradeLevel: value.gradeLevel,
+                    section_Name: value.section_Name,
+                  }));
+                }
+              }}
+              sx={{ flex: 1 }}
+              renderInput={(params) => (
+                <TextField {...params} label="Year Level & Section" size="small" fullWidth sx={{
+                  "& .MuiInputBase-root": {
+                    height: "56px"
+                  }
+                }} />
+              )}
+            />
           </Box>
         </Box>
 
@@ -455,6 +500,7 @@ export default function EditStudent() {
               transform: "scale(1.05)",
             },
           }}
+          onClick={() => navigate(-1)}
         >
           Cancel
         </Button>

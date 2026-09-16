@@ -449,6 +449,7 @@ async function loadSections(req, res) {
 }
 
 
+
 // Create Section
 async function createSection(req, res) {
   try {
@@ -644,6 +645,24 @@ async function loadFaculty(req, res) {
   }
 }
 
+async function getSectionsByDepartment(req, res) {
+  try {
+    const { department, AYS_ID } = req.query;
+
+    const [rows] = await pool.query(
+      `SELECT section_ID, section_Name, gradeLevel
+       FROM section_table
+       WHERE department = ? AND AYS_ID = ?
+       ORDER BY gradeLevel, section_Name`,
+      [department, AYS_ID]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching sections:", err);
+    res.status(500).json({ error: "Failed to fetch sections" });
+  }
+}
 
 // Export functions
 module.exports = {
@@ -661,6 +680,7 @@ module.exports = {
   getEnrolleeById,
   validateEnrollee,
   loadSections,
+  getSectionsByDepartment,
   createSection,
   deleteSections,
   loadStudentsBySection,
