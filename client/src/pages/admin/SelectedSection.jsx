@@ -3,12 +3,6 @@ import {
   Typography,
   Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Autocomplete,
 } from "@mui/material";
 import { Table } from "../../components/Table";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -156,7 +150,7 @@ export default function SelectedSection() {
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
-            alignItems: { xs: "center", md: "flex-end" },
+            alignItems: { xs: "center", md: "flex-start" },
             width: "100%",
             marginTop: "20px",
             marginBottom: "30px",
@@ -196,6 +190,8 @@ export default function SelectedSection() {
               justifyContent: "center",
               alignItems: "center",
               flexDirection: "row",
+              flexWrap: "wrap",
+              maxWidth: {xs: "300px", md: "500px"},
               gap: 2,
               marginTop: { xs: "10px", md: "0" },
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
@@ -232,6 +228,35 @@ export default function SelectedSection() {
               }}
             >
               Remove Selected
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#7B81A3",
+              }}
+              onClick={() =>
+                navigate(`/admin/sections/${sectionName}/SectionSubject`, {
+                  state: { section_ID: sectionId },
+                })
+              }
+            >
+              Configure Subjects
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#242C54",
+              }}
+            >
+              Migrate Selected
             </Button>
           </Box>
         </Box>

@@ -28,6 +28,7 @@ import CurriculumSubjects from './pages/admin/CurriculumSubjects';
 import AddSubject from './pages/admin/AddSubject'
 import EnrolleeQueue from './pages/admin/EnrolleeQueue';
 import FacultyReport from './pages/evaluation/FacultyReportPublic'
+import SectionSubject from './pages/admin/SectionSubject'
 import { Link } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
@@ -83,6 +84,7 @@ function App() {
                 <Route path="facultyEvaluation/evaluation/:id" element={<AdminEval />} />
                 <Route path="sections" element={<Sections />} />
                 <Route path="sections/:sectionName" element={<SelectedSection />} />
+                <Route path="sections/:sectionName/SectionSubject" element={<SectionSubject />} />
                 <Route path="sections/:sectionName/addStudent" element={<EnrolleeQueue />} />
                 <Route path="section/:sectionName/:studentId" element={<EditStudent />} />
                 <Route path="section/:sectionName/:studentId/editGrade" element={<EditGrade />} />
