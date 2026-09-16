@@ -1,6 +1,43 @@
-import styles from './AdminEval.css';
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import "./AdminEval.css";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function Evaluation() {
+  const { id } = useParams();
+
+  const [faculty, setFaculty] = useState(null);
+  const [overall, setOverall] = useState(0);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/evaluation/summary/${id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load evaluation summary");
+        return res.json();
+      })
+      .then((data) => {
+        setFaculty(data.faculty);
+        setOverall(data.overall);
+        setCategories(data.categories);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return null;
+
+  if (error) {
+    return (
+      <div className="evaluation">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="evaluation">
       <div className="evaluationHeader">
@@ -11,53 +48,30 @@ export default function Evaluation() {
 
       <div className="professorsDiv">
         <div className="professor">
-          <div className="circle">4.5</div>
+          <div className="circle">{overall}</div>
           <div>
-            <h3>Professor 1</h3>
-            <h6>Mathematics</h6>
+            <h3>{faculty.f_Name} {faculty.l_Name}</h3>
+            <h6>{faculty.position}</h6>
           </div>
         </div>
 
         <div className="sum">
-          <div className="variety">
-            <p>Personality and Appearance</p>
-            <div className="side">
-              <div className="measure"></div>
-            </div>
-            <h6>4.3</h6>
-          </div>
+          {categories.length === 0 && (
+            <p>No evaluation data yet for this term.</p>
+          )}
 
-          <div className="variety">
-            <p>Teaching Effectiveness</p>
-            <div className="side">
-              <div className="measure"></div>
+          {categories.map((cat) => (
+            <div className="variety" key={cat.category_ID}>
+              <p>{cat.category_Name}</p>
+              <div className="side">
+                <div
+                  className="measure"
+                  style={{ width: `${(cat.avgScore / 5) * 100}%` }}
+                ></div>
+              </div>
+              <h6>{cat.avgScore}</h6>
             </div>
-            <h6>4.0</h6>
-          </div>
-
-          <div className="variety">
-            <p>Classroom Management</p>
-            <div className="side">
-              <div className="measure"></div>
-            </div>
-            <h6>3.8</h6>
-          </div>
-
-          <div className="variety">
-            <p>Communication Skills</p>
-            <div className="side">
-              <div className="measure"></div>
-            </div>
-            <h6>4.5</h6>
-          </div>
-
-          <div className="variety">
-            <p>Punctuality</p>
-            <div className="side">
-              <div className="measure"></div>
-            </div>
-            <h6>4.7</h6>
-          </div>
+          ))}
         </div>
       </div>
     </div>
