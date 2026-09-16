@@ -53,14 +53,14 @@ exports.getCurriculumById = async (req, res) => {
 
 // CREATE curriculum
 exports.createCurriculum = async (req, res) => {
-  const { curriculum_Name, AY_ID } = req.body;
+  const { curriculum_Name, AY_ID, department } = req.body;
   if (!curriculum_Name || !AY_ID) {
     return res.status(400).json({ message: 'curriculum_Name and AY_ID are required' });
   }
   try {
     const [result] = await pool.query(
-      `INSERT INTO curriculum_table (curriculum_Name, AY_ID) VALUES (?, ?)`,
-      [curriculum_Name, AY_ID]
+      `INSERT INTO curriculum_table (curriculum_Name, AY_ID, department) VALUES (?, ?, ?)`,
+      [curriculum_Name, AY_ID, department]
     );
     res.status(201).json({ curriculum_ID: result.insertId, curriculum_Name, AY_ID });
   } catch (err) {
@@ -72,11 +72,11 @@ exports.createCurriculum = async (req, res) => {
 // UPDATE curriculum
 exports.updateCurriculum = async (req, res) => {
   const { id } = req.params;
-  const { curriculum_Name, AY_ID } = req.body;
+  const { curriculum_Name, AY_ID, department } = req.body;
   try {
     const [result] = await pool.query(
-      `UPDATE curriculum_table SET curriculum_Name = ?, AY_ID = ? WHERE curriculum_ID = ?`,
-      [curriculum_Name, AY_ID, id]
+      `UPDATE curriculum_table SET curriculum_Name = ?, AY_ID = ?, department = ? WHERE curriculum_ID = ?`,
+      [curriculum_Name, AY_ID, department, id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Curriculum not found' });

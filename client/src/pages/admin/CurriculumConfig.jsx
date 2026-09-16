@@ -56,6 +56,7 @@ export default function CurriculumConfig() {
     curriculum_ID: null,
     curriculum_Name: "",
     AY_ID: null,
+    department: "",
   });
 
   // Track selected rows from Table
@@ -82,6 +83,7 @@ export default function CurriculumConfig() {
         curriculum: c.curriculum_Name,
         AY_Name: c.AY_Name,
         AY_ID: c.AY_ID,
+        department: c.department
       }));
       setRows(mapped);
       setError(null);
@@ -103,7 +105,6 @@ export default function CurriculumConfig() {
       console.error(err);
     }
   };
-
   const handleSaveCurriculum = async () => {
     if (!newCurriculum.curriculum_Name || !newCurriculum.AY_ID) {
       alert("Curriculum name and academic year are required");
@@ -119,6 +120,7 @@ export default function CurriculumConfig() {
         body: JSON.stringify({
           curriculum_Name: newCurriculum.curriculum_Name,
           AY_ID: newCurriculum.AY_ID,
+          department: newCurriculum.department,
         }),
       });
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
@@ -129,6 +131,7 @@ export default function CurriculumConfig() {
         curriculum_ID: null,
         curriculum_Name: "",
         AY_ID: null,
+        department: "",
       });
       if (selectedAY) fetchCurricula(selectedAY.id);
     } catch (err) {
@@ -178,6 +181,7 @@ export default function CurriculumConfig() {
       curriculum_ID: row.id,
       curriculum_Name: row.curriculum,
       AY_ID: row.AY_ID,
+      department: row.department
     });
     setEditMode(true);
     setOpen(true);
@@ -186,6 +190,7 @@ export default function CurriculumConfig() {
   const columns = [
     { field: "curriculum", headerName: "Curriculum", flex: 0.6 },
     { field: "AY_Name", headerName: "Academic Year", flex: 0.4 },
+    { field: "department", headerName: "Department", flex: 0.6 },
     {
       field: "action",
       headerName: "Action",
@@ -247,7 +252,7 @@ export default function CurriculumConfig() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              alignItems: {xs:"center", md:"flex-start"}
+              alignItems: { xs: "center", md: "flex-start" }
             }}
           >
             <Typography
@@ -407,6 +412,26 @@ export default function CurriculumConfig() {
               marginTop: "8px",
             }}
           />
+
+         <Autocomplete
+            options={["College", "Senior High School"]} 
+            value={newCurriculum.department || null}
+            onChange={(e, value) =>
+              setNewCurriculum((prev) => ({
+                ...prev,
+                department: value ?? "Not Assigned", 
+              }))
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Department" size="small" />
+            )}
+            sx={{
+              width: 220,
+              marginLeft: { xs: "0", md: "50px" },
+              marginTop: "8px",
+            }}
+          />
+
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
@@ -416,5 +441,5 @@ export default function CurriculumConfig() {
         </DialogActions>
       </Dialog>
     </Box>
-  );
+  ); 
 }
