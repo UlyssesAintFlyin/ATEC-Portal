@@ -8,9 +8,6 @@ const RATING_MAP = {
     'Strongly Agree': 5
 };
 
-// GET /api/evaluation/faculty
-// Returns faculty members, but only their evaluation_table row for the
-// currently active AYS_ID (from system_settings_table.evaluation_AYS_ID)
 const getFacultyList = async (req, res) => {
     try {
         const [settingsRows] = await pool.query(
@@ -69,6 +66,16 @@ const submitEvaluation = async (req, res) => {
             return res.status(400).json({ message: 'Missing evaluation data.' });
         }
 
+        const [existing] = await connection.query(
+            'SELECT answer_ID FROM eval_answer_table WHERE evaluation_ID = ? AND student_ID = ? LIMIT 1',
+            [evaluationId, studentId]
+        );
+
+        if (existing.length > 0) {
+            connection.release();
+            return res.status(409).json({ message: 'You have already evaluated this faculty member.' });
+        }
+
         await connection.beginTransaction();
 
         for (const [questionId, choiceText] of Object.entries(answers)) {
@@ -121,4 +128,91 @@ const submitEvaluation = async (req, res) => {
     }
 };
 
-module.exports = { getFacultyList, getQuestions, submitEvaluation };
+const getAllFacultySummaries = async (req, res) => {
+    try {
+        const [settingsRows] = await pool.query(
+            'SELECT evaluation_AYS_ID FROM system_settings_table WHERE system_settings_ID = 1'
+        );
+        const AYS_ID = settingsRows.length > 0 ? settingsRows[0].evaluation_AYS_ID : null;
+
+        if (!AYS_ID) {
+            return res.status(400).json({ message: 'Evaluation period is not currently configured.' });
+        }
+
+        const [rows] = await pool.query(
+            `SELECT f.faculty_ID, f.f_Name, f.l_Name, f.position,
+                    AVG(se.category_Mean) AS overallScore
+             FROM faculty_table f
+             JOIN evaluation_table e ON e.faculty_ID = f.faculty_ID AND e.AYS_ID = ?
+             LEFT JOIN student_evaluation_table se ON se.evaluation_ID = e.evaluation_ID
+             GROUP BY f.faculty_ID, f.f_Name, f.l_Name, f.position`,
+            [AYS_ID]
+        );
+
+        const faculty = rows.map(row => ({
+            faculty_ID: row.faculty_ID,
+            f_Name: row.f_Name,
+            l_Name: row.l_Name,
+            position: row.position,
+            overallScore: row.overallScore ? Number(row.overallScore.toFixed(2)) : 0
+        }));
+
+        res.json({ faculty });
+
+    } catch (error) {
+        console.error('Get all faculty summaries error:', error);
+        res.status(500).json({ message: 'Failed to load faculty summaries', error: error.message });
+    }
+};
+
+const getFacultySummary = async (req, res) => {
+    try {
+        const { facultyId } = req.params;
+
+        const [facultyRows] = await pool.query(
+            'SELECT faculty_ID, f_Name, l_Name, position FROM faculty_table WHERE faculty_ID = ?',
+            [facultyId]
+        );
+
+        if (facultyRows.length === 0) {
+            return res.status(404).json({ message: 'Faculty not found.' });
+        }
+
+        const [settingsRows] = await pool.query(
+            'SELECT evaluation_AYS_ID FROM system_settings_table WHERE system_settings_ID = 1'
+        );
+        const AYS_ID = settingsRows.length > 0 ? settingsRows[0].evaluation_AYS_ID : null;
+
+        const [categoryRows] = await pool.query(
+            `SELECT cat.category_ID, cat.category_Name, AVG(se.category_Mean) AS avgScore
+             FROM student_evaluation_table se
+             JOIN evaluation_category_table cat ON se.category_ID = cat.category_ID
+             JOIN evaluation_table e ON se.evaluation_ID = e.evaluation_ID
+             WHERE e.faculty_ID = ? AND e.AYS_ID = ?
+             GROUP BY cat.category_ID, cat.category_Name`,
+            [facultyId, AYS_ID]
+        );
+
+        const categories = categoryRows.map(row => ({
+            category_ID: row.category_ID,
+            category_Name: row.category_Name,
+            avgScore: row.avgScore ? Number(row.avgScore.toFixed(2)) : 0
+        }));
+
+        const overall = categories.length > 0
+            ? Number((categories.reduce((sum, c) => sum + c.avgScore, 0) / categories.length).toFixed(2))
+            : 0;
+
+        res.json({
+            faculty: facultyRows[0],
+            overall,
+            categories
+        });
+
+    } catch (error) {
+        console.error('Get faculty summary error:', error);
+        res.status(500).json({ message: 'Failed to load evaluation summary', error: error.message });
+    }
+};
+
+module.exports = { getFacultyList, getQuestions, submitEvaluation, getAllFacultySummaries, getFacultySummary };
