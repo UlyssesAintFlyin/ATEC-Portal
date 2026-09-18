@@ -21,7 +21,14 @@ const {
   loadStudentsBySection,
   convertEnrollees,
   getStudentById,
-  updateStudentById
+  updateStudentById,
+  getSectionAdvisers,
+  assignAdviser,
+  listCurriculumsBySection,
+  updateSectionCurriculum,
+  getCurrentSubjectTeacher,
+  assignTeacherToSubject
+
 } = require('../controllers/adminController');
 
 router.get('/loadAcademicYear', loadAcademicYear); //this pulls in the loadAcademicYear function
@@ -43,10 +50,17 @@ router.delete('/sections/deleteSections', deleteSections); //this pulls in the d
 router.get('/sections/:sectionId/students', loadStudentsBySection); //this pulls in the loadStudentsBySection function
 router.post('/sections/convertEnrollees', convertEnrollees); //this pulls in the convertEnrollees function
 router.get('/students/:id', getStudentById); //this pulls in the getStudentById function
-router.put("/students/:id/update", updateStudentById);
-router.get("/ays", ays);
-router.put("/ays", ays);
-router.get("/sections/byDepartment", getSectionsByDepartment);
+router.put('/students/:id/update', updateStudentById);
+router.get('/ays', ays);
+router.put('/ays', ays);
+router.get('/sections/byDepartment', getSectionsByDepartment);
+router.get('/faculty/getSectionAdvisers', getSectionAdvisers);
+router.put('/faculty/assignAdviser', assignAdviser);
+router.get("/curriculum/listBySection", listCurriculumsBySection);
+router.put('/curriculum/updateSectionCurriculum', updateSectionCurriculum);
+router.get('/faculty/getTeachersBySubject', getCurrentSubjectTeacher);
+router.put('/faculty/assignTeacherToSubject', assignTeacherToSubject);
+
 //calls adminController during an API request   
 
 module.exports = router;

@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button, Autocomplete } from "@mui/material";
-import TextField from "@mui/material/TextField";
+import {
+  Typography,
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Autocomplete,
+} from "@mui/material";
+
 import { Table } from "../../components/Table";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
@@ -12,22 +22,165 @@ export default function SectionSubject() {
   const location = useLocation();
   const sectionId = location.state?.section_ID;
 
-  const curriculumList = ["BSIT 2024", "BSIS 2025"];
-  const adviserList = ["Dr. Alfred", "Dr. Rene"];
+  const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
+
+  const [adviserList, setAdviserList] = useState([]);
+  const [currentAdviser, setCurrentAdviser] = useState(null);
+  const [pendingAdviser, setPendingAdviser] = useState(null);
+
+  const [curriculumList, setCurriculumList] = useState([]);
+  const [currentCurriculum, setCurrentCurriculum] = useState(null);
+  const [pendingCurriculum, setPendingCurriculum] = useState(null);
+
+  const [teacherList, setTeacherList] = useState([]);
+  const [pendingTeachers, setPendingTeachers] = useState({});
+  const [currentTeachers, setCurrentTeachers] = useState({});
+
+  const [openDialog, setOpenDialog] = useState(false);
+  const [subjectId, setSubjectId] = useState(null);
+
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchSystemSettings = async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/systemSettings`);
+        const data = await res.json();
+        setCurrentAYS_ID(data.enrollment_AYS_ID);
+      } catch (err) {
+        console.error("Error loading system settings:", err);
+      }
+    };
+    fetchSystemSettings();
+  }, []);
+
+  useEffect(() => {
+    if (!sectionId) return;
+    const fetchSectionAdvisers = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/admin/faculty/getSectionAdvisers?sectionId=${sectionId}`
+        );
+        const data = await res.json();
+        setAdviserList(data.facultyOptions);
+        setCurrentAdviser(data.currentAdviser);
+        setPendingAdviser(data.currentAdviser);
+      } catch (err) {
+        console.error("Error loading advisers:", err);
+      }
+    };
+    fetchSectionAdvisers();
+  }, [sectionId]);
+
+  useEffect(() => {
+    if (!sectionId) return;
+    const fetchCurriculums = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/admin/curriculum/listBySection?sectionId=${sectionId}`
+        );
+        const data = await res.json();
+        setCurriculumList(data.curriculumOptions);
+        const current =
+          data.curriculumOptions.find(
+            (c) => c.id === data.currentCurriculumId
+          ) || null;
+        setCurrentCurriculum(current);
+        setPendingCurriculum(current);
+      } catch (err) {
+        console.error("Error loading curriculums:", err);
+      }
+    };
+    fetchCurriculums();
+  }, [sectionId]);
+
+  const handleOpenDialog = (subjectId) => {
+    setSubjectId(subjectId);
+    setOpenDialog(true);
+  };
+
+  useEffect(() => {
+    if (!openDialog || !subjectId) return;
+    const fetchTeachers = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/admin/faculty/getTeachersBySubject?subjectId=${subjectId}&sectionId=${sectionId}&aysId=${currentAYS_ID}`
+        );
+        const data = await res.json();
+        setTeacherList(data.teacherOptions);
+        setCurrentTeachers((prev) => ({
+          ...prev,
+          [subjectId]: data.currentTeacher,
+        }));
+        setPendingTeachers((prev) => ({
+          ...prev,
+          [subjectId]: data.currentTeacher,
+        }));
+      } catch (err) {
+        console.error("Error loading teachers:", err);
+      }
+    };
+    fetchTeachers();
+  }, [openDialog, subjectId, sectionId, currentAYS_ID]);
+
+  const handleAdviserChange = (newValue) => setPendingAdviser(newValue);
+  const handleCurriculumChange = (newValue) => setPendingCurriculum(newValue);
+  const handleTeacherChange = (subjectId, newValue) => {
+    setPendingTeachers((prev) => ({
+      ...prev,
+      [subjectId]: newValue,
+    }));
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      const requests = [
+        fetch(`${API_URL}/admin/faculty/assignAdviser`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sectionId,
+            facultyId: pendingAdviser ? pendingAdviser.id : null,
+          }),
+        }),
+        fetch(`${API_URL}/admin/curriculum/updateSectionCurriculum`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sectionId,
+            curriculumId: pendingCurriculum ? pendingCurriculum.id : null,
+          }),
+        }),
+        ...Object.entries(pendingTeachers).map(([subjId, teacher]) =>
+          fetch(`${API_URL}/admin/faculty/assignTeacherToSubject`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subjectId: subjId,
+              sectionId,
+              aysId: currentAYS_ID,
+              teacherId: teacher ? teacher.id : null,
+            }),
+          })
+        ),
+      ];
+
+      await Promise.all(requests);
+
+      setCurrentAdviser(pendingAdviser);
+      setCurrentCurriculum(pendingCurriculum);
+      setCurrentTeachers(pendingTeachers);
+      setOpenDialog(false);
+    } catch (err) {
+      console.error("Error saving changes:", err);
+    }
+  };
 
   const columns = [
-    {
-      field: "subjectName",
-      headerName: "Subject Name",
-      flex: 1,
-      minWidth: 150,
-    },
-    {
-      field: "subjectcode",
-      headerName: "Subject Code",
-      flex: 0.5,
-      minWidth: 100,
-    },
+    { field: "subject", headerName: "Subject Name", flex: 1, minWidth: 150 },
+    { field: "subject_code", headerName: "Subject Code", flex: 0.5, minWidth: 100 },
     {
       field: "action",
       headerName: "Action",
@@ -37,15 +190,8 @@ export default function SectionSubject() {
         <Button
           variant="contained"
           color="inherit"
-          onClick={() =>
-            navigate(`/admin/section/${sectionName}/${params.row.id}`, {
-              state: { sectionName: sectionName },
-            })
-          }
-          sx={{
-            fontSize: { xs: "12px", sm: "15px", md: "15px" },
-            width: { xs: "80px", sm: "120px", md: "100px" },
-          }}
+          sx={{ fontSize: "15px", width: "100px" }}
+          onClick={() => handleOpenDialog(params.row.id)}
         >
           Edit
         </Button>
@@ -53,15 +199,36 @@ export default function SectionSubject() {
     },
   ];
 
-  const rows = [
-    { id: 1, subjectName: "Purposive Communication", subjectcode: "PCM-101" },
-    {
-      id: 2,
-      subjectName: "Mathematics in the Modern World",
-      subjectcode: "MATH-102",
-    },
-    { id: 3, subjectName: "Understanding the Self", subjectcode: "UTS-103" },
-  ];
+  useEffect(() => {
+    if (!currentCurriculum) return;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/curricula/${currentCurriculum.id}`);
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const data = await res.json();
+        setRows(
+          data.subjects.map((s) => ({
+            id: s.subject_ID,
+            subject: s.subject_Name,
+            subject_code: s.subject_code,
+            units: s.units,
+          }))
+        );
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load curriculum subjects");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [currentCurriculum]);
+
+
+
+
+
 
   return (
     <Box
@@ -145,12 +312,12 @@ export default function SectionSubject() {
                 color: "#E8EDF2",
                 backgroundColor: "#245442",
               }}
+              onClick={handleSaveChanges}
             >
               Save Changes
             </Button>
           </Box>
         </Box>
-
         <Box
           sx={{
             marginLeft: { xs: "20px", md: "50px" },
@@ -199,17 +366,17 @@ export default function SectionSubject() {
             >
               Choose the curriculum that this section shall follow
             </Typography>
-
             <Autocomplete
-              options={curriculumList}
-              renderInput={(params) => (
-                <TextField {...params} label="Choose Curriculum" />
-              )}
+              options={curriculumList || []}
+              getOptionLabel={(option) => option?.name ?? ""}
+              isOptionEqualToValue={(option, value) => option?.id === value?.id}
+              value={pendingCurriculum}
+              onChange={(event, newValue) => handleCurriculumChange(newValue)}
+              renderInput={(params) => <TextField {...params} label="Choose Curriculum" />}
               fullWidth
               sx={{ backgroundColor: "#E8EDF2" }}
             />
           </Box>
-
           <Box
             sx={{
               backgroundColor: "#7B81A3",
@@ -231,18 +398,49 @@ export default function SectionSubject() {
             >
               Choose an advisor for this Section <i>{sectionName}</i>
             </Typography>
-
             <Autocomplete
-              options={adviserList}
-              renderInput={(params) => (
-                <TextField {...params} label="Choose Adviser" />
-              )}
+              options={adviserList || []}
+              getOptionLabel={(option) => option?.name ?? ""}
+              isOptionEqualToValue={(option, value) => option?.id === value?.id}
+              value={pendingAdviser}
+              onChange={(event, newValue) => handleAdviserChange(newValue)}
+              renderInput={(params) => <TextField {...params} label="Choose Adviser" />}
               fullWidth
               sx={{ backgroundColor: "#E8EDF2" }}
             />
           </Box>
         </Box>
       </Box>
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Assign Teacher</DialogTitle>
+        <DialogContent>
+          <Autocomplete
+            options={teacherList || []}
+            getOptionLabel={(option) => option?.name ?? ""}
+            isOptionEqualToValue={(option, value) => option?.id === value?.id}
+            value={pendingTeachers[subjectId] || null}
+            onChange={(event, newValue) => {
+              handleTeacherChange(subjectId, newValue);
+            }}
+            renderInput={(params) => <TextField {...params} label="Choose Teacher" />}
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveChanges}
+          >
+            Save Teacher
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

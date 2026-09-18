@@ -664,6 +664,239 @@ async function getSectionsByDepartment(req, res) {
   }
 }
 
+async function getSectionAdvisers(req, res) {
+  try {
+    const { sectionId } = req.query;
+
+  
+    const [sectionRows] = await pool.query(
+      `SELECT sec.section_ID,
+              sec.section_Name,
+              sec.faculty_ID AS currentAdviserId,
+              CONCAT(f.l_Name, ', ', f.f_Name,
+                CASE WHEN f.m_Name IS NOT NULL AND f.m_Name <> '' 
+                     THEN CONCAT(' ', LEFT(f.m_Name,1), '.') ELSE '' END
+              ) AS currentAdviserName
+       FROM section_table sec
+       LEFT JOIN faculty_table f ON sec.faculty_ID = f.faculty_ID
+       WHERE sec.section_ID = ?`,
+      [sectionId]
+    );
+
+    if (sectionRows.length === 0) {
+      return res.status(404).json({ error: "Section not found" });
+    }
+
+    const section = sectionRows[0];
+
+    const [facultyRows] = await pool.query(
+      `SELECT faculty_ID AS id,
+              CONCAT(l_Name, ', ', f_Name,
+                CASE WHEN m_Name IS NOT NULL AND m_Name <> '' 
+                     THEN CONCAT(' ', LEFT(m_Name,1), '.') ELSE '' END
+              ) AS name,
+              position, status
+       FROM faculty_table
+       WHERE status != 'Resigned'`
+    );
+
+    res.json({
+      sectionId: section.section_ID,
+      sectionName: section.section_Name,
+      currentAdviser: {
+        id: section.currentAdviserId,
+        name: section.currentAdviserName
+      },
+      facultyOptions: facultyRows
+    });
+  } catch (err) {
+    console.error("Error fetching advisers:", err.sqlMessage || err);
+    res.status(500).json({ error: "Failed to fetch advisers" });
+  }
+}
+
+async function assignAdviser(req, res) {
+  try {
+    const { sectionId, facultyId } = req.body;
+
+    if (!sectionId) {
+      return res.status(400).json({ error: "sectionId is required" });
+    }
+    if (facultyId) {
+      const [rows] = await pool.query(
+        `SELECT status FROM faculty_table WHERE faculty_ID = ?`,
+        [facultyId]
+      );
+      if (rows.length === 0) {
+        return res.status(404).json({ error: "Faculty not found" });
+      }
+      if (rows[0].status === "Resigned") {
+        return res.status(400).json({ error: "Cannot assign a resigned faculty" });
+      }
+    }
+
+    await pool.query(
+      `UPDATE section_table SET faculty_ID = ? WHERE section_ID = ?`,
+      [facultyId || null, sectionId]
+    );
+
+    res.json({ message: "Adviser updated successfully" });
+  } catch (err) {
+    console.error("Error updating adviser:", err.sqlMessage || err);
+    res.status(500).json({ error: "Failed to update adviser" });
+  }
+}
+
+async function listCurriculumsBySection(req, res) {
+  try {
+    const { sectionId } = req.query;
+
+    const [sectionRows] = await pool.query(
+      `SELECT department, curriculum_ID, AYS_ID
+       FROM section_table
+       WHERE section_ID = ?`,
+      [sectionId]
+    );
+
+    if (sectionRows.length === 0) {
+      return res.status(404).json({ error: "Section not found" });
+    }
+
+    const { department, curriculum_ID, AYS_ID } = sectionRows[0];
+
+    const [curriculums] = await pool.query(
+      `SELECT curriculum_ID AS id,
+              curriculum_Name AS name,
+              AY_ID,
+              department
+       FROM curriculum_table
+       WHERE AY_ID = ? AND department = ?`,
+      [AYS_ID, department]
+    );
+    res.json({
+      sectionId,
+      currentCurriculumId: curriculum_ID,
+      curriculumOptions: curriculums
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch curriculums" });
+  }
+}
+
+async function updateSectionCurriculum(req, res) {
+  try {
+    const { sectionId, curriculumId } = req.body;
+
+    if (!sectionId) {
+      return res.status(400).json({ error: "sectionId is required" });
+    }
+
+    await pool.query(
+      `UPDATE section_table SET curriculum_ID = ? WHERE section_ID = ?`,
+      [curriculumId || null, sectionId]
+    );
+
+    res.json({ message: "Curriculum updated successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update curriculum" });
+  }
+}
+
+async function getCurrentSubjectTeacher(req, res) {
+  try {
+    const { subjectId, sectionId, aysId } = req.query;
+
+    if (!subjectId || !sectionId || !aysId) {
+      return res.status(400).json({ error: "subjectId, sectionId, and aysId are required" });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT f.faculty_ID AS id,
+              CONCAT(f.f_Name, ' ', f.l_Name) AS name
+       FROM faculty_year_record_table fyr
+       JOIN faculty_table f ON f.faculty_ID = fyr.faculty_ID
+       WHERE fyr.subject_ID = ? AND fyr.section_ID = ? AND fyr.AYS_ID = ?`,
+      [subjectId, sectionId, aysId]
+    );
+
+    const currentTeacher = rows.length > 0 ? rows[0] : null;
+
+    const [teachers] = await pool.query(
+      `SELECT faculty_ID AS id,
+              CONCAT(f_Name, ' ', l_Name) AS name
+       FROM faculty_table
+       WHERE position = 'Teacher' AND status = 'Active'`
+    );
+
+    res.json({ currentTeacher, teacherOptions: teachers });
+  } catch (err) {
+    console.error("Error retrieving current teacher:", err);
+    res.status(500).json({ error: "Failed to retrieve current teacher" });
+  }
+}
+
+async function assignTeacherToSubject(req, res) {
+  try {
+    const { subjectId, sectionId, aysId, teacherId } = req.body;
+
+    if (!subjectId || !sectionId || !aysId) {
+      return res.status(400).json({ error: "subjectId, sectionId, and aysId are required" });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT * FROM faculty_year_record_table 
+       WHERE subject_ID = ? AND section_ID = ? AND AYS_ID = ?`,
+      [subjectId, sectionId, aysId]
+    );
+
+    if (rows.length > 0) {
+      await pool.query(
+        `UPDATE faculty_year_record_table
+         SET faculty_ID = ?
+         WHERE subject_ID = ? AND section_ID = ? AND AYS_ID = ?`,
+        [teacherId || null, subjectId, sectionId, aysId]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO faculty_year_record_table (subject_ID, section_ID, AYS_ID, faculty_ID)
+         VALUES (?, ?, ?, ?)`,
+        [subjectId, sectionId, aysId, teacherId || null]
+      );
+    }
+
+    if (teacherId) {
+      await pool.query(
+        `DELETE FROM faculty_year_record_table
+         WHERE subject_ID = ? AND section_ID = ? AND AYS_ID = ? AND faculty_ID IS NOT NULL AND faculty_ID != ?`,
+        [subjectId, sectionId, aysId, teacherId]
+      );
+    }
+
+    let updatedTeacher = null;
+    if (teacherId) {
+      const [teacherRows] = await pool.query(
+        `SELECT faculty_ID AS id,
+                CONCAT(f_Name, ' ', l_Name) AS name
+         FROM faculty_table
+         WHERE faculty_ID = ?`,
+        [teacherId]
+      );
+      updatedTeacher = teacherRows[0] || null;
+    }
+
+    res.json({
+      message: "Teacher assignment saved successfully",
+      currentTeacher: updatedTeacher
+    });
+  } catch (err) {
+    console.error("Error saving teacher assignment:", err);
+    res.status(500).json({ error: "Failed to save teacher assignment" });
+  }
+}
+
+
+
+
 // Export functions
 module.exports = {
   loadAcademicYear,
@@ -687,5 +920,11 @@ module.exports = {
   convertEnrollees,
   getStudentById,
   updateStudentById, 
-  loadFaculty
+  loadFaculty,
+  getSectionAdvisers, 
+  assignAdviser, 
+  listCurriculumsBySection,
+  updateSectionCurriculum,
+  getCurrentSubjectTeacher,
+  assignTeacherToSubject
 };
