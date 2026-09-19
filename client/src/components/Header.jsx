@@ -111,7 +111,7 @@ export const Header = () => {
         {location.pathname === "/" && (
           <Box
             sx={{
-              display: "flex",
+              display: {xs: "none", md:"flex"},
               flexDirection: { xs: "column", sm: "row" },
               gap: { xs: 0, sm: 2, md: 3 },
               ml: { xs: 1, sm: 2, md: 3 },
@@ -262,7 +262,7 @@ export const Header = () => {
               <ListItem
                 button
                 component={Link}
-                to="/evaluationReport"
+                to="/evaluationFaculty"
                 onClick={toggleDrawer(false)}
               >
                 <ListItemText primary="Evaluation" />

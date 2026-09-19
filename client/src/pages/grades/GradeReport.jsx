@@ -1,19 +1,27 @@
-import React from "react";
-import { Typography, Box, Button } from "@mui/material";
-import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
+import React, { useState, useEffect } from "react";
+import { Typography, Box, TextField, Autocomplete } from "@mui/material";
 import { StandardTable } from "../../components/StandardTable";
+import { useAuth } from "../../context/AuthContext";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 function GradeReport() {
-  //Array for dropdown
-  const choices = [
-    { label: "Academic Year 2024–2026 – 1st Semester", id: 1 },
-    { label: "Academic Year 2024–2026 – 2nd Semester", id: 2 },
-  ];
+  const { user } = useAuth();
+  const studentId = user?.id;
+
+  const [sectionName, setSectionName] = useState("---");
+  const [studentName, setStudentName] = useState(user?.name ?? "---");
+
+  const [aysOptions, setAysOptions] = useState([]);
+  const [selectedAYS, setSelectedAYS] = useState(null);
+
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   //Array for table column
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60},
+    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
     {
       field: "subjectName",
       headerName: "Subject Name",
@@ -32,39 +40,54 @@ function GradeReport() {
     },
   ];
 
-  //Array for table records
-  const rows = [
-    {
-      id: 1,
-      subjectName: "Genereal Mathematics",
-      instructor: "Carlo Dimasili",
-      grade: 98.0,
-    },
-    {
-      id: 2,
-      subjectName: "English Literary",
-      instructor: "Jhepoy Labangon",
-      grade: 99.0,
-    },
-    {
-      id: 3,
-      subjectName: "Basic Calculus",
-      instructor: "Jenny Javier",
-      grade: 97.0,
-    },
-    {
-      id: 4,
-      subjectName: "Eart and Life Science",
-      instructor: "Erving Santos",
-      grade: 99.0,
-    },
-    {
-      id: 5,
-      subjectName: "Purposive Communication",
-      instructor: "Catherine Lasos",
-      grade: 99.0,
-    },
-  ];
+  // Load AYS options for this student
+  useEffect(() => {
+    if (!studentId) return;
+    const fetchOptions = async () => {
+      try {
+        const res = await fetch(`${API_URL}/grades/recordList?studentId=${studentId}`);
+        const data = await res.json();
+        setAysOptions(data);
+        if (data.length > 0) setSelectedAYS(data[0]);
+      } catch (err) {
+        console.error("Error loading AYS options:", err);
+      }
+    };
+    fetchOptions();
+  }, [studentId]);
+
+  useEffect(() => {
+    if (!studentId || !selectedAYS) {
+      setRows([]);
+      return;
+    }
+    const fetchReport = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `${API_URL}/grades/studReport?studentId=${studentId}&aysId=${selectedAYS.id}`
+        );
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const data = await res.json();
+        setRows(data.report);
+        setSectionName(data.sectionName);
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load grade report");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, [studentId, selectedAYS]);
+
+  const handleAYSChange = (newValue) => setSelectedAYS(newValue);
+
+  const finalGrade =
+    rows.length > 0
+      ? (rows.reduce((sum, r) => sum + Number(r.grade), 0) / rows.length).toFixed(1)
+      : null;
 
   return (
     <Box
@@ -91,30 +114,43 @@ function GradeReport() {
           sx={{
             display: "flex",
             flexDirection: "column",
-            alignItems: "center"
+            justifyContent: "flex-start",
+            gap: 1,
+            marginTop: "20px",
+            marginBottom: "20px",
           }}
         >
           <Typography
+            variant="h2"
             sx={{
               color: "#242c54",
               fontWeight: "bold",
-              fontSize: { xs: "16px", md: "35px" },
-              textAlign: { xs: "center", md: "left" },
-              marginLeft: { xs: "0", md: "50px" },
+              fontSize: { xs: "28px", md: "35px" },
+              textAlign: "center",
             }}
           >
             Grade Report
           </Typography>
           <Typography
+            variant="h3"
+            sx={{
+              color: "#242c54",
+              fontSize: { xs: "20px", md: "27px" },
+              textAlign: "center",
+            }}
+          >
+            {studentName ?? "—"}
+          </Typography>
+          <Typography
             variant="body1"
             sx={{
               color: "#242c54",
-              fontSize: { xs: "12px", md: "16px" },
-              textAlign: { xs: "center", md: "left" },
-              marginLeft: { xs: "0", md: "50px" },
+              fontWeight: "bold",
+              fontSize: { xs: "12", md: "17" },
+              textAlign: "center",
             }}
           >
-            View your grade summary for the semester.
+            {sectionName}.
           </Typography>
         </Box>
 
@@ -157,7 +193,7 @@ function GradeReport() {
                   lineHeight: 1,
                 }}
               >
-                98
+                {finalGrade ?? "—"}
               </Typography>
               <Typography variant="body2">over 100</Typography>
             </Box>
@@ -166,14 +202,13 @@ function GradeReport() {
           {/*Dropdwon Component*/}
           <Autocomplete
             disablePortal
-            options={choices}
-            sx={{
-              width: { xs: "150px", md: "300px" },
-              marginRight: { xs: "20px", md: "50px" },
-            }}
-            renderInput={(params) => (
-              <TextField {...params} label="Academic Year" />
-            )}
+            options={aysOptions}
+            getOptionLabel={(option) => option?.label ?? ""}
+            isOptionEqualToValue={(option, value) => option?.id === value?.id}
+            value={selectedAYS}
+            sx={{ width: { xs: "150px", md: "300px" }, marginRight: { xs: "20px", md: "50px" } }}
+            onChange={(event, newValue) => handleAYSChange(newValue)}
+            renderInput={(params) => <TextField {...params} label="Academic Year" />}
           />
         </Box>
 
@@ -193,6 +228,7 @@ function GradeReport() {
             columns={columns}
             fileName="grade-report"
             printFields={["subjectName", "instructor", "grade"]}
+            loading={loading}
           />
         </Box>
       </Box>

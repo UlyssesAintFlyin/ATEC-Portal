@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Typography,
   Box,
@@ -9,6 +9,9 @@ import {
   DialogActions,
   TextField,
   Autocomplete,
+  Snackbar,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 
 import { Table } from "../../components/Table";
@@ -43,6 +46,17 @@ export default function SectionSubject() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const fileInputRef = useRef(null);
+  const [importing, setImporting] = useState(false);
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    severity: "success",
+    message: "",
+  });
+  const [importErrors, setImportErrors] = useState([]);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+
   useEffect(() => {
     const fetchSystemSettings = async () => {
       try {
@@ -61,7 +75,7 @@ export default function SectionSubject() {
     const fetchSectionAdvisers = async () => {
       try {
         const res = await fetch(
-          `${API_URL}/admin/faculty/getSectionAdvisers?sectionId=${sectionId}`
+          `${API_URL}/admin/faculty/getSectionAdvisers?sectionId=${sectionId}`,
         );
         const data = await res.json();
         setAdviserList(data.facultyOptions);
@@ -79,13 +93,13 @@ export default function SectionSubject() {
     const fetchCurriculums = async () => {
       try {
         const res = await fetch(
-          `${API_URL}/admin/curriculum/listBySection?sectionId=${sectionId}`
+          `${API_URL}/admin/curriculum/listBySection?sectionId=${sectionId}`,
         );
         const data = await res.json();
         setCurriculumList(data.curriculumOptions);
         const current =
           data.curriculumOptions.find(
-            (c) => c.id === data.currentCurriculumId
+            (c) => c.id === data.currentCurriculumId,
           ) || null;
         setCurrentCurriculum(current);
         setPendingCurriculum(current);
@@ -106,7 +120,7 @@ export default function SectionSubject() {
     const fetchTeachers = async () => {
       try {
         const res = await fetch(
-          `${API_URL}/admin/faculty/getTeachersBySubject?subjectId=${subjectId}&sectionId=${sectionId}&aysId=${currentAYS_ID}`
+          `${API_URL}/admin/faculty/getTeachersBySubject?subjectId=${subjectId}&sectionId=${sectionId}&aysId=${currentAYS_ID}`,
         );
         const data = await res.json();
         setTeacherList(data.teacherOptions);
@@ -163,7 +177,7 @@ export default function SectionSubject() {
               aysId: currentAYS_ID,
               teacherId: teacher ? teacher.id : null,
             }),
-          })
+          }),
         ),
       ];
 
@@ -178,9 +192,89 @@ export default function SectionSubject() {
     }
   };
 
+  const handleGetTemplate = async () => {
+    if (!currentCurriculum || !sectionId || !currentAYS_ID) return;
+    setTemplateLoading(true);
+    try {
+      const params = new URLSearchParams({
+        sectionId,
+        curriculumId: currentCurriculum.id,
+        aysId: currentAYS_ID,
+      });
+      const res = await fetch(`${API_URL}/grades/template?${params}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Failed to generate template");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `grade_template_${sectionName}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error downloading template:", err);
+      setSnackbar({ open: true, severity: "error", message: err.message });
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
+
+  const handleImportClick = () => {
+    if (!currentCurriculum || !sectionId || !currentAYS_ID) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sectionId", sectionId);
+      formData.append("curriculumId", currentCurriculum.id);
+      formData.append("aysId", currentAYS_ID);
+
+      const res = await fetch(`${API_URL}/grades/import`, {
+        method: "POST",
+        body: formData,
+      });
+      const body = await res.json();
+
+      if (res.status === 422 && Array.isArray(body.errors)) {
+        setImportErrors(body.errors);
+        setErrorDialogOpen(true);
+        return;
+      }
+      if (!res.ok) {
+        throw new Error(body.message || "Import failed");
+      }
+
+      setSnackbar({ open: true, severity: "success", message: body.message });
+    } catch (err) {
+      console.error("Error importing grades:", err);
+      setSnackbar({ open: true, severity: "error", message: err.message });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const gradesDisabled = !pendingCurriculum;
+
   const columns = [
     { field: "subject", headerName: "Subject Name", flex: 1, minWidth: 150 },
-    { field: "subject_code", headerName: "Subject Code", flex: 0.5, minWidth: 100 },
+    {
+      field: "subject_code",
+      headerName: "Subject Code",
+      flex: 0.5,
+      minWidth: 100,
+    },
     {
       field: "action",
       headerName: "Action",
@@ -213,7 +307,7 @@ export default function SectionSubject() {
             subject: s.subject_Name,
             subject_code: s.subject_code,
             units: s.units,
-          }))
+          })),
         );
         setError(null);
       } catch (err) {
@@ -224,11 +318,6 @@ export default function SectionSubject() {
       }
     })();
   }, [currentCurriculum]);
-
-
-
-
-
 
   return (
     <Box
@@ -292,11 +381,11 @@ export default function SectionSubject() {
           <Box
             sx={{
               display: "flex",
-              justifyContent: "center",
+              justifyContent: {xs:"center", md:"flex-end"},
               alignItems: "center",
               flexDirection: "row",
               flexWrap: "wrap",
-              maxWidth: { xs: "300px", md: "500px" },
+              maxWidth: { xs: "300px", md: "700px" },
               gap: 2,
               marginTop: { xs: "10px", md: "0" },
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
@@ -305,7 +394,6 @@ export default function SectionSubject() {
           >
             <Button
               variant="contained"
-              color="primary"
               sx={{
                 fontSize: { xs: "12px", sm: "14px", md: "16px" },
                 padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
@@ -315,6 +403,49 @@ export default function SectionSubject() {
               onClick={handleSaveChanges}
             >
               Save Changes
+            </Button>
+
+            <Button
+              variant="contained"
+              disabled={gradesDisabled || importing}
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#242C54",
+              }}
+              onClick={handleImportClick}
+            >
+              {importing ? (
+                <CircularProgress size={20} sx={{ color: "#E8EDF2" }} />
+              ) : (
+                "Import Grades"
+              )}
+            </Button>
+            <input
+              type="file"
+              accept=".xlsx"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileSelected}
+            />
+
+            <Button
+              variant="contained"
+              disabled={gradesDisabled || templateLoading}
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#482454",
+              }}
+              onClick={handleGetTemplate}
+            >
+              {templateLoading ? (
+                <CircularProgress size={20} sx={{ color: "#E8EDF2" }} />
+              ) : (
+                "Get Template"
+              )}
             </Button>
           </Box>
         </Box>
@@ -372,7 +503,7 @@ export default function SectionSubject() {
               isOptionEqualToValue={(option, value) => option?.id === value?.id}
               value={pendingCurriculum}
               onChange={(event, newValue) => handleCurriculumChange(newValue)}
-              renderInput={(params) => <TextField {...params} label="Choose Curriculum" />}
+              renderInput={(params) => <TextField {...params} />}
               fullWidth
               sx={{ backgroundColor: "#E8EDF2" }}
             />
@@ -404,7 +535,7 @@ export default function SectionSubject() {
               isOptionEqualToValue={(option, value) => option?.id === value?.id}
               value={pendingAdviser}
               onChange={(event, newValue) => handleAdviserChange(newValue)}
-              renderInput={(params) => <TextField {...params} label="Choose Adviser" />}
+              renderInput={(params) => <TextField {...params} />}
               fullWidth
               sx={{ backgroundColor: "#E8EDF2" }}
             />
@@ -427,7 +558,9 @@ export default function SectionSubject() {
             onChange={(event, newValue) => {
               handleTeacherChange(subjectId, newValue);
             }}
-            renderInput={(params) => <TextField {...params} label="Choose Teacher" />}
+            renderInput={(params) => (
+              <TextField {...params} label="Choose Teacher" />
+            )}
             fullWidth
           />
         </DialogContent>
@@ -441,6 +574,38 @@ export default function SectionSubject() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        open={errorDialogOpen}
+        onClose={() => setErrorDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Import Failed — Fix These Rows</DialogTitle>
+        <DialogContent>
+          {importErrors.map((msg, i) => (
+            <Typography key={i} variant="body2" sx={{ mb: 1 }}>
+              {msg}
+            </Typography>
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setErrorDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

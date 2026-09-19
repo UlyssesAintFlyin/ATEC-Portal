@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Typography,
-  Box,
-  Button,
-} from "@mui/material";
+import { Typography, Box, Button } from "@mui/material";
 import { Table } from "../../components/Table";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
@@ -100,8 +96,9 @@ export default function SelectedSection() {
             color="inherit"
             onClick={() =>
               navigate(
-                `/admin/section/${sectionName}/${params.row.id}/editGrade`,
-              )
+                `/admin/section/${sectionName}/${params.row.id}/gradeReport`, {
+                state: { sectionName: sectionName, studentName: params.row.studentName  },
+              })
             }
             sx={{
               marginLeft: "10px",
@@ -129,7 +126,7 @@ export default function SelectedSection() {
     <Box
       sx={{
         backgroundColor: "#BAC5D1",
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
       }}
@@ -137,11 +134,12 @@ export default function SelectedSection() {
       <Box
         sx={{
           backgroundColor: "#E8EDF2",
-          height: "100%",
+          minHeight: "100vh",
           width: { xs: "100%", sm: "600px", md: "1200px" },
           margin: "0 auto",
           display: "flex",
           flexDirection: "column",
+          height: "auto",
         }}
       >
         {/* Header with Add and Remove Button */}
@@ -150,7 +148,7 @@ export default function SelectedSection() {
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
-            alignItems: { xs: "center", md: "flex-start" },
+            alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
             marginBottom: "30px",
@@ -187,11 +185,11 @@ export default function SelectedSection() {
           <Box
             sx={{
               display: "flex",
-              justifyContent: "center",
+              justifyContent: {xs:"center", md:"flex-end"},
               alignItems: "center",
               flexDirection: "row",
               flexWrap: "wrap",
-              maxWidth: {xs: "300px", md: "500px"},
+              maxWidth: { xs: "300px", md: "500px" },
               gap: 2,
               marginTop: { xs: "10px", md: "0" },
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
@@ -236,7 +234,7 @@ export default function SelectedSection() {
                 fontSize: { xs: "12px", sm: "14px", md: "16px" },
                 padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
                 color: "#E8EDF2",
-                backgroundColor: "#7B81A3",
+                backgroundColor: "#242c54",
               }}
               onClick={() =>
                 navigate(`/admin/sections/${sectionName}/SectionSubject`, {
@@ -244,19 +242,7 @@ export default function SelectedSection() {
                 })
               }
             >
-              Configure Subjects
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              sx={{
-                fontSize: { xs: "12px", sm: "14px", md: "16px" },
-                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
-                color: "#E8EDF2",
-                backgroundColor: "#242C54",
-              }}
-            >
-              Migrate Selected
+              Grading
             </Button>
           </Box>
         </Box>
@@ -279,6 +265,62 @@ export default function SelectedSection() {
             }}
             selectionModel={selectedIds}
           />
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            width: "100%",
+            minHeight: "200px",
+            marginTop: {xs: -3, md:"80px"},
+            marginBottom: "40px",
+            justifyContent: "center",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              width: "50%",
+              minHeight: "120px",
+              backgroundColor: "#242C54",
+              justifyContent: "center",
+              alignItems: "flex-start",
+              borderRadius: "10px"
+            }}
+          >
+            <Box
+              sx={{
+                margin: "20px",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <Typography
+                variant="h1"
+                sx={{
+                  fontSize: {xs: "15px", md:"25px"},
+                  textAlign: "center",
+                  color: "#E8EDF2",
+                }}
+              >
+                Migrate the following selected students to a different school year or
+                semester.
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{
+                  fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                  padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                  mt: "30px",
+                  color: "#242C54",
+                  backgroundColor: "#E8EDF2",
+                }}
+              >
+                Migrate Students
+              </Button>
+            </Box>
+          </Box>
         </Box>
       </Box>
 

@@ -87,7 +87,7 @@ function App() {
                 <Route path="sections/:sectionName/SectionSubject" element={<SectionSubject />} />
                 <Route path="sections/:sectionName/addStudent" element={<EnrolleeQueue />} />
                 <Route path="section/:sectionName/:studentId" element={<EditStudent />} />
-                <Route path="section/:sectionName/:studentId/editGrade" element={<EditGrade />} />
+                <Route path="section/:sectionName/:studentId/gradeReport" element={<EditGrade />} />
                 <Route path="systemSettings" element={<SystemSettings />} />
                 <Route path="systemSettings/termConfig" element={<TermConfig />} />
                 <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />
