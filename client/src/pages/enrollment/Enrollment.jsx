@@ -334,14 +334,18 @@ export default function Enrollment() {
                 </div>
                 <div className="formGroup small">
                   <label htmlFor="gender">Gender/Sex:</label>
-                  <input
-                    type="text"
+
+                  <select
                     id="gender"
                     name="gender"
                     value={studentDetails.gender}
                     onChange={handleDetailsChange}
                     required
-                  />
+                  >
+                    <option value="">Select Gender/Sex</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
                 </div>
                 <div className="formGroup">
                   <label htmlFor="homeAddress">Home address:</label>
@@ -398,7 +402,7 @@ export default function Enrollment() {
                     name="mothersName"
                     value={studentDetails.mothersName}
                     onChange={handleDetailsChange}
-                    required
+                  
                   />
                 </div>
                 <div className="formGroup">
@@ -411,7 +415,7 @@ export default function Enrollment() {
                     name="mothersContact"
                     value={studentDetails.mothersContact}
                     onChange={handleDetailsChange}
-                    required
+                    
                   />
                 </div>
               </div>
@@ -425,7 +429,7 @@ export default function Enrollment() {
                     name="fathersName"
                     value={studentDetails.fathersName}
                     onChange={handleDetailsChange}
-                    required
+                    
                   />
                 </div>
                 <div className="formGroup">
@@ -438,7 +442,7 @@ export default function Enrollment() {
                     name="fathersContact"
                     value={studentDetails.fathersContact}
                     onChange={handleDetailsChange}
-                    required
+                    
                   />
                 </div>
                 <div className="formGroup">
@@ -570,10 +574,10 @@ export default function Enrollment() {
                 onChange={handleProgramChange}
               >
                 <option value="">Select Track & Specialization</option>
-                <option value="STEM">Art, Social Sciences and Humanities(ASSH)</option>
+                <option value="ASSH">Art, Social Sciences and Humanities(ASSH)</option>
                 <option value="ABM">Accountancy, Business and Management(ABM)</option>
-                <option value="HUMSS">Science, Technology, Engineering and Mathematics(STEM)</option>
-                <option value="TVL">Information, Communication and Technology(TVL)</option>
+                <option value="STEM">Science, Technology, Engineering and Mathematics(STEM)</option>
+                <option value="ICT">Information, Communication and Technology(TVL)</option>
               </select>
             </div>
           ) : (
@@ -626,7 +630,7 @@ export default function Enrollment() {
         <div className="child">
           <p className="stepLabel">Step 3 of 3</p>
           <h6>Review you details</h6>
-          <p>Check your details.</p>
+          <p>Please review your information carefully before proceeding.</p>
           <div className="studentForm">
             <form onSubmit={handleFinalSubmit}>
               <div className="reviewGrid">

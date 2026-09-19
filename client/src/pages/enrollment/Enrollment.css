@@ -159,8 +159,8 @@
 }
 
 .formGroup.small{
-    flex: 0 0 80px;
-    min-width: 80px;
+    flex: 0 0 100px;
+    min-width: 100px;
 }
 
 .formGroup.wide{
