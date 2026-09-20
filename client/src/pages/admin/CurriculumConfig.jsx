@@ -38,9 +38,8 @@ export default function CurriculumConfig() {
         setRows([]);
         return;
       }
-
       setSelectedTerm({
-        id: data.AYS_ID,
+        id: data.AY_ID,
         label: `${data.AY_Name} — ${data.semester_name}`,
       });
     } catch (err) {
@@ -83,6 +82,7 @@ export default function CurriculumConfig() {
       console.error(err);
     }
   };
+  
   const fetchCurricula = async (aysId) => {
     setLoading(true);
     try {
@@ -209,12 +209,12 @@ export default function CurriculumConfig() {
   }, []);
 
   useEffect(() => {
-    if (selectedTerm) {
-      fetchCurricula(selectedTerm.id);
-    } else {
-      setRows([]); // no AY selected → no rows
-    }
-  }, [selectedTerm]);
+  if (selectedTerm) {
+    fetchCurricula(selectedTerm.id);
+  } else {
+    setRows([]);
+  }
+}, [selectedTerm]);
 
   const handleOpenEdit = () => {
     if (selectedIds.length !== 1) return;

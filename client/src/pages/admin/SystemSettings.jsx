@@ -33,12 +33,24 @@ export default function SystemSettings() {
     }, []);
 
     const updateSystemSettings = async (ay_ID, semester_ID) => {
-        await fetch(`${API_URL}/admin/ays`, {
+    try {
+        const res = await fetch(`${API_URL}/admin/ays`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ay_ID, semester_ID }),
         });
-    };
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            alert(data.error || "That academic year and semester combination doesn't exist yet.");
+            return false;
+        }
+        return true;
+    } catch (err) {
+        console.error(err);
+        alert("Failed to update term settings");
+        return false;
+    }
+};
 
 
     const [evaluationEnabled, setEvaluationEnabled] = useState(false);
@@ -50,7 +62,6 @@ export default function SystemSettings() {
                 const response = await fetch(`${API_URL}/admin/systemSettings`);
                 const data = await response.json();
 
-                console.log(data)
                 setEvaluationEnabled(data.evaluation_settings_value === 1);
                 setEnrollmentEnabled(data.enrollment_settings_value === 1);
             } catch (err) {
@@ -78,9 +89,11 @@ export default function SystemSettings() {
                         options={academicYears} 
                         getOptionLabel={(option) => option.name || ""}
                         value={academicYears.find(ay => ay.id === selectedAY) || null}
-                        onChange={(event, newValue) => {
+                        onChange={async (event, newValue) => {
+                            const prevAY = selectedAY;
                             setSelectedAY(newValue?.id || null);
-                            updateSystemSettings(newValue?.id, selectedSemester);
+                            const ok = await updateSystemSettings(newValue?.id, selectedSemester);
+                            if (!ok) setSelectedAY(prevAY);
                         }}
                         sx={{
                             width: { xs: 150, sm: 250, md: 400 },
@@ -96,9 +109,11 @@ export default function SystemSettings() {
                         options={semesters} 
                         getOptionLabel={(option) => option.name || ""}
                         value={semesters.find(s => s.id === selectedSemester) || null}
-                        onChange={(event, newValue) => {
-                            setSelectedSemester(newValue?.id || null);
-                            updateSystemSettings(selectedAY, newValue?.id);
+                        onChange={async (event, newValue) => {
+                            const prevAY = selectedAY;
+                            setSelectedAY(newValue?.id || null);
+                            const ok = await updateSystemSettings(newValue?.id, selectedSemester);
+                            if (!ok) setSelectedAY(prevAY);
                         }}
                         sx={{
                             width: { xs: 150, sm: 250, md: 400 },
