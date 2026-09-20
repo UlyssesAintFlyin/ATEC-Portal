@@ -376,7 +376,6 @@ async function convertEnrollees(req, res) {
       `SELECT * FROM enrollment_table WHERE enrollment_ID IN (?) AND status = 'Validated'`,
       [enrolleeIds]
     );
-    console.log(enrollees);
     const [sectionRows] = await connection.query(
       `SELECT syr.section_record_ID, sec.department
        FROM section_year_record_table syr
@@ -398,7 +397,7 @@ async function convertEnrollees(req, res) {
          (f_Name, m_Name, l_Name, password, gender, contact_Number, email, address, 
           father_Name, father_Contact, mother_Name, mother_Contact, guardian_Name, guardian_Contact, 
           birthdate, age, lrn, account_type_ID) 
-         VALUES (?, ?, ?, "password123", ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, "password123", ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         [
           enrollee.f_Name,
           enrollee.m_Name,
@@ -416,7 +415,6 @@ async function convertEnrollees(req, res) {
           enrollee.birthdate,
           enrollee.age,
           enrollee.lrn || null,
-          enrollee.account_type_ID || null,
         ]
       );
 
@@ -463,9 +461,6 @@ async function convertEnrollees(req, res) {
     if (connection) connection.release();
   }
 }
-
-
-
 
 // Load Section
 async function loadSections(req, res) {
