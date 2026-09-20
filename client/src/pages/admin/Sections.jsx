@@ -58,8 +58,8 @@ export default function Sections() {
         console.error("Error loading sections:", err);
       }
     };
-    if (currentAYS_ID) fetchSections();
-  }, [currentAYS_ID]);
+     fetchSections();
+  }, );
 
   const handleAdd = async () => {
     try {

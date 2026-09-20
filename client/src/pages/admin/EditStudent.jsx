@@ -94,9 +94,6 @@ export default function EditStudent() {
   };
 
 
-
-
-
   return (
     <Box
       sx={{
