@@ -117,13 +117,21 @@ async function loadValidatedEnrollees(req, res) {
                END
              ) AS enrollee,
              e.status,
-             e.student_type
+             CASE 
+               WHEN LOWER(e.student_type) = 'college' THEN 'College'
+               WHEN LOWER(e.student_type) = 'seniorhigh' THEN 'Senior High School'
+               ELSE e.student_type
+             END AS student_type
       FROM enrollment_table e
       JOIN academic_year_semester_table ays ON e.AYS_ID = ays.AYS_ID
       WHERE e.status = 'Validated'
-        AND LOWER(e.student_type) = LOWER(?)
+        AND (
+          (LOWER(e.student_type) = 'college' AND LOWER(?) = 'college')
+          OR (LOWER(e.student_type) = 'seniorhigh' AND LOWER(?) = 'senior high school')
+        )
     `;
-    const params = [department];
+
+    const params = [department, department];
 
     if (ayId) {
       query += ` AND ays.AY_ID = ?`;
@@ -360,22 +368,37 @@ async function convertEnrollees(req, res) {
   console.log("Request body:", req.body);
   const { sectionId, enrolleeIds, AYS_ID } = req.body;
 
+  const connection = await pool.getConnection();
   try {
-    // Get enrollee info
-    const [enrollees] = await pool.query(
+    await connection.beginTransaction();
+
+    const [enrollees] = await connection.query(
       `SELECT * FROM enrollment_table WHERE enrollment_ID IN (?) AND status = 'Validated'`,
       [enrolleeIds]
     );
+    console.log(enrollees);
+    const [sectionRows] = await connection.query(
+      `SELECT syr.section_record_ID, sec.department
+       FROM section_year_record_table syr
+       JOIN section_table sec ON syr.section_ID = sec.section_ID
+       WHERE syr.section_ID = ? AND syr.AYS_ID = ?`,
+      [sectionId, AYS_ID]
+    );
+    if (sectionRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Section/year record not found" });
+    }
+    const { section_record_ID, department } = sectionRows[0];
 
     const createdStudents = [];
 
     for (const enrollee of enrollees) {
-      // Insert into student_table
-      const [studentResult] = await pool.query(
+      const [studentResult] = await connection.query(
         `INSERT INTO student_table 
-         (f_Name, m_Name, l_Name, gender, contact_Number, email, address, birthdate, 
-          father_Name, father_Contact, mother_Name, mother_Contact, guardian_Name, guardian_Contact, password) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "password123")`,
+         (f_Name, m_Name, l_Name, password, gender, contact_Number, email, address, 
+          father_Name, father_Contact, mother_Name, mother_Contact, guardian_Name, guardian_Contact, 
+          birthdate, age, lrn, account_type_ID) 
+         VALUES (?, ?, ?, "password123", ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           enrollee.f_Name,
           enrollee.m_Name,
@@ -384,62 +407,77 @@ async function convertEnrollees(req, res) {
           enrollee.contact_Number,
           enrollee.email,
           enrollee.address,
-          enrollee.birthdate,
           enrollee.father_Name,
           enrollee.father_Contact,
           enrollee.mother_Name,
           enrollee.mother_Contact,
           enrollee.guardian_Name,
           enrollee.guardian_Contact,
-
+          enrollee.birthdate,
+          enrollee.age,
+          enrollee.lrn || null,
+          enrollee.account_type_ID || null,
         ]
       );
 
       const studentId = studentResult.insertId;
 
-      // Insert into student_year_record_table
-      await pool.query(
+      const normalizedDepartment =
+        enrollee.student_type?.toLowerCase() === "college"
+          ? "College"
+          : enrollee.student_type?.toLowerCase() === "seniorhigh"
+          ? "Senior High School"
+          : department;
+
+      await connection.query(
         `INSERT INTO student_year_record_table
-        (student_ID, section_ID, AYS_ID, program, department, specialization)
-        SELECT ?, ?, ?, ?, s.department, ?
-        FROM section_table s
-        WHERE s.section_ID = ?`,
-        [studentId, sectionId, AYS_ID, enrollee.program, enrollee.specialization, sectionId]
+         (student_ID, section_record_ID, program, department, specialization)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          studentId,
+          section_record_ID,
+          enrollee.track,
+          normalizedDepartment,
+          enrollee.specialization,
+        ]
       );
 
-      // Mark enrollee as converted
-      await pool.query(
+      await connection.query(
         `DELETE FROM enrollment_table WHERE enrollment_ID = ?`,
         [enrollee.enrollment_ID]
       );
 
       createdStudents.push({
         id: studentId,
-        name: `${enrollee.f_Name} ${enrollee.l_Name}`
+        name: `${enrollee.f_Name} ${enrollee.l_Name}`,
       });
     }
 
+    await connection.commit();
     res.json({ success: true, students: createdStudents });
   } catch (err) {
     console.error("Error converting enrollees:", err);
+    if (connection) await connection.rollback();
     res.status(500).json({ error: "Failed to convert enrollees" });
+  } finally {
+    if (connection) connection.release();
   }
 }
+
+
+
 
 // Load Section
 async function loadSections(req, res) {
   try {
-    const { AYS_ID } = req.query;
 
     const [rows] = await pool.query(
       `SELECT section_ID AS id,
               section_Name AS sectionName,
               gradeLevel,
-              department,
-              AYS_ID
+              department         
        FROM section_table
-       WHERE AYS_ID = ?`,
-      [AYS_ID]
+       `,  
     );
 
     res.json(rows);
@@ -504,58 +542,69 @@ async function loadStudentsBySection(req, res) {
   try {
     const { sectionId } = req.params;
     const { AYS_ID } = req.query;
+
     const [rows] = await pool.query(
       `SELECT s.student_ID AS id,
               CONCAT(
-         s.l_Name, ', ',
-         s.f_Name, ' ',
-         CASE 
-           WHEN s.m_Name IS NOT NULL AND s.m_Name <> '' 
-           THEN CONCAT(LEFT(s.m_Name,1), '.')
-           ELSE ''
-         END
-       ) AS studentName,
+                s.l_Name, ', ',
+                s.f_Name, ' ',
+                CASE 
+                  WHEN s.m_Name IS NOT NULL AND s.m_Name <> '' 
+                  THEN CONCAT(LEFT(s.m_Name,1), '.')
+                  ELSE ''
+                END
+              ) AS studentName,
               s.gender,
               TIMESTAMPDIFF(YEAR, s.birthdate, CURDATE()) AS age,
               syr.program,
               syr.specialization,
               syr.department,
-              syr.AYS_ID
+              syrt.AYS_ID
        FROM student_year_record_table syr
-       JOIN student_table s ON syr.student_ID = s.student_ID
-       WHERE syr.section_ID = ? AND syr.AYS_ID = ?
+       JOIN student_table s 
+         ON syr.student_ID = s.student_ID
+       JOIN section_year_record_table syrt 
+         ON syr.section_record_ID = syrt.section_record_ID
+       WHERE syrt.section_ID = ? 
+         AND syrt.AYS_ID = ?
        ORDER BY s.l_Name ASC`,
       [sectionId, AYS_ID]
     );
+
     res.json(rows);
   } catch (err) {
+    console.error("Error loading students:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to load students" });
   }
 }
+
 
 //getStudent Info by ID
 async function getStudentById(req, res) {
   try {
     const { AYS_ID } = req.query;
     const { id } = req.params;
+
     const [rows] = await pool.query(
       `SELECT 
-      s.f_Name, s.m_Name, s.l_Name, s.gender, s.contact_Number, s.email, s.address,
-      s.father_Name, s.father_Contact, s.mother_Name, s.mother_Contact,
-      s.guardian_Name, s.guardian_Contact,
-      s.birthdate, s.age, s.lrn, s.password,
-      syr.department, syr.program,
-      sec.section_Name, sec.gradeLevel, sec.section_ID
-   FROM student_table s
-   JOIN student_year_record_table syr 
-     ON s.student_ID = syr.student_ID
-   JOIN section_table sec 
-     ON syr.section_ID = sec.section_ID
-   WHERE s.student_ID = ? AND syr.AYS_ID = ?`,
+        s.f_Name, s.m_Name, s.l_Name, s.gender, s.contact_Number, s.email, s.address,
+        s.father_Name, s.father_Contact, s.mother_Name, s.mother_Contact,
+        s.guardian_Name, s.guardian_Contact,
+        s.birthdate, s.age, s.lrn, s.password,
+        syr.department, syr.program,
+        sec.section_Name, sec.gradeLevel, sec.section_ID,
+        syrt.AYS_ID
+       FROM student_table s
+       JOIN student_year_record_table syr 
+         ON s.student_ID = syr.student_ID
+       JOIN section_year_record_table syrt 
+         ON syr.section_record_ID = syrt.section_record_ID
+       JOIN section_table sec 
+         ON syrt.section_ID = sec.section_ID
+       WHERE s.student_ID = ? 
+         AND syrt.AYS_ID = ?`,
       [id, AYS_ID]
     );
-
-
 
     if (rows.length === 0) {
       return res.status(404).json({ error: "Student not found" });
@@ -563,7 +612,7 @@ async function getStudentById(req, res) {
 
     res.json(rows[0]);
   } catch (err) {
-    console.error("Error fetching student info:", err);
+    console.error("Error fetching student info:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to fetch student info" });
   }
 }
@@ -601,20 +650,32 @@ async function updateStudentById(req, res) {
       ]
     );
 
+    const [sectionRows] = await pool.query(
+      `SELECT section_record_ID 
+       FROM section_year_record_table 
+       WHERE section_ID = ? AND AYS_ID = ?`,
+      [section_ID, AYS_ID]
+    );
+
+    if (sectionRows.length === 0) {
+      return res.status(400).json({ error: "Invalid section/year combination" });
+    }
+
+    const section_record_ID = sectionRows[0].section_record_ID;
+
     await pool.query(
       `UPDATE student_year_record_table
-       SET department = ?, program = ?, section_ID = ?
-       WHERE student_ID = ? AND AYS_ID = ?`,
-      [department, program, section_ID, id, AYS_ID]
+       SET department = ?, program = ?, section_record_ID = ?
+       WHERE student_ID = ?`,
+      [department, program, section_record_ID, id]
     );
 
     res.json({ success: true, message: "Student updated successfully" });
   } catch (err) {
-    console.error("Error updating student:", err);
+    console.error("Error updating student:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to update student" });
   }
 }
-
 
 async function loadFaculty(req, res) {
   try {
@@ -648,134 +709,111 @@ async function getSectionsByDepartment(req, res) {
     const { department, AYS_ID } = req.query;
 
     const [rows] = await pool.query(
-      `SELECT section_ID, section_Name, gradeLevel
-       FROM section_table
-       WHERE department = ? AND AYS_ID = ?
-       ORDER BY gradeLevel, section_Name`,
+      `SELECT sec.section_ID, sec.section_Name, sec.gradeLevel
+       FROM section_table sec
+       JOIN section_year_record_table syrt 
+         ON sec.section_ID = syrt.section_ID
+       WHERE sec.department = ? 
+         AND syrt.AYS_ID = ?
+       ORDER BY sec.gradeLevel, sec.section_Name`,
       [department, AYS_ID]
     );
 
     res.json(rows);
   } catch (err) {
-    console.error("Error fetching sections:", err);
+    console.error("Error fetching sections:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to fetch sections" });
   }
 }
 
 async function getSectionAdvisers(req, res) {
   try {
-    const { sectionId } = req.query;
+    const { sectionId, AYS_ID } = req.query;
+    if (!sectionId || !AYS_ID) return res.status(400).json({ error: "sectionId and AYS_ID are required" });
 
-  
     const [sectionRows] = await pool.query(
-      `SELECT sec.section_ID,
-              sec.section_Name,
-              sec.faculty_ID AS currentAdviserId,
+      `SELECT sec.section_ID, sec.section_Name,
+              syrt.faculty_ID AS currentAdviserId,
               CONCAT(f.l_Name, ', ', f.f_Name,
                 CASE WHEN f.m_Name IS NOT NULL AND f.m_Name <> '' 
                      THEN CONCAT(' ', LEFT(f.m_Name,1), '.') ELSE '' END
               ) AS currentAdviserName
        FROM section_table sec
-       LEFT JOIN faculty_table f ON sec.faculty_ID = f.faculty_ID
-       WHERE sec.section_ID = ?`,
-      [sectionId]
+       JOIN section_year_record_table syrt ON sec.section_ID = syrt.section_ID
+       LEFT JOIN faculty_table f ON syrt.faculty_ID = f.faculty_ID
+       WHERE sec.section_ID = ? AND syrt.AYS_ID = ?`,
+      [sectionId, AYS_ID]
     );
-
-    if (sectionRows.length === 0) {
-      return res.status(404).json({ error: "Section not found" });
-    }
+    if (sectionRows.length === 0) return res.status(404).json({ error: "Section not found for given year" });
 
     const section = sectionRows[0];
-
     const [facultyRows] = await pool.query(
       `SELECT faculty_ID AS id,
               CONCAT(l_Name, ', ', f_Name,
                 CASE WHEN m_Name IS NOT NULL AND m_Name <> '' 
                      THEN CONCAT(' ', LEFT(m_Name,1), '.') ELSE '' END
-              ) AS name,
-              position, status
-       FROM faculty_table
-       WHERE status != 'Resigned'`
+              ) AS name, position, status
+       FROM faculty_table WHERE status != 'Resigned'`
     );
 
     res.json({
       sectionId: section.section_ID,
       sectionName: section.section_Name,
-      currentAdviser: {
-        id: section.currentAdviserId,
-        name: section.currentAdviserName
-      },
+      currentAdviser: { id: section.currentAdviserId, name: section.currentAdviserName },
       facultyOptions: facultyRows
     });
   } catch (err) {
-    console.error("Error fetching advisers:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to fetch advisers" });
   }
 }
 
 async function assignAdviser(req, res) {
   try {
-    const { sectionId, facultyId } = req.body;
+    const { sectionId, AYS_ID, facultyId } = req.body;
+    if (!sectionId || !AYS_ID) return res.status(400).json({ error: "sectionId and AYS_ID are required" });
 
-    if (!sectionId) {
-      return res.status(400).json({ error: "sectionId is required" });
-    }
     if (facultyId) {
-      const [rows] = await pool.query(
-        `SELECT status FROM faculty_table WHERE faculty_ID = ?`,
-        [facultyId]
-      );
-      if (rows.length === 0) {
-        return res.status(404).json({ error: "Faculty not found" });
-      }
-      if (rows[0].status === "Resigned") {
-        return res.status(400).json({ error: "Cannot assign a resigned faculty" });
-      }
+      const [rows] = await pool.query(`SELECT status FROM faculty_table WHERE faculty_ID = ?`, [facultyId]);
+      if (rows.length === 0) return res.status(404).json({ error: "Faculty not found" });
+      if (rows[0].status === "Resigned") return res.status(400).json({ error: "Cannot assign a resigned faculty" });
     }
 
-    await pool.query(
-      `UPDATE section_table SET faculty_ID = ? WHERE section_ID = ?`,
-      [facultyId || null, sectionId]
+    const [result] = await pool.query(
+      `UPDATE section_year_record_table SET faculty_ID = ? WHERE section_ID = ? AND AYS_ID = ?`,
+      [facultyId || null, sectionId, AYS_ID]
     );
+    if (result.affectedRows === 0) return res.status(404).json({ error: "Section/year record not found" });
 
     res.json({ message: "Adviser updated successfully" });
   } catch (err) {
-    console.error("Error updating adviser:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to update adviser" });
   }
 }
 
 async function listCurriculumsBySection(req, res) {
   try {
-    const { sectionId } = req.query;
+    const { sectionId, AYS_ID } = req.query;
+    if (!sectionId || !AYS_ID) return res.status(400).json({ error: "sectionId and AYS_ID are required" });
 
     const [sectionRows] = await pool.query(
-      `SELECT department, curriculum_ID, AYS_ID
-       FROM section_table
-       WHERE section_ID = ?`,
-      [sectionId]
+      `SELECT sec.department, syrt.curriculum_record_ID
+       FROM section_table sec
+       JOIN section_year_record_table syrt ON sec.section_ID = syrt.section_ID
+       WHERE sec.section_ID = ? AND syrt.AYS_ID = ?`,
+      [sectionId, AYS_ID]
     );
+    if (sectionRows.length === 0) return res.status(404).json({ error: "Section/year record not found" });
 
-    if (sectionRows.length === 0) {
-      return res.status(404).json({ error: "Section not found" });
-    }
-
-    const { department, curriculum_ID, AYS_ID } = sectionRows[0];
-
+    const { department, curriculum_record_ID } = sectionRows[0];
     const [curriculums] = await pool.query(
-      `SELECT curriculum_ID AS id,
-              curriculum_Name AS name,
-              AY_ID,
-              department
-       FROM curriculum_table
-       WHERE AY_ID = ? AND department = ?`,
+      `SELECT c.curriculum_ID AS id, c.curriculum_Name AS name, c.department
+       FROM curriculum_table c
+       JOIN curriculum_year_record_table cyr ON c.curriculum_ID = cyr.curriculum_ID
+       WHERE cyr.AYS_ID = ? AND c.department = ?`,
       [AYS_ID, department]
     );
-    res.json({
-      sectionId,
-      currentCurriculumId: curriculum_ID,
-      curriculumOptions: curriculums
-    });
+
+    res.json({ sectionId, currentCurriculumId: curriculum_record_ID, curriculumOptions: curriculums });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch curriculums" });
   }
@@ -783,16 +821,24 @@ async function listCurriculumsBySection(req, res) {
 
 async function updateSectionCurriculum(req, res) {
   try {
-    const { sectionId, curriculumId } = req.body;
+    const { sectionId, AYS_ID, curriculumId } = req.body;
+    if (!sectionId || !AYS_ID) return res.status(400).json({ error: "sectionId and AYS_ID are required" });
 
-    if (!sectionId) {
-      return res.status(400).json({ error: "sectionId is required" });
+    let curriculum_record_ID = null;
+    if (curriculumId) {
+      const [rows] = await pool.query(
+        `SELECT curriculum_record_ID FROM curriculum_year_record_table WHERE curriculum_ID = ? AND AYS_ID = ?`,
+        [curriculumId, AYS_ID]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Curriculum/year record not found" });
+      curriculum_record_ID = rows[0].curriculum_record_ID;
     }
 
-    await pool.query(
-      `UPDATE section_table SET curriculum_ID = ? WHERE section_ID = ?`,
-      [curriculumId || null, sectionId]
+    const [result] = await pool.query(
+      `UPDATE section_year_record_table SET curriculum_record_ID = ? WHERE section_ID = ? AND AYS_ID = ?`,
+      [curriculum_record_ID, sectionId, AYS_ID]
     );
+    if (result.affectedRows === 0) return res.status(404).json({ error: "Section/year record not found" });
 
     res.json({ message: "Curriculum updated successfully" });
   } catch (err) {
@@ -802,95 +848,75 @@ async function updateSectionCurriculum(req, res) {
 
 async function getCurrentSubjectTeacher(req, res) {
   try {
-    const { subjectId, sectionId, aysId } = req.query;
-
-    if (!subjectId || !sectionId || !aysId) {
-      return res.status(400).json({ error: "subjectId, sectionId, and aysId are required" });
-    }
+    const { subjectId, sectionId, AYS_ID } = req.query;
+    if (!subjectId || !sectionId || !AYS_ID) return res.status(400).json({ error: "subjectId, sectionId, and AYS_ID are required" });
 
     const [rows] = await pool.query(
-      `SELECT f.faculty_ID AS id,
-              CONCAT(f.f_Name, ' ', f.l_Name) AS name
+      `SELECT f.faculty_ID AS id, CONCAT(f.f_Name, ' ', f.l_Name) AS name
        FROM faculty_year_record_table fyr
        JOIN faculty_table f ON f.faculty_ID = fyr.faculty_ID
-       WHERE fyr.subject_ID = ? AND fyr.section_ID = ? AND fyr.AYS_ID = ?`,
-      [subjectId, sectionId, aysId]
+       JOIN section_year_record_table syrt ON fyr.section_record_ID = syrt.section_record_ID
+       WHERE fyr.subject_ID = ? AND syrt.section_ID = ? AND syrt.AYS_ID = ?`,
+      [subjectId, sectionId, AYS_ID]
     );
-
     const currentTeacher = rows.length > 0 ? rows[0] : null;
 
     const [teachers] = await pool.query(
-      `SELECT faculty_ID AS id,
-              CONCAT(f_Name, ' ', l_Name) AS name
-       FROM faculty_table
-       WHERE position = 'Teacher' AND status = 'Active'`
+      `SELECT faculty_ID AS id, CONCAT(f_Name, ' ', l_Name) AS name
+       FROM faculty_table WHERE position = 'Teacher' AND status = 'Active'`
     );
 
     res.json({ currentTeacher, teacherOptions: teachers });
   } catch (err) {
-    console.error("Error retrieving current teacher:", err);
     res.status(500).json({ error: "Failed to retrieve current teacher" });
   }
 }
 
 async function assignTeacherToSubject(req, res) {
   try {
-    const { subjectId, sectionId, aysId, teacherId } = req.body;
+    const { subjectId, sectionId, AYS_ID, teacherId } = req.body;
+    if (!subjectId || !sectionId || !AYS_ID) return res.status(400).json({ error: "subjectId, sectionId, and AYS_ID are required" });
 
-    if (!subjectId || !sectionId || !aysId) {
-      return res.status(400).json({ error: "subjectId, sectionId, and aysId are required" });
-    }
+    const [sectionRows] = await pool.query(
+      `SELECT section_record_ID FROM section_year_record_table WHERE section_ID = ? AND AYS_ID = ?`,
+      [sectionId, AYS_ID]
+    );
+    if (sectionRows.length === 0) return res.status(404).json({ error: "Section/year record not found" });
 
+    const section_record_ID = sectionRows[0].section_record_ID;
     const [rows] = await pool.query(
-      `SELECT * FROM faculty_year_record_table 
-       WHERE subject_ID = ? AND section_ID = ? AND AYS_ID = ?`,
-      [subjectId, sectionId, aysId]
+      `SELECT * FROM faculty_year_record_table WHERE subject_ID = ? AND section_record_ID = ?`,
+      [subjectId, section_record_ID]
     );
 
     if (rows.length > 0) {
       await pool.query(
-        `UPDATE faculty_year_record_table
-         SET faculty_ID = ?
-         WHERE subject_ID = ? AND section_ID = ? AND AYS_ID = ?`,
-        [teacherId || null, subjectId, sectionId, aysId]
+        `UPDATE faculty_year_record_table SET faculty_ID = ? WHERE subject_ID = ? AND section_record_ID = ?`,
+        [teacherId || null, subjectId, section_record_ID]
       );
     } else {
       await pool.query(
-        `INSERT INTO faculty_year_record_table (subject_ID, section_ID, AYS_ID, faculty_ID)
-         VALUES (?, ?, ?, ?)`,
-        [subjectId, sectionId, aysId, teacherId || null]
-      );
-    }
-
-    if (teacherId) {
-      await pool.query(
-        `DELETE FROM faculty_year_record_table
-         WHERE subject_ID = ? AND section_ID = ? AND AYS_ID = ? AND faculty_ID IS NOT NULL AND faculty_ID != ?`,
-        [subjectId, sectionId, aysId, teacherId]
+        `INSERT INTO faculty_year_record_table (subject_ID, section_record_ID, faculty_ID) VALUES (?, ?, ?)`,
+        [subjectId, section_record_ID, teacherId || null]
       );
     }
 
     let updatedTeacher = null;
     if (teacherId) {
       const [teacherRows] = await pool.query(
-        `SELECT faculty_ID AS id,
-                CONCAT(f_Name, ' ', l_Name) AS name
-         FROM faculty_table
-         WHERE faculty_ID = ?`,
+        `SELECT faculty_ID AS id, CONCAT(f_Name, ' ', l_Name) AS name FROM faculty_table WHERE faculty_ID = ?`,
         [teacherId]
       );
       updatedTeacher = teacherRows[0] || null;
     }
 
-    res.json({
-      message: "Teacher assignment saved successfully",
-      currentTeacher: updatedTeacher
-    });
+    res.json({ message: "Teacher assignment saved successfully", currentTeacher: updatedTeacher });
   } catch (err) {
-    console.error("Error saving teacher assignment:", err);
     res.status(500).json({ error: "Failed to save teacher assignment" });
   }
 }
+
+
 
 
 
@@ -916,6 +942,7 @@ module.exports = {
   deleteSections,
   loadStudentsBySection,
   convertEnrollees,
+
   getStudentById,
   updateStudentById, 
   loadFaculty,
