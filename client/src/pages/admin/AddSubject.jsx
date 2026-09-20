@@ -13,7 +13,7 @@ import {
 import { EditableTable } from "../../components/EditableTable";
 import { useNavigate, useParams } from "react-router-dom";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function AddSubject() {
   const navigate = useNavigate();

@@ -285,6 +285,22 @@ async function getCurrentAcademicYear(req, res) {
   }
 }
 
+async function loadAcademicYearSemesters(req, res) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT ays.AYS_ID, ay.AY_Name, sem.semester_name
+       FROM academic_year_semester_table ays
+       JOIN academic_year_table ay ON ays.AY_ID = ay.AY_ID
+       JOIN semester_table sem ON ays.semester_ID = sem.semester_ID
+       ORDER BY ay.AY_ID DESC, sem.semester_ID ASC`
+    );
+    res.json(rows); // [{ AYS_ID, AY_Name, semester_name }, ...]
+  } catch (err) {
+    console.error("Error loading academic year semesters:", err);
+    res.status(500).json({ error: "Failed to load academic year semesters" });
+  }
+}
+
 // Reject enrollees
 async function rejectEnrollees(req, res) {
   try {
@@ -926,5 +942,6 @@ module.exports = {
   listCurriculumsBySection,
   updateSectionCurriculum,
   getCurrentSubjectTeacher,
-  assignTeacherToSubject
+  assignTeacherToSubject,
+  loadAcademicYearSemesters,
 };

@@ -27,7 +27,8 @@ const {
   listCurriculumsBySection,
   updateSectionCurriculum,
   getCurrentSubjectTeacher,
-  assignTeacherToSubject
+  assignTeacherToSubject,
+  loadAcademicYearSemesters
 
 } = require('../controllers/adminController');
 
@@ -39,7 +40,8 @@ router.get('/loadValidatedEnrollees', loadValidatedEnrollees); //this pulls in t
 router.put('/toggleEvaluation', toggleEvaluation); //this pulls in the toggleEvaluation function
 router.put('/toggleEnrollment', toggleEnrollment); //this pulls in the toggleEnrollment function
 router.get('/systemSettings', getSystemSettings); //this pulls in the getSystemSettings function
-router.get('/currentAcademicYear', getCurrentAcademicYear); //this pulls in the getCurrentAcademicYear function
+router.get('/currentAcademicYear', getCurrentAcademicYear);//this pulls in the getCurrentAcademicYear function
+router.get('/loadAcademicYear', loadAcademicYearSemesters); 
 router.post('/rejectEnrollees', rejectEnrollees); //this pulls in the rejectEnrollees function
 router.get('/enrollees/:id', getEnrolleeById); //this pulls in the getEnrolleeById function
 router.get('/enrollees/:id/validate', validateEnrollee); //this pulls in the validateEnrollee function
