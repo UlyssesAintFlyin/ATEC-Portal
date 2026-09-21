@@ -791,15 +791,16 @@ async function listCurriculumsBySection(req, res) {
     if (!sectionId || !AYS_ID) return res.status(400).json({ error: "sectionId and AYS_ID are required" });
 
     const [sectionRows] = await pool.query(
-      `SELECT sec.department, syrt.curriculum_record_ID
+      `SELECT sec.department, cyr.curriculum_ID AS currentCurriculumId
        FROM section_table sec
        JOIN section_year_record_table syrt ON sec.section_ID = syrt.section_ID
+       LEFT JOIN curriculum_year_record_table cyr ON syrt.curriculum_record_ID = cyr.curriculum_record_ID
        WHERE sec.section_ID = ? AND syrt.AYS_ID = ?`,
       [sectionId, AYS_ID]
     );
     if (sectionRows.length === 0) return res.status(404).json({ error: "Section/year record not found" });
 
-    const { department, curriculum_record_ID } = sectionRows[0];
+    const { department, currentCurriculumId } = sectionRows[0];
     const [curriculums] = await pool.query(
       `SELECT c.curriculum_ID AS id, c.curriculum_Name AS name, c.department
        FROM curriculum_table c
@@ -808,7 +809,7 @@ async function listCurriculumsBySection(req, res) {
       [AYS_ID, department]
     );
 
-    res.json({ sectionId, currentCurriculumId: curriculum_record_ID, curriculumOptions: curriculums });
+    res.json({ sectionId, currentCurriculumId, curriculumOptions: curriculums });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch curriculums" });
   }

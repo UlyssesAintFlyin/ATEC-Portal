@@ -1,5 +1,14 @@
-const pool = require('../config/db'); 
+const pool = require('../config/db');
 const ExcelJS = require('exceljs');
+
+// Resolve the section_record_ID for a given section + term
+async function getSectionRecordId(conn, sectionId, aysId) {
+  const [[row]] = await conn.query(
+    `SELECT section_record_ID FROM section_year_record_table WHERE section_ID = ? AND AYS_ID = ?`,
+    [sectionId, aysId]
+  );
+  return row ? row.section_record_ID : null;
+}
 
 // subjects belonging to a curriculum, deterministic order
 async function getSubjectsForCurriculum(conn, curriculumId) {
@@ -14,15 +23,15 @@ async function getSubjectsForCurriculum(conn, curriculumId) {
   return subjects;
 }
 
-// students currently in this section for this term
-async function getStudentsInSection(conn, sectionId, aysId) {
+// students belonging to a specific section_year_record_table row
+async function getStudentsInSectionRecord(conn, sectionRecordId) {
   const [students] = await conn.query(
     `SELECT st.student_ID, st.lrn, st.f_Name, st.m_Name, st.l_Name
      FROM student_year_record_table syr
      JOIN student_table st ON syr.student_ID = st.student_ID
-     WHERE syr.section_ID = ? AND syr.AYS_ID = ?
+     WHERE syr.section_record_ID = ?
      ORDER BY st.l_Name, st.f_Name`,
-    [sectionId, aysId]
+    [sectionRecordId]
   );
   return students;
 }
@@ -32,8 +41,8 @@ function formatName(st) {
   return `${st.l_Name}, ${st.f_Name}${middleInitial}`;
 }
 
-// GET /admin/grades/template?sectionId=&curriculumId=&aysId=
-async function getGradeTemplate (req, res) {
+// GET /grades/template?sectionId=&curriculumId=&aysId=
+async function getGradeTemplate(req, res) {
   const { sectionId, curriculumId, aysId } = req.query;
   if (!sectionId || !curriculumId || !aysId) {
     return res.status(400).json({ message: 'sectionId, curriculumId, and aysId are required' });
@@ -41,8 +50,13 @@ async function getGradeTemplate (req, res) {
 
   const conn = await pool.getConnection();
   try {
+    const sectionRecordId = await getSectionRecordId(conn, sectionId, aysId);
+    if (!sectionRecordId) {
+      return res.status(404).json({ message: 'Section/year record not found' });
+    }
+
     const subjects = await getSubjectsForCurriculum(conn, curriculumId);
-    const students = await getStudentsInSection(conn, sectionId, aysId);
+    const students = await getStudentsInSectionRecord(conn, sectionRecordId);
 
     if (subjects.length === 0) {
       return res.status(400).json({ message: 'This curriculum has no subjects assigned' });
@@ -51,15 +65,14 @@ async function getGradeTemplate (req, res) {
       return res.status(400).json({ message: 'No students enrolled in this section' });
     }
 
-    // Existing grades, so re-downloads show current state instead of blanks
     const studentIds = students.map((s) => s.student_ID);
     const [existingGrades] = await conn.query(
       `SELECT student_ID, subject_ID, grade_value
        FROM grade_table
-       WHERE section_ID = ? AND AYS_ID = ? AND student_ID IN (?)`,
-      [sectionId, aysId, studentIds.length ? studentIds : [0]]
+       WHERE section_record_ID = ? AND student_ID IN (?)`,
+      [sectionRecordId, studentIds.length ? studentIds : [0]]
     );
-    const gradeLookup = {}; // `${student_ID}_${subject_ID}` -> grade_value
+    const gradeLookup = {};
     existingGrades.forEach((g) => {
       gradeLookup[`${g.student_ID}_${g.subject_ID}`] = g.grade_value;
     });
@@ -103,10 +116,10 @@ async function getGradeTemplate (req, res) {
   } finally {
     conn.release();
   }
-};
+}
 
-// POST /admin/grades/import  (multipart/form-data: file, sectionId, curriculumId, aysId)
-async function importGrades (req, res) {
+// POST /grades/import (multipart/form-data: file, sectionId, curriculumId, aysId)
+async function importGrades(req, res) {
   const { sectionId, curriculumId, aysId } = req.body;
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
   if (!sectionId || !curriculumId || !aysId) {
@@ -115,6 +128,11 @@ async function importGrades (req, res) {
 
   const conn = await pool.getConnection();
   try {
+    const sectionRecordId = await getSectionRecordId(conn, sectionId, aysId);
+    if (!sectionRecordId) {
+      return res.status(404).json({ message: 'Section/year record not found' });
+    }
+
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(req.file.buffer);
     const sheet = workbook.worksheets[0];
@@ -122,8 +140,7 @@ async function importGrades (req, res) {
     const subjects = await getSubjectsForCurriculum(conn, curriculumId);
     const subjectByCode = Object.fromEntries(subjects.map((s) => [s.subject_code, s.subject_ID]));
 
-    // Map header columns (3+) to subject_ID; validate against current curriculum
-    const headerRow = sheet.getRow(1).values; // 1-indexed; index 0 unused
+    const headerRow = sheet.getRow(1).values;
     const columnSubjectMap = {};
     for (let col = 3; col < headerRow.length; col++) {
       const code = headerRow[col];
@@ -139,7 +156,7 @@ async function importGrades (req, res) {
       return res.status(400).json({ message: 'No subject columns found in file' });
     }
 
-    const students = await getStudentsInSection(conn, sectionId, aysId);
+    const students = await getStudentsInSectionRecord(conn, sectionRecordId);
     const studentByLRN = Object.fromEntries(students.map((s) => [String(s.lrn), s.student_ID]));
 
     const errors = [];
@@ -159,7 +176,7 @@ async function importGrades (req, res) {
       for (const [colIndex, subjectId] of Object.entries(columnSubjectMap)) {
         const cell = row.getCell(Number(colIndex));
         const value = cell.value;
-        if (value === null || value === undefined || value === '') continue; // ungraded, skip
+        if (value === null || value === undefined || value === '') continue;
 
         const gradeValue = Number(value);
         if (Number.isNaN(gradeValue) || gradeValue < 0 || gradeValue > 100) {
@@ -167,7 +184,7 @@ async function importGrades (req, res) {
           continue;
         }
 
-        gradeRows.push([gradeValue, studentId, subjectId, sectionId, aysId]);
+        gradeRows.push([gradeValue, studentId, subjectId, sectionRecordId]);
       }
     });
 
@@ -180,7 +197,7 @@ async function importGrades (req, res) {
 
     await conn.beginTransaction();
     await conn.query(
-      `INSERT INTO grade_table (grade_value, student_ID, subject_ID, section_ID, AYS_ID)
+      `INSERT INTO grade_table (grade_value, student_ID, subject_ID, section_record_ID)
        VALUES ?
        ON DUPLICATE KEY UPDATE grade_value = VALUES(grade_value), updated_at = CURRENT_TIMESTAMP`,
       [gradeRows]
@@ -195,27 +212,29 @@ async function importGrades (req, res) {
   } finally {
     conn.release();
   }
-};
+}
 
+// GET /grades/studCurriculumRecord?studentId=
 async function getStudCurriculumRecord(req, res) {
   const { studentId } = req.query;
   if (!studentId) return res.status(400).json({ message: 'studentId is required' });
 
   try {
     const [rows] = await pool.query(
-      `SELECT DISTINCT ays.AYS_ID, ay.AY_Name, sem.semester_Name
+      `SELECT DISTINCT ays.AYS_ID, ay.AY_Name, sem.semester_name
        FROM student_year_record_table syr
-       JOIN academic_year_semester_table ays ON syr.AYS_ID = ays.AYS_ID
+       JOIN section_year_record_table sec_yr ON syr.section_record_ID = sec_yr.section_record_ID
+       JOIN academic_year_semester_table ays ON sec_yr.AYS_ID = ays.AYS_ID
        JOIN academic_year_table ay ON ays.AY_ID = ay.AY_ID
        JOIN semester_table sem ON ays.semester_ID = sem.semester_ID
        WHERE syr.student_ID = ?
-       ORDER BY ay.AY_Name DESC, sem.semester_Name DESC`,
+       ORDER BY ay.AY_Name DESC, sem.semester_name DESC`,
       [studentId]
     );
     res.json(
       rows.map((r) => ({
         id: r.AYS_ID,
-        label: `${r.AY_Name} - ${r.semester_Name}`,
+        label: `${r.AY_Name} - ${r.semester_name}`,
       }))
     );
   } catch (err) {
@@ -232,14 +251,20 @@ async function getStudentGradeReport(req, res) {
   }
 
   try {
-    // Section the student was in for this specific AYS
-    const [[record]] = await pool.query(
-      `SELECT sec.section_Name
+    const [[studentRecord]] = await pool.query(
+      `SELECT syr.section_record_ID, sec.section_Name
        FROM student_year_record_table syr
-       LEFT JOIN section_table sec ON syr.section_ID = sec.section_ID
-       WHERE syr.student_ID = ? AND syr.AYS_ID = ?`,
+       JOIN section_year_record_table sec_yr ON syr.section_record_ID = sec_yr.section_record_ID
+       LEFT JOIN section_table sec ON sec_yr.section_ID = sec.section_ID
+       WHERE syr.student_ID = ? AND sec_yr.AYS_ID = ?`,
       [studentId, aysId]
     );
+
+    if (!studentRecord) {
+      return res.json({ report: [], sectionName: "—" });
+    }
+
+    const { section_record_ID, section_Name } = studentRecord;
 
     const [rows] = await pool.query(
       `SELECT
@@ -252,12 +277,11 @@ async function getStudentGradeReport(req, res) {
        JOIN subject_table s ON g.subject_ID = s.subject_ID
        LEFT JOIN faculty_load_table fl
          ON fl.subject_ID = g.subject_ID
-        AND fl.section_ID = g.section_ID
-        AND fl.AYS_ID = g.AYS_ID
+        AND fl.section_record_ID = g.section_record_ID
        LEFT JOIN faculty_table f ON fl.faculty_ID = f.faculty_ID
-       WHERE g.student_ID = ? AND g.AYS_ID = ?
+       WHERE g.student_ID = ? AND g.section_record_ID = ?
        ORDER BY s.subject_Name`,
-      [studentId, aysId]
+      [studentId, section_record_ID]
     );
 
     const report = rows.map((r) => ({
@@ -267,10 +291,7 @@ async function getStudentGradeReport(req, res) {
       grade: r.grade_value,
     }));
 
-    res.json({
-      report,
-      sectionName: record?.section_Name ?? "—",
-    });
+    res.json({ report, sectionName: section_Name ?? "—" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch grade report' });
