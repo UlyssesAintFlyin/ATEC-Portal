@@ -60,7 +60,29 @@ export default function Sections() {
     };
      fetchSections();
   }, );
+  useEffect(() => {
+  const initializeSectionYearRecords = async () => {
+    try {
+      const response = await fetch(`${API_URL}/admin/sections/initialize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ AYS_ID: currentAYS_ID }),
+      });
 
+      if (response.ok) {
+        console.log('Section year records initialized successfully.');
+      } else {
+        console.error('Failed to initialize section year records:', response.statusText);
+      }
+    } catch (err) {
+      console.error('Error initializing section year records:', err);
+    }
+  };
+
+  initializeSectionYearRecords();
+}, [currentAYS_ID]);
   const handleAdd = async () => {
     try {
       const res = await fetch(`${API_URL}/admin/sections/addSection`, {

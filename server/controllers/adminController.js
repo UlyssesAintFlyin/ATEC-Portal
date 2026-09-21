@@ -482,6 +482,54 @@ async function loadSections(req, res) {
   }
 }
 
+async function initializeSectionYearRecords(req, res) {
+  try {
+    const { AYS_ID } = req.body;
+
+    if (!AYS_ID) {
+      return res.status(400).json({ error: 'AYS_ID is required' });
+    }
+
+    const [sections] = await pool.query(`
+      SELECT section_ID
+      FROM section_table
+    `);
+
+    const [existingRecords] = await pool.query(
+      `SELECT section_ID
+       FROM section_year_record_table
+       WHERE AYS_ID = ?`,
+      [AYS_ID]
+    );
+
+    const existingSectionIds = new Set(
+      existingRecords.map(row => row.section_ID)
+    );
+
+    const missingSections = sections.filter(
+      section => !existingSectionIds.has(section.section_ID)
+    );
+
+    if (missingSections.length > 0) {
+      const values = missingSections.map(section => [
+        section.section_ID,
+        AYS_ID
+      ]);
+
+      await pool.query(
+        `INSERT INTO section_year_record_table
+         (section_ID, AYS_ID)
+         VALUES ?`,
+        [values]
+      );
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Error initializing section year records:", err);
+    res.sendStatus(500);
+  }
+}
 
 
 // Create Section
@@ -934,10 +982,10 @@ module.exports = {
   loadSections,
   getSectionsByDepartment,
   createSection,
+  initializeSectionYearRecords,
   deleteSections,
   loadStudentsBySection,
   convertEnrollees,
-
   getStudentById,
   updateStudentById, 
   loadFaculty,

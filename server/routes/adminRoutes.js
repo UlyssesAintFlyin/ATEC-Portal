@@ -15,6 +15,7 @@ const {
   getEnrolleeById,
   validateEnrollee,
   loadSections,
+  initializeSectionYearRecords,
   getSectionsByDepartment,
   createSection,
   deleteSections,
@@ -45,6 +46,7 @@ router.get('/enrollees/:id', getEnrolleeById); //this pulls in the getEnrolleeBy
 router.get('/enrollees/:id/validate', validateEnrollee); //this pulls in the validateEnrollee function
 router.put('/enrollees/:id/validate', validateEnrollee); //this pulls in the validateEnrollee function
 router.get('/sections/loadSections', loadSections); //this pulls in the loadSections function
+router.post('/sections/initialize' , initializeSectionYearRecords);
 router.post('/sections/addSection', createSection); //this pulls in the createSection function
 router.delete('/sections/deleteSections', deleteSections); //this pulls in the deleteSections function 
 router.get('/sections/:sectionId/students', loadStudentsBySection); //this pulls in the loadStudentsBySection function
