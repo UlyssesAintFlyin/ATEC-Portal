@@ -8,12 +8,16 @@ const RATING_MAP = {
     'Strongly Agree': 5
 };
 
+// GET /api/evaluation/faculty/:studentId
+// Returns only the professors actually teaching this student's section
+// for the currently active evaluation AYS_ID
 const getFacultyList = async (req, res) => {
     try {
+        const { studentId } = req.params;
+
         const [settingsRows] = await pool.query(
             `SELECT evaluation_AYS_ID FROM system_settings_table WHERE system_settings_ID = 1`
         );
-
         const AYS_ID = settingsRows.length > 0 ? settingsRows[0].evaluation_AYS_ID : null;
 
         if (!AYS_ID) {
@@ -21,11 +25,17 @@ const getFacultyList = async (req, res) => {
         }
 
         const [rows] = await pool.query(
-            `SELECT e.evaluation_ID, f.faculty_ID, f.f_Name, f.l_Name
-             FROM evaluation_table e
-             JOIN faculty_table f ON e.faculty_ID = f.faculty_ID
-             WHERE e.AYS_ID = ?`,
-            [AYS_ID]
+            `SELECT f.faculty_ID, f.f_Name, f.l_Name, e.evaluation_ID,
+                GROUP_CONCAT(DISTINCT s.subject_Name SEPARATOR ', ') AS subjects
+             FROM student_year_record_table syr
+             JOIN section_year_record_table sec ON syr.section_record_ID = sec.section_record_ID
+             JOIN faculty_year_record_table fyr ON fyr.section_record_ID = sec.section_record_ID
+             JOIN faculty_table f ON fyr.faculty_ID = f.faculty_ID
+             LEFT JOIN subject_table s ON fyr.subject_ID = s.subject_ID
+             JOIN evaluation_table e ON e.faculty_ID = f.faculty_ID AND e.AYS_ID = sec.AYS_ID
+             WHERE syr.student_ID = ? AND sec.AYS_ID = ?
+             GROUP BY f.faculty_ID, f.f_Name, f.l_Name, e.evaluation_ID`,
+            [studentId, AYS_ID]
         );
 
         res.json({ faculty: rows });
@@ -164,6 +174,8 @@ const getAllFacultySummaries = async (req, res) => {
         res.status(500).json({ message: 'Failed to load faculty summaries', error: error.message });
     }
 };
+
+
 
 const getFacultySummary = async (req, res) => {
     try {
