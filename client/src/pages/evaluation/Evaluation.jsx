@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import Blockade from "../../components/Blockade";
 import { useAuth } from "../../context/AuthContext";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function Evaluation() {
   const [showEval, setShowEval] = useState(false);
   const [answers, setAnswers] = useState({});
@@ -24,7 +26,6 @@ export default function Evaluation() {
     "Strongly Agree",
   ];
 
-  const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     fetch(`${API_URL}/system-settings`)
@@ -42,7 +43,9 @@ export default function Evaluation() {
   }, []);
 
   useEffect(() => {
-    fetch(`${API_URL}/evaluation/faculty`)
+    if (!user?.id) return;
+
+    fetch(`${API_URL}/evaluation/faculty/${user.id}`)
       .then((res) => res.json())
       .then((data) => setFacultyList(data.faculty || []))
       .catch((err) => console.error("Failed to load faculty:", err));
@@ -51,7 +54,7 @@ export default function Evaluation() {
       .then((res) => res.json())
       .then((data) => setSections(data.sections || []))
       .catch((err) => console.error("Failed to load questions:", err));
-  }, []);
+}, [user?.id]);
 
   if (settingsLoading) {
     return null;

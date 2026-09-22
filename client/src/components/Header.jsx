@@ -262,7 +262,7 @@ export const Header = () => {
               <ListItem
                 button
                 component={Link}
-                to="/evaluationReport"
+                to="/evaluationFaculty"
                 onClick={toggleDrawer(false)}
               >
                 <ListItemText primary="Evaluation" />

@@ -1,64 +1,153 @@
-import styles from '../admin/AdminEval.css';
+import "../admin/AdminEval.css";
+import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function FacultyReport() {
-  return (
-    <div className="evaluation">
-      <div className="evaluationHeader">
-        <h2>Faculty Evaluation</h2>
-        <p>Below is the summary of your evaluation.</p>
-      </div>
+    const { user } = useAuth();
 
-      <div className="professorsDiv">
-        <div className="professor">
-          <div className="circle">4.5</div>
-          <div>
-            <h3>Professor 1</h3>
-            <h6>Mathematics</h6>
-          </div>
+    const [faculty, setFaculty] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [overall, setOverall] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    
+
+    useEffect(() => {
+        if (!user || !user.id) {
+            return;
+        }
+
+        const loadReport = async () => {
+            try {
+                const response = await fetch(
+                    `${API_URL}/evaluation/summary/${user.id}`
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.message || "Failed to load evaluation."
+                    );
+                }
+
+                setFaculty(data.faculty);
+                setCategories(data.categories || []);
+                setOverall(data.overall || 0);
+
+            } catch (error) {
+                console.error("Faculty report error:", error);
+                setError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadReport();
+    }, [user]);
+
+    if (loading) {
+        return (
+            <div className="evaluation">
+                <div className="evaluationHeader">
+                    <h2>Faculty Evaluation</h2>
+                    <p>Loading evaluation...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="evaluation">
+                <div className="evaluationHeader">
+                    <h2>Faculty Evaluation</h2>
+                    <p>{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!faculty) {
+        return (
+            <div className="evaluation">
+                <div className="evaluationHeader">
+                    <h2>Faculty Evaluation</h2>
+                    <p>No evaluation data found.</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="evaluation">
+
+            <div className="evaluationHeader">
+                <h2>Faculty Evaluation</h2>
+                <p>Below is the summary of your evaluation.</p>
+            </div>
+
+            <div className="professorsDiv">
+
+                <div className="professor">
+
+                    <div className="circle">
+                        {Number(overall).toFixed(1)}
+                    </div>
+
+                    <div>
+                        <h3>
+                            {faculty.f_Name} {faculty.l_Name}
+                        </h3>
+
+                        <h6>
+                            {faculty.position}
+                        </h6>
+                    </div>
+
+                </div>
+
+                <div className="sum">
+
+                    {categories.length === 0 ? (
+                        <p>No student evaluations have been submitted yet.</p>
+                    ) : (
+                        categories.map((category) => (
+                            <div
+                                className="variety"
+                                key={category.category_ID}
+                            >
+
+                                <p>
+                                    {category.category_Name}
+                                </p>
+
+                                <div className="side">
+                                    <div
+                                        className="measure"
+                                        style={{
+                                            width:
+                                                (Number(category.avgScore) / 5) * 100 +
+                                                "%"
+                                        }}
+                                    ></div>
+                                </div>
+
+                                <h6>
+                                    {Number(category.avgScore).toFixed(1)}
+                                </h6>
+
+                            </div>
+                        ))
+                    )}
+
+                </div>
+
+            </div>
+
         </div>
-
-        <div className="sum">
-          <div className="variety">
-            <p>Personality and Appearance</p>
-            <div className="side">
-              <div className="measure"></div>
-            </div>
-            <h6>4.3</h6>
-          </div>
-
-          <div className="variety">
-            <p>Teaching Effectiveness</p>
-            <div className="side">
-              <div className="measure"></div>
-            </div>
-            <h6>4.0</h6>
-          </div>
-
-          <div className="variety">
-            <p>Classroom Management</p>
-            <div className="side">
-              <div className="measure"></div>
-            </div>
-            <h6>3.8</h6>
-          </div>
-
-          <div className="variety">
-            <p>Communication Skills</p>
-            <div className="side">
-              <div className="measure"></div>
-            </div>
-            <h6>4.5</h6>
-          </div>
-
-          <div className="variety">
-            <p>Punctuality</p>
-            <div className="side">
-              <div className="measure"></div>
-            </div>
-            <h6>4.7</h6>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }

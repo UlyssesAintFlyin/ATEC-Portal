@@ -8,7 +8,7 @@ const {
     getFacultySummary
 } = require('../controllers/evaluationController');
 
-router.get('/faculty', getFacultyList);
+router.get('/faculty/:studentId', getFacultyList);
 router.get('/questions', getQuestions);
 router.post('/submit', submitEvaluation);
 router.get('/summary', getAllFacultySummaries);
