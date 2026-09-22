@@ -29,6 +29,9 @@ const {
   updateSectionCurriculum,
   getCurrentSubjectTeacher,
   assignTeacherToSubject,
+  getAYSOptions,
+  getSectionOptions,
+  transferSection
 
 } = require('../controllers/adminController');
 
@@ -62,6 +65,9 @@ router.get("/curriculum/listBySection", listCurriculumsBySection);
 router.put('/curriculum/updateSectionCurriculum', updateSectionCurriculum);
 router.get('/faculty/getTeachersBySubject', getCurrentSubjectTeacher);
 router.put('/faculty/assignTeacherToSubject', assignTeacherToSubject);
+router.get('/sections/options', getSectionOptions);
+router.get('/academicYearSemester/options', getAYSOptions);
+router.post('/sections/transferSection', transferSection);
 
 //calls adminController during an API request   
 

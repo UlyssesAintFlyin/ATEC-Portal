@@ -424,8 +424,8 @@ async function convertEnrollees(req, res) {
         enrollee.student_type?.toLowerCase() === "college"
           ? "College"
           : enrollee.student_type?.toLowerCase() === "seniorhigh"
-          ? "Senior High School"
-          : department;
+            ? "Senior High School"
+            : department;
 
       await connection.query(
         `INSERT INTO student_year_record_table
@@ -472,7 +472,7 @@ async function loadSections(req, res) {
               gradeLevel,
               department         
        FROM section_table
-       `,  
+       `,
     );
 
     res.json(rows);
@@ -960,9 +960,136 @@ async function assignTeacherToSubject(req, res) {
   }
 }
 
+  async function getSectionOptions(req, res) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT
+          section_ID,
+          section_Name,
+          department,
+          gradeLevel
+       FROM section_table
+       ORDER BY gradeLevel, section_Name`
+      );
 
+      res.json(rows);
+    } catch (err) {
+      res.sendStatus(500);
+    }
+  }
 
+  async function getAYSOptions(req, res) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT
+          ays.AYS_ID,
+          ay.AY_Name,
+          sem.semester_name
+       FROM academic_year_semester_table ays
+       JOIN academic_year_table ay
+         ON ay.AY_ID = ays.AY_ID
+       JOIN semester_table sem
+         ON sem.semester_ID = ays.semester_ID
+       ORDER BY ay.AY_Name DESC`
+      );
 
+      res.json(rows);
+    } catch (err) {
+      res.sendStatus(500);
+    }
+  }
+
+  async function transferSection(req, res) {
+    try {
+      const {
+        sourceSectionId,
+        sourceAYS_ID,
+        targetSectionId,
+        targetAYS_ID
+      } = req.body;
+
+      const [[source]] = await pool.query(
+        `SELECT *
+        FROM section_year_record_table
+        WHERE section_ID = ?
+        AND AYS_ID = ?`,
+        [sourceSectionId, sourceAYS_ID]
+      );
+
+      if (!source) {
+        return res.sendStatus(404);
+      }
+
+      const [[target]] = await pool.query(
+        `SELECT section_record_ID
+        FROM section_year_record_table
+        WHERE section_ID = ?
+        AND AYS_ID = ?`,
+        [targetSectionId, targetAYS_ID]
+      );
+
+      let targetSectionRecordId =
+        target?.section_record_ID;
+
+      if (!targetSectionRecordId) {
+        const [result] = await pool.query(
+          `INSERT INTO section_year_record_table
+        (section_ID, AYS_ID, curriculum_record_ID, faculty_ID)
+        VALUES (?, ?, ?, ?)`,
+          [
+            targetSectionId,
+            targetAYS_ID,
+            source.curriculum_record_ID,
+            source.faculty_ID
+          ]
+        );
+
+        targetSectionRecordId =
+          result.insertId;
+      }
+
+      await pool.query(
+        `INSERT INTO student_year_record_table
+        (
+        student_ID,
+        section_record_ID,
+        program,
+        department,
+        specialization
+        )
+        SELECT student_ID, ?, program, department, specialization
+        FROM student_year_record_table
+        WHERE section_record_ID = ?`,
+        [
+          targetSectionRecordId,
+          source.section_record_ID
+        ]
+      );
+
+      await pool.query(
+        `INSERT INTO faculty_year_record_table
+        (
+          advisory,
+          faculty_ID,
+          section_record_ID,
+          subject_ID
+        )
+        SELECT advisory, faculty_ID, ?,
+        subject_ID
+        FROM faculty_year_record_table
+        WHERE section_record_ID = ?`,
+        [
+          targetSectionRecordId,
+          source.section_record_ID
+        ]
+      );
+
+      res.sendStatus(200);
+    } catch (err) {
+      console.error(err);
+      res.sendStatus(500);
+    }
+  }
 
 
 // Export functions
@@ -988,12 +1115,15 @@ module.exports = {
   loadStudentsBySection,
   convertEnrollees,
   getStudentById,
-  updateStudentById, 
+  updateStudentById,
   loadFaculty,
-  getSectionAdvisers, 
-  assignAdviser, 
+  getSectionAdvisers,
+  assignAdviser,
   listCurriculumsBySection,
   updateSectionCurriculum,
   getCurrentSubjectTeacher,
   assignTeacherToSubject,
+  getAYSOptions,
+  getSectionOptions,
+  transferSection
 };

@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button } from "@mui/material";
+import {
+  Typography,
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Autocomplete,
+} from "@mui/material";
 import { Table } from "../../components/Table";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
@@ -13,6 +23,16 @@ export default function SelectedSection() {
   const sectionId = location.state?.section_ID; // passed from Sections.jsx
   const [rows, setRows] = useState([]);
   const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
+  const [openTransfer, setOpenTransfer] = useState(false);
+
+  const [sectionOptions, setSectionOptions] = useState([]);
+  const [aysOptions, setAYSOptions] = useState([]);
+
+  const [currentSection, setCurrentSection] = useState(null);
+  const [currentAYS, setCurrentAYS] = useState(null);
+
+  const [targetSection, setTargetSection] = useState(null);
+  const [targetAYS, setTargetAYS] = useState(null);
 
   useEffect(() => {
     const fetchSystemSettings = async () => {
@@ -97,7 +117,7 @@ export default function SelectedSection() {
             onClick={() =>
               navigate(
                 `/admin/section/${sectionName}/${params.row.id}/gradeReport`, {
-                state: { sectionName: sectionName, studentName: params.row.studentName  },
+                state: { sectionName: sectionName, studentName: params.row.studentName },
               })
             }
             sx={{
@@ -113,6 +133,66 @@ export default function SelectedSection() {
     },
   ];
 
+  useEffect(() => {
+    if (!openTransfer) return;
+
+    const loadTransferData = async () => {
+      try {
+        const [sectionsRes, aysRes] = await Promise.all([
+          fetch(`${API_URL}/admin/sections/options`),
+          fetch(`${API_URL}/admin/academicYearSemester/options`)
+        ]);
+
+        const sections = await sectionsRes.json();
+        const ays = await aysRes.json();
+
+        setSectionOptions(sections);
+        setAYSOptions(ays);
+
+        const matchedSection = sections.find(
+          (s) => Number(s.section_ID) === Number(sectionId)
+        );
+
+        const matchedAYS = ays.find(
+          (a) => Number(a.AYS_ID) === Number(currentAYS_ID)
+        );
+
+        setTargetSection(matchedSection || null);
+        setTargetAYS(matchedAYS || null);
+
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadTransferData();
+  }, [openTransfer, sectionId, currentAYS_ID]);
+
+
+
+  const handleTransfer = async () => {
+    try {
+      await fetch(
+        `${API_URL}/admin/sections/transferSection`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sourceSectionId: sectionId,
+            sourceAYS_ID: currentAYS_ID,
+            targetSectionId: targetSection.section_ID,
+            targetAYS_ID: targetAYS.AYS_ID,
+          }),
+        }
+      );
+
+      setOpenTransfer(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -185,7 +265,7 @@ export default function SelectedSection() {
           <Box
             sx={{
               display: "flex",
-              justifyContent: {xs:"center", md:"flex-end"},
+              justifyContent: { xs: "center", md: "flex-end" },
               alignItems: "center",
               flexDirection: "row",
               flexWrap: "wrap",
@@ -272,7 +352,7 @@ export default function SelectedSection() {
             display: "flex",
             width: "100%",
             minHeight: "200px",
-            marginTop: {xs: -3, md:"80px"},
+            marginTop: { xs: -3, md: "80px" },
             marginBottom: "40px",
             justifyContent: "center",
           }}
@@ -298,7 +378,7 @@ export default function SelectedSection() {
               <Typography
                 variant="h1"
                 sx={{
-                  fontSize: {xs: "15px", md:"25px"},
+                  fontSize: { xs: "15px", md: "25px" },
                   textAlign: "center",
                   color: "#E8EDF2",
                 }}
@@ -309,6 +389,7 @@ export default function SelectedSection() {
               <Button
                 variant="contained"
                 color="primary"
+                onClick={() => setOpenTransfer(true)}
                 sx={{
                   fontSize: { xs: "12px", sm: "14px", md: "16px" },
                   padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
@@ -324,61 +405,77 @@ export default function SelectedSection() {
         </Box>
       </Box>
 
-      {/* Add Student Dialog 
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Add New Student</DialogTitle>
-        <DialogContent>
-          <TextField
-            margin="dense"
-            label="Student Name"
-            fullWidth value={newStudent.studentName}
-            onChange={(e) => setNewStudent({ ...newStudent, studentName: e.target.value })}
-          />
-          <TextField
-            margin="dense"
-            label="Age" type="number"
-            fullWidth value={newStudent.age}
-            onChange={(e) => setNewStudent({ ...newStudent, age: e.target.value })}
-          />
+      <Dialog
+        open={openTransfer}
+        onClose={() => setOpenTransfer(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Transfer Section Data
+        </DialogTitle>
+
+        <DialogContent
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            mt: 1,
+          }}
+        >
           <Autocomplete
-            options={[
-              "Male",
-              "Female"
-            ]}
-            value={newStudent.gender}
-            onChange={(event, newValue) =>
-              setNewStudent({ ...newStudent, gender: newValue })
+            options={sectionOptions}
+            value={targetSection}
+            onChange={(e, value) => setTargetSection(value)}
+            isOptionEqualToValue={(option, value) =>
+              option.section_ID === value.section_ID
+            }
+            getOptionLabel={(option) =>
+              option?.section_Name || ""
             }
             renderInput={(params) => (
-              <TextField {...params} margin="dense" label="Gender" fullWidth />
+              <TextField
+                {...params}
+                label="Section"
+              />
             )}
           />
+
           <Autocomplete
-            options={[
-              "TechPro - ICT",
-              "TechPro - Industrial Technology",
-              "TechPro - Hospitality and Tourism",
-              "Academic - STEM",
-              "Academic - ABM",
-              "Academic - ASSH",
-              "College - DIT",
-              "College - DRT",
-              "College - DHT",
-            ]}
-            value={newStudent.program}
-            onChange={(event, newValue) =>
-              setNewStudent({ ...newStudent, program: newValue })
+            options={aysOptions}
+            value={targetAYS}
+            onChange={(e, value) => setTargetAYS(value)}
+            isOptionEqualToValue={(option, value) =>
+              option.AYS_ID === value.AYS_ID
+            }
+            getOptionLabel={(option) =>
+              option
+                ? `${option.AY_Name} • ${option.semester_name}`
+                : ""
             }
             renderInput={(params) => (
-              <TextField {...params} margin="dense" label="Program" fullWidth />
+              <TextField
+                {...params}
+                label="Academic Year & Semester"
+              />
             )}
           />
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleAdd} variant="contained">Add</Button>
+          <Button onClick={() => setOpenTransfer(false)}>
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            disabled={!targetSection || !targetAYS}
+            onClick={handleTransfer}
+          >
+            Transfer
+          </Button>
         </DialogActions>
-      </Dialog> */}
+      </Dialog>
     </Box>
   );
 }
