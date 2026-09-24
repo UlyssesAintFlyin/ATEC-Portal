@@ -31,7 +31,8 @@ const {
   assignTeacherToSubject,
   getAYSOptions,
   getSectionOptions,
-  transferSection
+  transferSection,
+  dropStudents
 
 } = require('../controllers/adminController');
 
@@ -68,6 +69,7 @@ router.put('/faculty/assignTeacherToSubject', assignTeacherToSubject);
 router.get('/sections/options', getSectionOptions);
 router.get('/academicYearSemester/options', getAYSOptions);
 router.post('/sections/transferSection', transferSection);
+router.put('/students/drop', dropStudents);
 
 //calls adminController during an API request   
 

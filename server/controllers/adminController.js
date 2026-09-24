@@ -597,6 +597,7 @@ async function loadStudentsBySection(req, res) {
                   ELSE ''
                 END
               ) AS studentName,
+              s.status,
               s.gender,
               TIMESTAMPDIFF(YEAR, s.birthdate, CURDATE()) AS age,
               syr.program,
@@ -610,6 +611,7 @@ async function loadStudentsBySection(req, res) {
          ON syr.section_record_ID = syrt.section_record_ID
        WHERE syrt.section_ID = ? 
          AND syrt.AYS_ID = ?
+         AND s.status = "Enrolled"
        ORDER BY s.l_Name ASC`,
       [sectionId, AYS_ID]
     );
@@ -960,28 +962,28 @@ async function assignTeacherToSubject(req, res) {
   }
 }
 
-  async function getSectionOptions(req, res) {
-    try {
-      const [rows] = await pool.query(
-        `SELECT
+async function getSectionOptions(req, res) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT
           section_ID,
           section_Name,
           department,
           gradeLevel
        FROM section_table
        ORDER BY gradeLevel, section_Name`
-      );
+    );
 
-      res.json(rows);
-    } catch (err) {
-      res.sendStatus(500);
-    }
+    res.json(rows);
+  } catch (err) {
+    res.sendStatus(500);
   }
+}
 
-  async function getAYSOptions(req, res) {
-    try {
-      const [rows] = await pool.query(
-        `SELECT
+async function getAYSOptions(req, res) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT
           ays.AYS_ID,
           ay.AY_Name,
           sem.semester_name
@@ -991,65 +993,65 @@ async function assignTeacherToSubject(req, res) {
        JOIN semester_table sem
          ON sem.semester_ID = ays.semester_ID
        ORDER BY ay.AY_Name DESC`
-      );
+    );
 
-      res.json(rows);
-    } catch (err) {
-      res.sendStatus(500);
-    }
+    res.json(rows);
+  } catch (err) {
+    res.sendStatus(500);
   }
+}
 
-  async function transferSection(req, res) {
-    try {
-      const {
-        sourceSectionId,
-        sourceAYS_ID,
-        targetSectionId,
-        targetAYS_ID
-      } = req.body;
+async function transferSection(req, res) {
+  try {
+    const {
+      sourceSectionId,
+      sourceAYS_ID,
+      targetSectionId,
+      targetAYS_ID
+    } = req.body;
 
-      const [[source]] = await pool.query(
-        `SELECT *
+    const [[source]] = await pool.query(
+      `SELECT *
         FROM section_year_record_table
         WHERE section_ID = ?
         AND AYS_ID = ?`,
-        [sourceSectionId, sourceAYS_ID]
-      );
+      [sourceSectionId, sourceAYS_ID]
+    );
 
-      if (!source) {
-        return res.sendStatus(404);
-      }
+    if (!source) {
+      return res.sendStatus(404);
+    }
 
-      const [[target]] = await pool.query(
-        `SELECT section_record_ID
+    const [[target]] = await pool.query(
+      `SELECT section_record_ID
         FROM section_year_record_table
         WHERE section_ID = ?
         AND AYS_ID = ?`,
-        [targetSectionId, targetAYS_ID]
-      );
+      [targetSectionId, targetAYS_ID]
+    );
 
-      let targetSectionRecordId =
-        target?.section_record_ID;
+    let targetSectionRecordId =
+      target?.section_record_ID;
 
-      if (!targetSectionRecordId) {
-        const [result] = await pool.query(
-          `INSERT INTO section_year_record_table
+    if (!targetSectionRecordId) {
+      const [result] = await pool.query(
+        `INSERT INTO section_year_record_table
         (section_ID, AYS_ID, curriculum_record_ID, faculty_ID)
         VALUES (?, ?, ?, ?)`,
-          [
-            targetSectionId,
-            targetAYS_ID,
-            source.curriculum_record_ID,
-            source.faculty_ID
-          ]
-        );
+        [
+          targetSectionId,
+          targetAYS_ID,
+          source.curriculum_record_ID,
+          source.faculty_ID
+        ]
+      );
 
-        targetSectionRecordId =
-          result.insertId;
-      }
+      targetSectionRecordId =
+        result.insertId;
+    }
 
-      await pool.query(
-        `INSERT INTO student_year_record_table
+    await pool.query(
+      `INSERT INTO student_year_record_table
         (
         student_ID,
         section_record_ID,
@@ -1060,14 +1062,14 @@ async function assignTeacherToSubject(req, res) {
         SELECT student_ID, ?, program, department, specialization
         FROM student_year_record_table
         WHERE section_record_ID = ?`,
-        [
-          targetSectionRecordId,
-          source.section_record_ID
-        ]
-      );
+      [
+        targetSectionRecordId,
+        source.section_record_ID
+      ]
+    );
 
-      await pool.query(
-        `INSERT INTO faculty_year_record_table
+    await pool.query(
+      `INSERT INTO faculty_year_record_table
         (
           advisory,
           faculty_ID,
@@ -1078,19 +1080,40 @@ async function assignTeacherToSubject(req, res) {
         subject_ID
         FROM faculty_year_record_table
         WHERE section_record_ID = ?`,
-        [
-          targetSectionRecordId,
-          source.section_record_ID
-        ]
-      );
+      [
+        targetSectionRecordId,
+        source.section_record_ID
+      ]
+    );
 
-      res.sendStatus(200);
-    } catch (err) {
-      console.error(err);
-      res.sendStatus(500);
-    }
+    res.sendStatus(200);
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
   }
+}
 
+async function dropStudents(req, res) {
+  try {
+    const { studentIds } = req.body;
+
+    if (!studentIds || studentIds.length === 0) {
+      return res.status(400).json({ error: "No students selected" });
+    }
+
+    await pool.query(
+      `UPDATE student_table
+       SET status = 'Dropped'
+       WHERE student_ID IN (?)`,
+      [studentIds]
+    );
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Error dropping students:", err);
+    res.sendStatus(500);
+  }
+}
 
 // Export functions
 module.exports = {
@@ -1125,5 +1148,6 @@ module.exports = {
   assignTeacherToSubject,
   getAYSOptions,
   getSectionOptions,
-  transferSection
+  transferSection, 
+  dropStudents
 };

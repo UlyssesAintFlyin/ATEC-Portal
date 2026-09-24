@@ -196,11 +196,25 @@ export default function SelectedSection() {
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  console.log(selectedIds)
+ const handleRemoveSelected = async () => {
+  try {
+    await fetch(`${API_URL}/admin/students/drop`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        studentIds: selectedIds,
+      }),
+    });
 
-  const handleRemoveSelected = () => {
     setRows(rows.filter((r) => !selectedIds.includes(r.id)));
     setSelectedIds([]);
-  };
+  } catch (err) {
+    console.error("Error dropping students:", err);
+  }
+};
 
   return (
     <Box
@@ -305,7 +319,7 @@ export default function SelectedSection() {
                 backgroundColor: "#54242b",
               }}
             >
-              Remove Selected
+              Drop Selected
             </Button>
             <Button
               variant="contained"
