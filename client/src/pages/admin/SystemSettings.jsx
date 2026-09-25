@@ -32,41 +32,55 @@ export default function SystemSettings() {
         };
         fetchData();
     }, []);
-     useEffect(() => {
+    useEffect(() => {
         const fetchSystemSettings = async () => {
-          try {
-            const res = await fetch(`${API_URL}/admin/systemSettings`);
-            if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-            const data = await res.json();
-            setCurrentAYS_ID(data.enrollment_AYS_ID);
-          } catch (err) {
-            console.error("Error loading system settings:", err);
-            setCurrentAYS_ID(null);
-          }
+            try {
+                const res = await fetch(`${API_URL}/admin/systemSettings`);
+                if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+                const data = await res.json();
+                setCurrentAYS_ID(data.enrollment_AYS_ID);
+            } catch (err) {
+                console.error("Error loading system settings:", err);
+                setCurrentAYS_ID(null);
+            }
         };
-    
+
         fetchSystemSettings();
-      }, []);
+    }, []);
     const updateSystemSettings = async (ay_ID, semester_ID) => {
-    try {
-        const res = await fetch(`${API_URL}/admin/ays`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ay_ID, semester_ID }),
-        });
-        if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            alert(data.error || "That academic year and semester combination doesn't exist yet.");
+        try {
+            if (!ay_ID || !semester_ID) {
+                return false;
+            }
+
+            const res = await fetch(`${API_URL}/admin/ays`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    ay_ID,
+                    semester_ID,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(
+                    data.error ||
+                    "That academic year and semester combination doesn't exist yet."
+                );
+                return false;
+            }
+
+            return true;
+        } catch (err) {
+            console.error(err);
+            alert("Failed to update term settings");
             return false;
         }
-        return true;
-    } catch (err) {
-        console.error(err);
-        alert("Failed to update term settings");
-        return false;
-    }
-};
-
+    };
 
     const [evaluationEnabled, setEvaluationEnabled] = useState(false);
     const [enrollmentEnabled, setEnrollmentEnabled] = useState(false);
@@ -101,42 +115,73 @@ export default function SystemSettings() {
                         Select Term
                     </Typography>
                     <Autocomplete
-                        options={academicYears} 
-                        getOptionLabel={(option) => option.name || ""}
-                        value={academicYears.find(ay => ay.id === selectedAY) || null}
-                        onChange={async (event, newValue) => {
+                        options={academicYears}
+                        value={
+                            academicYears.find((ay) => ay.id === selectedAY) || null
+                        }
+                        onChange={async (_, newValue) => {
+                            if (!newValue) return;
+
                             const prevAY = selectedAY;
-                            setSelectedAY(newValue?.id || null);
-                            const ok = await updateSystemSettings(newValue?.id, selectedSemester);
-                            if (!ok) setSelectedAY(prevAY);
+
+                            setSelectedAY(newValue.id);
+
+                            const ok = await updateSystemSettings(
+                                newValue.id,
+                                selectedSemester
+                            );
+
+                            if (!ok) {
+                                setSelectedAY(prevAY);
+                            }
                         }}
+                        getOptionLabel={(option) => option.name || ""}
+                        isOptionEqualToValue={(option, value) =>
+                            option.id === value.id
+                        }
                         sx={{
                             width: { xs: 150, sm: 250, md: 400 },
-                            marginTop: "10px",
-                            marginLeft: { xs: "28px", sm: "38px", md: "58px" }
+                            mt: "10px",
+                            ml: { xs: "28px", sm: "38px", md: "58px" },
                         }}
-                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                        renderInput={(params) => <TextField {...params} label="Academic Year" />}
+                        renderInput={(params) => (
+                            <TextField {...params} label="Academic Year" />
+                        )}
                     />
 
-
                     <Autocomplete
-                        options={semesters} 
-                        getOptionLabel={(option) => option.name || ""}
-                        value={semesters.find(s => s.id === selectedSemester) || null}
-                        onChange={async (event, newValue) => {
-                            const prevAY = selectedAY;
-                            setSelectedAY(newValue?.id || null);
-                            const ok = await updateSystemSettings(newValue?.id, selectedSemester);
-                            if (!ok) setSelectedAY(prevAY);
+                        options={semesters}
+                        value={
+                            semesters.find((s) => s.id === selectedSemester) || null
+                        }
+                        onChange={async (_, newValue) => {
+                            if (!newValue) return;
+
+                            const prevSemester = selectedSemester;
+
+                            setSelectedSemester(newValue.id);
+
+                            const ok = await updateSystemSettings(
+                                selectedAY,
+                                newValue.id
+                            );
+
+                            if (!ok) {
+                                setSelectedSemester(prevSemester);
+                            }
                         }}
+                        getOptionLabel={(option) => option.name || ""}
+                        isOptionEqualToValue={(option, value) =>
+                            option.id === value.id
+                        }
                         sx={{
                             width: { xs: 150, sm: 250, md: 400 },
-                            marginTop: "10px",
-                            marginLeft: { xs: "28px", sm: "38px", md: "58px" }
+                            mt: "10px",
+                            ml: { xs: "28px", sm: "38px", md: "58px" },
                         }}
-                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                        renderInput={(params) => <TextField {...params} label="Semester" />}
+                        renderInput={(params) => (
+                            <TextField {...params} label="Semester" />
+                        )}
                     />
                     <Typography sx={{ color: "#242c54", fontWeight: "bold", fontSize: "22px", marginLeft: { xs: "28px", sm: "38px", md: "58px" } }}>
                         Configure Evaluation
