@@ -4,6 +4,7 @@ import { Box, Typography, CircularProgress } from "@mui/material";
 import Item from "./Item";
 
 const API_URL = process.env.REACT_APP_API_URL; // move to an env var when deploying
+const STATIC_URL = API_URL.replace(/\/api\/?$/, "");
 
 function CarouselComponent() {
   const [items, setItems] = useState([]);
@@ -18,9 +19,9 @@ function CarouselComponent() {
         const data = await res.json();
 
         const mapped = data.map((page) => ({
-          name: page.caoursel_title,
-          description: page.caoursel_description,
-          image: page.carousel_image ? `${API_URL}${page.carousel_image}` : undefined,
+          name: page.carousel_title,
+          description: page.carousel_description,
+          image: page.carousel_image ? `${STATIC_URL}${page.carousel_image}` : undefined,
         }));
 
         setItems(mapped);

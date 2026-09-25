@@ -284,7 +284,7 @@ export default function CurriculumConfig() {
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
-            alignItems: { xs: "center", md: "flex-start" },
+            alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
             marginBottom: "30px",

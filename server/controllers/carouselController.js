@@ -61,7 +61,7 @@ async function createCarouselPage(req, res) {
 
   try {
     const [result] = await pool.query(
-      `INSERT INTO carousel_table (caoursel_title, caoursel_description, carousel_image)
+      `INSERT INTO carousel_table (carousel_title, carousel_description, carousel_image)
        VALUES (?, ?, ?)`,
       [caoursel_title, caoursel_description, imagePath]
     );

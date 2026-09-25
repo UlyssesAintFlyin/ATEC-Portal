@@ -15,14 +15,15 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 
 const API_URL = process.env.REACT_APP_API_URL;
+const STATIC_URL = API_URL.replace(/\/api\/?$/, "");
 
 function makeEmptyPage() {
   return {
     localKey: `new-${Date.now()}-${Math.random()}`,
-    carousel_ID: null, 
+    carousel_ID: null,
     title: "",
     description: "",
-    imageFile: null, 
+    imageFile: null,
     existingImagePath: null,
   };
 }
@@ -35,7 +36,11 @@ function CarouselConfig() {
 
   // Snackbar replaces the old full-width global Alert so messages no longer
   // push the layout around when they appear/disappear.
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const showMessage = (severity, message) => {
     setSnackbar({ open: true, message, severity });
@@ -61,11 +66,11 @@ function CarouselConfig() {
           data.map((row) => ({
             localKey: `db-${row.carousel_ID}`,
             carousel_ID: row.carousel_ID,
-            title: row.caoursel_title,
-            description: row.caoursel_description,
+            title: row.carousel_title,
+            description: row.carousel_description,
             imageFile: null,
             existingImagePath: row.carousel_image,
-          }))
+          })),
         );
       } catch (err) {
         console.error(err);
@@ -79,7 +84,7 @@ function CarouselConfig() {
 
   const updatePage = (localKey, field, value) => {
     setPages((prev) =>
-      prev.map((p) => (p.localKey === localKey ? { ...p, [field]: value } : p))
+      prev.map((p) => (p.localKey === localKey ? { ...p, [field]: value } : p)),
     );
   };
 
@@ -106,7 +111,9 @@ function CarouselConfig() {
 
     // Not yet saved to the DB — just remove it locally, no API call needed
     if (!deleteTarget.carousel_ID) {
-      setPages((prev) => prev.filter((p) => p.localKey !== deleteTarget.localKey));
+      setPages((prev) =>
+        prev.filter((p) => p.localKey !== deleteTarget.localKey),
+      );
       setDeleteTarget(null);
       return;
     }
@@ -114,15 +121,20 @@ function CarouselConfig() {
     const token = localStorage.getItem("token");
     setDeleting(true);
     try {
-      const res = await fetch(`${API_URL}/carousel/${deleteTarget.carousel_ID}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `${API_URL}/carousel/${deleteTarget.carousel_ID}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || "Failed to delete carousel page");
       }
-      setPages((prev) => prev.filter((p) => p.localKey !== deleteTarget.localKey));
+      setPages((prev) =>
+        prev.filter((p) => p.localKey !== deleteTarget.localKey),
+      );
       setDeleteTarget(null);
       showMessage("success", "Carousel page deleted.");
     } catch (err) {
@@ -138,7 +150,10 @@ function CarouselConfig() {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      showMessage("error", "You must be logged in as an admin to save changes.");
+      showMessage(
+        "error",
+        "You must be logged in as an admin to save changes.",
+      );
       return;
     }
 
@@ -177,10 +192,12 @@ function CarouselConfig() {
 
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.message || data.error?.formErrors?.join(", ") || "Save failed");
+          throw new Error(
+            data.message || data.error?.formErrors?.join(", ") || "Save failed",
+          );
         }
         return { localKey: page.localKey, saved: data };
-      })
+      }),
     );
 
     // reconcile local state with what actually got saved
@@ -203,7 +220,7 @@ function CarouselConfig() {
           newErrors[page.localKey] = result.reason?.message || "Save failed";
           return page;
         }
-      })
+      }),
     );
 
     setPageErrors(newErrors);
@@ -214,7 +231,7 @@ function CarouselConfig() {
     } else {
       showMessage(
         "error",
-        `${successCount} page(s) saved, ${Object.keys(newErrors).length} failed. See details below.`
+        `${successCount} page(s) saved, ${Object.keys(newErrors).length} failed. See details below.`,
       );
     }
   };
@@ -316,7 +333,9 @@ function CarouselConfig() {
                     sx={{ backgroundColor: "#E8EDF2" }}
                     placeholder="Enter the title of the carousel page"
                     value={page.title}
-                    onChange={(e) => updatePage(page.localKey, "title", e.target.value)}
+                    onChange={(e) =>
+                      updatePage(page.localKey, "title", e.target.value)
+                    }
                   />
                 </Box>
                 <Box sx={{ width: "90%" }}>
@@ -340,8 +359,8 @@ function CarouselConfig() {
                         {page.imageFile
                           ? page.imageFile.name
                           : page.existingImagePath
-                          ? "Change Image"
-                          : "Upload Image"}
+                            ? "Change Image"
+                            : "Upload Image"}
                         <input
                           type="file"
                           accept="image/*"
@@ -355,12 +374,12 @@ function CarouselConfig() {
                           src={
                             page.imageFile
                               ? URL.createObjectURL(page.imageFile)
-                              : `${API_URL}${page.existingImagePath}`
+                              : `${STATIC_URL}${page.existingImagePath}`
                           }
                           alt="Preview"
                           sx={{
                             display: "block",
-                            width: "80px",
+                            width: "150px",
                             height: "80px",
                             objectFit: "cover",
                             borderRadius: "4px",
@@ -422,7 +441,9 @@ function CarouselConfig() {
                     sx={{ backgroundColor: "#E8EDF2" }}
                     placeholder="Enter the description of the carousel page"
                     value={page.description}
-                    onChange={(e) => updatePage(page.localKey, "description", e.target.value)}
+                    onChange={(e) =>
+                      updatePage(page.localKey, "description", e.target.value)
+                    }
                   />
                 </Box>
               </Box>
@@ -468,7 +489,11 @@ function CarouselConfig() {
             "&:hover": { backgroundColor: "#4C9A52" },
           }}
         >
-          {saving ? <CircularProgress size={20} color="inherit" /> : "Save Changes"}
+          {saving ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : (
+            "Save Changes"
+          )}
         </Button>
       </Box>
 
@@ -492,7 +517,11 @@ function CarouselConfig() {
             variant="contained"
             disabled={deleting}
           >
-            {deleting ? <CircularProgress size={18} color="inherit" /> : "Delete"}
+            {deleting ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              "Delete"
+            )}
           </Button>
         </DialogActions>
       </Dialog>
@@ -503,7 +532,11 @@ function CarouselConfig() {
         onClose={closeSnackbar}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={closeSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+        <Alert
+          onClose={closeSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

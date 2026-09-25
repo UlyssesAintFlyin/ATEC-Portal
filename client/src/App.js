@@ -116,7 +116,7 @@ function Home() {
   return (
     <div className="home-root">
       <CarouselComponent />
-      <Box className="divider-bar" />
+      <Box className="divider-bar"/>
       <Box className="about-section" id="about">
         <Box className="about-text">
           <Typography variant="h4" className="about-title">

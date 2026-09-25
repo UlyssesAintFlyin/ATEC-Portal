@@ -123,7 +123,7 @@ export default function CurriculumSubjects() {
                 marginLeft: { xs: "20px", sm: "30px", md: "50px" },
               }}
             >
-              {curriculumName || "Curriculum Subjects"}
+              Curriculum Content
             </Typography>
             <Typography
               variant="body1"
@@ -134,7 +134,7 @@ export default function CurriculumSubjects() {
                 marginLeft: { xs: "20px", sm: "30px", md: "50px" },
               }}
             >
-              These are the subjects under the selected curriculum.
+              These are the subjects under <b>{curriculumName ? `${curriculumName}` : ""}</b>.
             </Typography>
           </Box>
 

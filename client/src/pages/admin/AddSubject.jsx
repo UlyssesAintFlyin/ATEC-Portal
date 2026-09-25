@@ -209,7 +209,7 @@ export default function AddSubject() {
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
-            alignItems: { xs: "center", md: "flex-end" },
+            alignItems: { xs: "center", md: "flex-start" },
             width: "100%",
             marginTop: "20px",
             marginBottom: "30px",
@@ -231,7 +231,7 @@ export default function AddSubject() {
                 marginLeft: { xs: "20px", sm: "30px", md: "50px" },
               }}
             >
-              Add Subjects{curriculumName ? ` — ${curriculumName}` : ""}
+              Add Subjects
             </Typography>
             <Typography
               variant="body1"
@@ -242,16 +242,17 @@ export default function AddSubject() {
                 marginLeft: { xs: "20px", sm: "30px", md: "50px" },
               }}
             >
-              Manage subjects and assign them to this curriculum.
+              Manage subjects and assign them to <b>{curriculumName ? `${curriculumName}` : ""}</b>.
             </Typography>
           </Box>
           <Box
             sx={{
               display: "flex",
-              justifyContent: "center",
+              justifyContent: {xs:"center", md:"flex-end"},
               alignItems: "center",
               flexDirection: "row",
               flexWrap: "wrap",
+              maxWidth: { xs: "300px", md: "500px" },
               gap: 2,
               marginTop: { xs: "10px", md: "0" },
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
