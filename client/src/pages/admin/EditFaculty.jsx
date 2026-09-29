@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogActions,
   Autocomplete,
+  Divider,
 } from "@mui/material";
 import { Table } from "../../components/Table";
 import TextField from "@mui/material/TextField";
@@ -18,7 +19,6 @@ const API_URL = process.env.REACT_APP_API_URL;
 export default function EditFaculty() {
   const { id } = useParams();
   const [open, setOpen] = useState(false);
-  const [config, setConfig] = useState(false);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     f_Name: "",
@@ -52,7 +52,7 @@ export default function EditFaculty() {
           faculty_ID: data.faculty_ID || "",
           password: data.password || "",
           emergency_Name: data.emergency_Name || "",
-          emergency_Number: data.emergency_Number || ""
+          emergency_Number: data.emergency_Number || "",
         });
       } catch (err) {
         console.error(err);
@@ -126,7 +126,6 @@ export default function EditFaculty() {
               fontWeight: "bold",
               fontSize: { xs: "22px", md: "35px" },
               textAlign: "center",
-              marginLeft: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
             Faculty Member's Information
@@ -140,7 +139,6 @@ export default function EditFaculty() {
             }}
           ></Box>
         </Box>
-        {/* Personal information */}
         <Box
           sx={{
             backgroundColor: "#F3F9FF",
@@ -210,12 +208,16 @@ export default function EditFaculty() {
               label="Age"
               type="number"
               fullWidth
-              value={formData.age === null || formData.age === undefined ? "" : formData.age}
+              value={
+                formData.age === null || formData.age === undefined
+                  ? ""
+                  : formData.age
+              }
               onChange={(e) => {
                 const val = e.target.value;
                 setFormData({
                   ...formData,
-                  age: val === "" ? null : Number(val)
+                  age: val === "" ? null : Number(val),
                 });
               }}
               InputProps={{ inputProps: { min: 0 } }}
@@ -256,31 +258,26 @@ export default function EditFaculty() {
               }
             />
           </Box>
-        </Box>
 
-        <Box
-          sx={{
-            backgroundColor: "#F3F9FF",
-            width: "100%",
-            minHeight: { xs: "auto", md: "180px" },
-            borderRadius: "5px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            py: { xs: 3, md: 0 },
-          }}
-        >
+          <Divider
+            variant="middle"
+            sx={{
+              borderColor: "#242c54",
+            }}
+          />
+
           <Typography
             variant="h6"
             sx={{
               color: "#242C54",
               fontWeight: "bold",
               fontSize: "30px",
-              margin: "10px 20px -15px",
+              ml: "20px",
             }}
           >
             Contact Information
           </Typography>
+
           <Box
             sx={{
               display: "flex",
@@ -306,33 +303,26 @@ export default function EditFaculty() {
               }
             />
           </Box>
-        </Box>
-        {/* Family information */}
-        <Box
-          sx={{
-            backgroundColor: "#F3F9FF",
-            width: "100%",
-            minHeight: { xs: "auto", md: "180px" },
-            borderRadius: "5px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            py: { xs: 3, md: 0 },
-          }}
-        >
+
+          <Divider
+            variant="middle"
+            sx={{
+              borderColor: "#242c54",
+            }}
+          />
+
           <Typography
             variant="h6"
             sx={{
               color: "#242C54",
               fontWeight: "bold",
               fontSize: "30px",
-              margin: "10px 20px -15px",
+              ml: "20px",
             }}
           >
             Incase of Emergency Contact Information
           </Typography>
-
-          <Box
+            <Box
             sx={{
               display: "flex",
               flexDirection: { xs: "column", md: "row" },
@@ -356,31 +346,27 @@ export default function EditFaculty() {
               }
             />
           </Box>
-        </Box>
-        <Box sx={{
-          backgroundColor: "#F3F9FF",
-          width: "100%",
-          minHeight: { xs: "auto", md: "180px" },
-          borderRadius: "5px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
-          py: { xs: 3, md: 0 },
-        }}
-        >
+
+          <Divider
+            variant="middle"
+            sx={{
+              borderColor: "#242c54",
+            }}
+          />
+
           <Typography
             variant="h6"
             sx={{
               color: "#242C54",
               fontWeight: "bold",
               fontSize: "30px",
-              margin: "10px 20px -15px",
+              ml: "20px",
             }}
           >
             Affiliation Status
           </Typography>
 
-          <Box
+             <Box
             sx={{
               display: "flex",
               flexDirection: { xs: "column", md: "row" },
@@ -395,7 +381,7 @@ export default function EditFaculty() {
                 "Academic Head",
                 "Discipline Officer",
                 "IT Administrator",
-                "Admin"
+                "Admin",
               ]}
               fullWidth
               value={formData.position || null}
@@ -404,18 +390,17 @@ export default function EditFaculty() {
               }
               isOptionEqualToValue={(option, value) => option === value}
               renderInput={(params) => (
-                <TextField {...params} label="Position" fullWidth size="medium" />
+                <TextField
+                  {...params}
+                  label="Position"
+                  fullWidth
+                  size="medium"
+                />
               )}
             />
 
-
             <Autocomplete
-              options={[
-                "Active",
-                "Inactive",
-                "On Leave",
-                "Resigned",
-              ]}
+              options={["Active", "Inactive", "On Leave", "Resigned"]}
               fullWidth
               value={formData.status ?? null}
               onChange={(event, newValue) =>
@@ -427,36 +412,33 @@ export default function EditFaculty() {
               )}
             />
           </Box>
-        </Box>
-        <Box
-          sx={{
-            backgroundColor: "#F3F9FF",
-            width: "100%",
-            minHeight: { xs: "auto", md: "180px" },
-            borderRadius: "5px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            py: { xs: 3, md: 0 },
-          }}
-        >
+
+          <Divider
+            variant="middle"
+            sx={{
+              borderColor: "#242c54",
+            }}
+          />
+
           <Typography
             variant="h6"
             sx={{
               color: "#242C54",
               fontWeight: "bold",
               fontSize: "30px",
-              margin: "10px 20px -15px",
+              ml: "20px",
             }}
           >
             Account Configuration
           </Typography>
+
           <Box
             sx={{
               display: "flex",
               flexDirection: { xs: "column", md: "row" },
               gap: 4,
               margin: "0 20px",
+              mb: "40px"
             }}
           >
             <TextField
@@ -476,6 +458,7 @@ export default function EditFaculty() {
             />
           </Box>
         </Box>
+
         <Box
           sx={{
             width: "100%",
@@ -499,7 +482,7 @@ export default function EditFaculty() {
               },
             }}
             onClick={() => {
-              setOpen(true)
+              setOpen(true);
               handleSave();
             }}
           >

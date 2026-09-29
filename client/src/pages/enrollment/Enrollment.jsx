@@ -206,19 +206,19 @@ export default function Enrollment() {
     return null;
   }
 
-  // if (!enrollmentOpen) {
-  //   return (
-  //     <Blockade
-  //       greeting="Pleasant Day, Aspiring Atecian!"
-  //       messageDetail={
-  //         termLabel
-  //           ? `Enrollment for ${termLabel} is currently closed.`
-  //           : "This page is currently unavailable as enrollment is temporarily closed."
-  //       }
-  //       statusDetail="Enrollment Closed"
-  //     />
-  //   );
-  // }
+  if (!enrollmentOpen) {
+    return (
+      <Blockade
+        greeting="Pleasant Day, Aspiring Atecian!"
+        messageDetail={
+          termLabel
+            ? `Enrollment for ${termLabel} is currently closed.`
+            : "This page is currently unavailable as enrollment is temporarily closed."
+        }
+        statusDetail="Enrollment Closed"
+      />
+    );
+  }
 
   const fullName =
     `${studentDetails.firstName} ${studentDetails.middleName} ${studentDetails.lastName}`.trim();

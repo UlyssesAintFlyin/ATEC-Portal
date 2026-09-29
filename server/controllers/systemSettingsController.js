@@ -24,7 +24,7 @@ const getSystemSettings = async (req, res) => {
             ORDER BY ss.system_settings_ID DESC
             LIMIT 1
         `);
-        console.log("Faculty data:", rows);
+        
         res.json(rows[0] || {
             enrollment_settings_value: false,
             evaluation_settings_value: false

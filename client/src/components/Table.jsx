@@ -53,8 +53,8 @@ export const Table = ({ rows, columns, paginationModel, ...props }) => {
         <DataGrid
           rows={rows}
           columns={columns}
-          pageSize={paginationModel?.pageSize || 5}
-          rowsPerPageOptions={[5, 10]}
+          pageSize={paginationModel?.pageSize || 10}
+          rowsPerPageOptions={[5, 10, 20]}
           checkboxSelection
           components={{ Toolbar: CustomToolbar }}
           sx={{ border: 0 }}

@@ -44,8 +44,8 @@ export const StandardTable = ({
   fileName = "export",
   printFields, // e.g. ["subjectName", "instructor", "grade"] 
   pageStyle = defaultPageStyle,
-  pageSize = 5,
-  rowsPerPageOptions = [5, 10],
+  pageSize = 10,
+  rowsPerPageOptions = [5, 10, 20],
   height = 540,
   showToolbar = true,
 }) => {

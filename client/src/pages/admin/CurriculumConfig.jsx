@@ -82,7 +82,7 @@ export default function CurriculumConfig() {
       console.error(err);
     }
   };
-  
+
   const fetchCurricula = async (aysId) => {
     setLoading(true);
     try {
@@ -209,12 +209,12 @@ export default function CurriculumConfig() {
   }, []);
 
   useEffect(() => {
-  if (selectedTerm) {
-    fetchCurricula(selectedTerm.id);
-  } else {
-    setRows([]);
-  }
-}, [selectedTerm]);
+    if (selectedTerm) {
+      fetchCurricula(selectedTerm.id);
+    } else {
+      setRows([]);
+    }
+  }, [selectedTerm]);
 
   const handleOpenEdit = () => {
     if (selectedIds.length !== 1) return;
@@ -236,7 +236,8 @@ export default function CurriculumConfig() {
     {
       field: "action",
       headerName: "Action",
-      flex: 0.5, minWidth: 100,
+      flex: 0.5,
+      minWidth: 100,
       renderCell: (params) => (
         <Button
           variant="contained"
@@ -246,11 +247,11 @@ export default function CurriculumConfig() {
               `/admin/systemSettings/curriculumConfig/curriculum/${params.row.curriculum_ID}`, // params.row.id
             )
           }
-          sx={
-            {
-              /* unchanged */
-            }
-          }
+          sx={{
+            marginLeft: "10px",
+            fontSize: { xs: "12px", sm: "15px", md: "15px" },
+            width: { xs: "80px", sm: "120px", md: "100px" },
+          }}
         >
           Open
         </Button>
@@ -322,7 +323,7 @@ export default function CurriculumConfig() {
           <Box
             sx={{
               display: "flex",
-              justifyContent: {xs:"center", md:"flex-end"},
+              justifyContent: { xs: "center", md: "flex-end" },
               alignItems: "center",
               flexDirection: "row",
               flexWrap: "wrap",
@@ -349,6 +350,7 @@ export default function CurriculumConfig() {
                 fontSize: { xs: "12px", sm: "14px", md: "16px" },
                 color: "#E8EDF2",
                 backgroundColor: "#245442",
+                maxHeight:"40px"
               }}
             >
               Add Curriculum
