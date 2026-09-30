@@ -132,6 +132,7 @@ export default function CurriculumSubjects() {
                 fontSize: { xs: "12px", md: "16px" },
                 textAlign: "left",
                 marginLeft: { xs: "20px", sm: "30px", md: "50px" },
+                textAlign: { xs: "center", md: "left" },
               }}
             >
               These are the subjects under <b>{curriculumName ? `${curriculumName}` : ""}</b>.

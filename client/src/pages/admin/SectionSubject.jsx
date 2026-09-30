@@ -374,6 +374,7 @@ const handleSaveChanges = async () => {
                 color: "#242c54",
                 fontSize: { xs: "12px", md: "16px" },
                 marginLeft: { xs: 0, md: "50px" },
+                textAlign: { xs: "center", md: "left" },
               }}
             >
               Manage the Instructors of the section <b>{sectionName}</b>

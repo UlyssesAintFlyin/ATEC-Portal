@@ -179,7 +179,7 @@ export default function FacultyEvaluation() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              alignItems: {xs:"center", md:"flex-start"}
+              alignItems: { xs: "center", md: "flex-start" },
             }}
           >
             <Typography
@@ -198,6 +198,7 @@ export default function FacultyEvaluation() {
                 color: "#242c54",
                 fontSize: { xs: "12px", md: "16px" },
                 marginLeft: { xs: 0, md: "50px" },
+                textAlign: { xs: "center", md: "left" },
               }}
             >
               Manage faculty evaluations and their respective information.

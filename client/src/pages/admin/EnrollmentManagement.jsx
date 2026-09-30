@@ -1,7 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { Typography, Box, Button } from "@mui/material";
-import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Typography,
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
+  Alert,
+  CircularProgress,
+} from "@mui/material";
 import { Table } from "../../components/Table";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -18,6 +27,72 @@ export default function EnrollmentManagement() {
   const [selectedAY, setSelectedAY] = useState(null);
 
   const [selectedIds, setSelectedIds] = useState([]);
+
+  const fileInputRef = useRef(null);
+  const [importing, setImporting] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    severity: "success",
+    message: "",
+  });
+  const [importErrors, setImportErrors] = useState([]);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+
+  const handleGetTemplate = async () => {
+    try {
+      const res = await fetch(`${API_URL}/enrollment/enrolleeTemplate`);
+      if (!res.ok) throw new Error("Failed to download template");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "enrollee_template.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setSnackbar({ open: true, severity: "error", message: err.message });
+    }
+  };
+
+  const handleImportClick = () => {
+    if (!selectedAY) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("ayId", selectedAY.id);
+
+      const res = await fetch(`${API_URL}/enrollment/importEnrollees`, {
+        method: "POST",
+        body: formData,
+      });
+      const body = await res.json();
+
+      if (res.status === 422 && Array.isArray(body.errors)) {
+        setImportErrors(body.errors);
+        setErrorDialogOpen(true);
+        return;
+      }
+      if (!res.ok) throw new Error(body.message || "Import failed");
+
+      setSnackbar({ open: true, severity: "success", message: body.message });
+      fetchEnrollees(selectedAY.id); // refresh the table
+    } catch (err) {
+      setSnackbar({ open: true, severity: "error", message: err.message });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const fetchCurrentAY = async () => {
     try {
@@ -44,7 +119,7 @@ export default function EnrollmentManagement() {
       const res = await fetch(`${API_URL}/admin/loadAcademicYear`);
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data = await res.json();
-      setAcademicYears(data); // [{ id, AY_Name }, ...]
+      setAcademicYears(data);
     } catch (err) {
       console.error(err);
     }
@@ -164,7 +239,7 @@ export default function EnrollmentManagement() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              alignItems: {xs:"center", md:"flex-start"}
+              alignItems: { xs: "center", md: "flex-start" },
             }}
           >
             <Typography
@@ -191,15 +266,54 @@ export default function EnrollmentManagement() {
           <Box
             sx={{
               display: "flex",
-              justifyContent: "center",
+              justifyContent: { xs: "center", md: "flex-end" },
               alignItems: "center",
               flexDirection: "row",
+              flexWrap: "wrap",
+              maxWidth: { xs: "300px", md: "700px" },
               gap: 2,
               marginTop: { xs: "10px", md: "0" },
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
               marginLeft: { xs: "20px", sm: "30px", md: "50px" },
             }}
           >
+            <Button
+              variant="contained"
+              disabled={!selectedAY || importing}
+              onClick={handleImportClick}
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#242C54",
+              }}
+            >
+              {importing ? (
+                <CircularProgress size={20} sx={{ color: "#E8EDF2" }} />
+              ) : (
+                "Import Enrollees"
+              )}
+            </Button>
+            <input
+              type="file"
+              accept=".xlsx"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileSelected}
+            />
+
+            <Button
+              variant="contained"
+              onClick={handleGetTemplate}
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#482454",
+              }}
+            >
+              Get Template
+            </Button>
             <Button
               sx={{
                 fontSize: { xs: "12px", sm: "15px", md: "17px" },
@@ -242,6 +356,38 @@ export default function EnrollmentManagement() {
           />
         </Box>
       </Box>
+
+      <Dialog
+        open={errorDialogOpen}
+        onClose={() => setErrorDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Import Failed — Fix These Rows</DialogTitle>
+        <DialogContent>
+          {importErrors.map((msg, i) => (
+            <Typography key={i} variant="body2" sx={{ mb: 1 }}>
+              {msg}
+            </Typography>
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setErrorDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
