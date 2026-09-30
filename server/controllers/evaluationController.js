@@ -24,21 +24,64 @@ const getFacultyList = async (req, res) => {
             return res.status(400).json({ message: 'Evaluation period is not currently configured.' });
         }
 
-        const [rows] = await pool.query(
-            `SELECT f.faculty_ID, f.f_Name, f.l_Name, e.evaluation_ID,
+        // 1. Everyone who teaches this student's section in the active term
+        const [teachers] = await pool.query(
+        `SELECT f.faculty_ID, f.f_Name, f.l_Name,
                 GROUP_CONCAT(DISTINCT s.subject_Name SEPARATOR ', ') AS subjects
-             FROM student_year_record_table syr
-             JOIN section_year_record_table sec ON syr.section_record_ID = sec.section_record_ID
-             JOIN faculty_year_record_table fyr ON fyr.section_record_ID = sec.section_record_ID
-             JOIN faculty_table f ON fyr.faculty_ID = f.faculty_ID
-             LEFT JOIN subject_table s ON fyr.subject_ID = s.subject_ID
-             JOIN evaluation_table e ON e.faculty_ID = f.faculty_ID AND e.AYS_ID = sec.AYS_ID
-             WHERE syr.student_ID = ? AND sec.AYS_ID = ?
-             GROUP BY f.faculty_ID, f.f_Name, f.l_Name, e.evaluation_ID`,
-            [studentId, AYS_ID]
+         FROM student_year_record_table syr
+         JOIN section_year_record_table sec
+              ON sec.section_record_ID = syr.section_record_ID AND sec.AYS_ID = ?
+         JOIN (
+              SELECT section_record_ID, faculty_ID, subject_ID FROM faculty_load_table
+              UNION
+              SELECT section_record_ID, faculty_ID, subject_ID FROM faculty_year_record_table
+         ) t ON t.section_record_ID = sec.section_record_ID
+         JOIN faculty_table f ON f.faculty_ID = t.faculty_ID
+         LEFT JOIN subject_table s ON s.subject_ID = t.subject_ID
+         WHERE syr.student_ID = ? AND t.faculty_ID IS NOT NULL
+         GROUP BY f.faculty_ID, f.f_Name, f.l_Name`,
+        [AYS_ID, studentId]
         );
 
-        res.json({ faculty: rows });
+        if (teachers.length === 0) {
+            return res.json({ faculty: [] });
+        }
+
+        const facultyIds = teachers.map((t) => t.faculty_ID);
+
+        // 2. Make sure each teacher has an evaluation row for this term
+        await pool.query(
+            `INSERT IGNORE INTO evaluation_table (evaluation_Name, faculty_ID, AYS_ID)
+             SELECT LEFT(CONCAT(f.f_Name, ' ', f.l_Name, ' Evaluation'), 50), f.faculty_ID, ?
+             FROM faculty_table f
+             WHERE f.faculty_ID IN (?)`,
+            [AYS_ID, facultyIds]
+        );
+
+        // 3. Get the evaluation IDs and check which ones this student already finished
+        const [evals] = await pool.query(
+            `SELECT e.faculty_ID, e.evaluation_ID,
+                    EXISTS(
+                        SELECT 1 FROM eval_answer_table a
+                        WHERE a.evaluation_ID = e.evaluation_ID AND a.student_ID = ?
+                    ) AS evaluated
+             FROM evaluation_table e
+             WHERE e.AYS_ID = ? AND e.faculty_ID IN (?)`,
+            [studentId, AYS_ID, facultyIds]
+        );
+
+        const evalMap = {};
+        evals.forEach((e) => {
+            evalMap[e.faculty_ID] = e;
+        });
+
+        const faculty = teachers.map((t) => ({
+            ...t,
+            evaluation_ID: evalMap[t.faculty_ID].evaluation_ID,
+            evaluated: Boolean(evalMap[t.faculty_ID].evaluated),
+        }));
+
+        res.json({ faculty });
     } catch (error) {
         console.error('Get faculty error:', error);
         res.status(500).json({

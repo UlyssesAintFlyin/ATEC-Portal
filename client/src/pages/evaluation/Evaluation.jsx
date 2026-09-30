@@ -103,6 +103,11 @@ export default function Evaluation() {
 
       if (response.ok) {
         alert("Evaluation submitted successfully!");
+        setFacultyList((prev) =>
+      prev.map((f) =>
+        f.faculty_ID === selectedFaculty.faculty_ID ? { ...f, evaluated: true } : f
+        )
+      );
         setShowEval(false);
         setAnswers({});
       } else {
@@ -125,22 +130,27 @@ export default function Evaluation() {
       </div>
 
       <div className="professorsDiv">
-        {facultyList.map((fac) => (
-          <div
-            className="professor"
-            key={fac.faculty_ID}
-            onClick={() => {
-              setSelectedFaculty(fac);
-              setShowEval(true);
-            }}
-          >
-            <div className="circle">-</div>
-            <div>
-              <h3>{fac.f_Name} {fac.l_Name}</h3>
-            </div>
-          </div>
-        ))}
+  {facultyList.length === 0 && <p>No faculty to evaluate yet.</p>}
+  {facultyList.map((fac) => (
+    <div
+      className="professor"
+      key={fac.faculty_ID}
+      style={{ opacity: fac.evaluated ? 0.5 : 1 }}
+      onClick={() => {
+        if (fac.evaluated) return;
+        setSelectedFaculty(fac);
+        setShowEval(true);
+      }}
+    >
+      <div className="circle">-</div>
+      <div>
+        <h3>{fac.f_Name} {fac.l_Name}</h3>
+        <p>{fac.subjects || "Adviser"}</p>
+        {fac.evaluated && <small>Already evaluated</small>}
       </div>
+    </div>
+  ))}
+</div>
 
       {showEval && selectedFaculty && (
         <div className="Evaluationform">
