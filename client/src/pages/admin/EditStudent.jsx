@@ -9,41 +9,47 @@ import {
   DialogActions,
   Autocomplete,
   Divider,
+  TextField,
 } from "@mui/material";
-import TextField from "@mui/material/TextField";
 import { useParams, useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
-
-const emptyStudent = {
-  f_Name: "",
-  m_Name: "",
-  l_Name: "",
-  age: "",
-  gender: "",
-  birthdate: "",
-  address: "",
-  email: "",
-  contact_Number: "",
-  father_Name: "",
-  father_Contact: "",
-  mother_Name: "",
-  mother_Contact: "",
-  guardian_Name: "",
-  guardian_Contact: "",
-  department: "",
-  program: "",
-  lrn: "",
-  password: "",
-};
 
 export default function EditStudent() {
   const { studentId } = useParams();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [student, setStudent] = useState(emptyStudent);
+  const [loading, setLoading] = useState(true);
   const [currentAYS_ID, setCurrentAYS_ID] = useState("");
   const [sections, setSections] = useState([]);
+  const [student, setStudent] = useState({
+    f_Name: "",
+    m_Name: "",
+    l_Name: "",
+    birthdate: "",
+    gender: "",
+    email: "",
+    age: "",
+    address: "",
+    contact_Number: "",
+    father_Name: "",
+    father_Contact: "",
+    mother_Name: "",
+    mother_Contact: "",
+    guardian_Name: "",
+    guardian_Contact: "",
+    department: "",
+    program: "",
+    lrn: "",
+    password: "",
+    student_ID: "",
+    section_ID: "",
+  });
+
+  const formatDateLocal = (dateStr) => {
+    if (!dateStr) return "";
+    return dateStr.split("T")[0];
+  };
 
   useEffect(() => {
     const fetchSystemSettings = async () => {
@@ -62,63 +68,85 @@ export default function EditStudent() {
   }, []);
 
   useEffect(() => {
-    if (!currentAYS_ID) return;
+    if (!currentAYS_ID || !studentId) return;
 
-    fetch(`${API_URL}/admin/students/${studentId}?AYS_ID=${currentAYS_ID}`)
-      .then((res) => res.json())
-      .then((data) => {
-        const cleaned = Object.fromEntries(
-          Object.entries(data).map(([k, v]) => [k, v ?? ""]),
+    const fetchStudent = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/admin/students/${studentId}?AYS_ID=${currentAYS_ID}`
         );
-        setStudent({ ...emptyStudent, ...cleaned });
-      })
-      .catch((err) => console.error("Error loading student:", err));
-  }, [student.department, currentAYS_ID]);
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const data = await res.json();
+
+        setStudent({
+          f_Name: data.f_Name || "",
+          m_Name: data.m_Name || "",
+          l_Name: data.l_Name || "",
+          birthdate: formatDateLocal(data.birthdate),
+          gender: data.gender || "",
+          email: data.email || "",
+          age: data.age || "",
+          address: data.address || "",
+          contact_Number: data.contact_Number || "",
+          father_Name: data.father_Name || "",
+          father_Contact: data.father_Contact || "",
+          mother_Name: data.mother_Name || "",
+          mother_Contact: data.mother_Contact || "",
+          guardian_Name: data.guardian_Name || "",
+          guardian_Contact: data.guardian_Contact || "",
+          department: data.department || "",
+          program: data.program || "",
+          lrn: data.lrn || "",
+          password: data.password || "",
+          student_ID: data.student_ID || "",
+          section_ID: data.section_ID || "",
+        });
+      } catch (err) {
+        console.error("Error loading student:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudent();
+  }, [studentId, currentAYS_ID]);
 
   useEffect(() => {
-    if (student && student.department && currentAYS_ID) {
-      fetch(
-        `${API_URL}/admin/sections/byDepartment?department=${student.department}&AYS_ID=${currentAYS_ID}`,
-      )
-        .then((res) => {
-          return res.json();
-        })
-        .then((data) => {
-          setSections(data);
-        })
-        .catch((err) => console.error("Error loading sections:", err));
-    }
-  }, [student, currentAYS_ID]);
+    if (!student.department || !currentAYS_ID) return;
 
-  const formatDateLocal = (isoString) => {
-    if (!isoString) return "";
-    const d = new Date(isoString);
-    // Use local year, month, day
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  };
-
-  const handleSave = async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/students/${studentId}/update`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...student,
-          birthdate: formatDateLocal(student?.birthdate),
-          AYS_ID: currentAYS_ID,
-        }),
-      });
-      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
-      const updated = await res.json();
-      setOpen(true);
-    } catch (err) {
-      console.error("Error saving student:", err);
-    }
-  };
+    fetch(
+      `${API_URL}/admin/sections/byDepartment?department=${student.department}&AYS_ID=${currentAYS_ID}`
+    )
+      .then((res) => res.json())
+      .then((data) => setSections(data))
+      .catch((err) => console.error("Error loading sections:", err));
+  }, [student.department, currentAYS_ID]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setStudent((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    try {
+      const payload = {
+        ...student,
+        age: student.age === "" || student.age === null ? null : parseInt(student.age, 10),
+        birthdate: formatDateLocal(student.birthdate),
+        AYS_ID: currentAYS_ID,
+      };
+
+      const res = await fetch(`${API_URL}/admin/students/${studentId}/update`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+      setOpen(true);
+    } catch (err) {
+      console.error("Error saving student:", err);
+    }
   };
 
   return (
@@ -163,14 +191,6 @@ export default function EditStudent() {
           >
             Student's Information
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 2,
-              marginRight: { xs: "20px", sm: "30px", md: "50px" },
-            }}
-          ></Box>
         </Box>
 
         <Box
@@ -206,18 +226,21 @@ export default function EditStudent() {
           >
             <TextField
               label="First Name"
+              name="f_Name"
               value={student.f_Name}
               onChange={handleChange}
               fullWidth
             />
             <TextField
               label="Middle Name"
+              name="m_Name"
               value={student.m_Name}
               onChange={handleChange}
               fullWidth
             />
             <TextField
               label="Surname"
+              name="l_Name"
               value={student.l_Name}
               onChange={handleChange}
               fullWidth
@@ -234,6 +257,7 @@ export default function EditStudent() {
           >
             <TextField
               label="Age"
+              name="age"
               type="number"
               value={student.age}
               onChange={handleChange}
@@ -241,15 +265,17 @@ export default function EditStudent() {
             />
             <TextField
               label="Gender"
+              name="gender"
               value={student.gender}
               onChange={handleChange}
               fullWidth
             />
             <TextField
               label="Birthdate"
+              name="birthdate"
               type="date"
               InputLabelProps={{ shrink: true }}
-              value={formatDateLocal(student.birthdate)}
+              value={student.birthdate}
               onChange={handleChange}
               fullWidth
             />
@@ -264,6 +290,7 @@ export default function EditStudent() {
           >
             <TextField
               label="Home Address"
+              name="address"
               value={student.address}
               onChange={handleChange}
               fullWidth
@@ -274,8 +301,7 @@ export default function EditStudent() {
             variant="middle"
             sx={{
               borderColor: "#242c54",
-            }}
-          />
+            }} />
 
           <Typography
             variant="h6"
@@ -298,13 +324,15 @@ export default function EditStudent() {
             }}
           >
             <TextField
-              label="Email Adress"
+              label="Email Address"
+              name="email"
               value={student.email}
               onChange={handleChange}
               fullWidth
             />
             <TextField
               label="Contact Number"
+              name="contact_Number"
               value={student.contact_Number}
               onChange={handleChange}
               fullWidth
@@ -315,8 +343,7 @@ export default function EditStudent() {
             variant="middle"
             sx={{
               borderColor: "#242c54",
-            }}
-          />
+            }} />
 
           <Typography
             variant="h6"
@@ -340,13 +367,15 @@ export default function EditStudent() {
           >
             <TextField
               label="Father's Name"
+              name="father_Name"
               value={student.father_Name}
               onChange={handleChange}
               fullWidth
             />
             <TextField
               label="Father's Contact Number"
-              value={student?.father_Contact ?? ""}
+              name="father_Contact"
+              value={student.father_Contact}
               onChange={handleChange}
               fullWidth
             />
@@ -361,12 +390,14 @@ export default function EditStudent() {
           >
             <TextField
               label="Mother's Maiden Name"
+              name="mother_Name"
               value={student.mother_Name}
               onChange={handleChange}
               fullWidth
             />
             <TextField
               label="Mother's Contact Number"
+              name="mother_Contact"
               value={student.mother_Contact}
               onChange={handleChange}
               fullWidth
@@ -382,12 +413,14 @@ export default function EditStudent() {
           >
             <TextField
               label="Guardian's Name"
+              name="guardian_Name"
               value={student.guardian_Name}
               onChange={handleChange}
               fullWidth
             />
             <TextField
               label="Guardian's Contact Number"
+              name="guardian_Contact"
               value={student.guardian_Contact}
               onChange={handleChange}
               fullWidth
@@ -398,8 +431,7 @@ export default function EditStudent() {
             variant="middle"
             sx={{
               borderColor: "#242c54",
-            }}
-          />
+            }} />
 
           <Typography
             variant="h6"
@@ -419,11 +451,11 @@ export default function EditStudent() {
               flexDirection: { xs: "column", md: "row" },
               gap: 4,
               margin: "0 20px",
-              boxSizing: "border-box",
             }}
           >
             <TextField
               label="Department"
+              name="department"
               value={student.department}
               inputProps={{ readOnly: true }}
               fullWidth
@@ -431,6 +463,7 @@ export default function EditStudent() {
             />
             <TextField
               label="Course/Track"
+              name="program"
               value={student.program}
               inputProps={{ readOnly: true }}
               fullWidth
@@ -453,35 +486,25 @@ export default function EditStudent() {
                   setStudent((prev) => ({
                     ...prev,
                     section_ID: value.section_ID,
-                    gradeLevel: value.gradeLevel,
-                    section_Name: value.section_Name,
                   }));
                 }
               }}
+              fullWidth
               sx={{ flex: 1 }}
               renderInput={(params) => (
                 <TextField
                   {...params}
                   label="Year Level & Section"
-                  size="small"
                   fullWidth
-                  sx={{
-                    "& .MuiInputBase-root": {
-                      height: "56px",
-                    },
-                  }}
                 />
               )}
             />
           </Box>
 
-          <Divider
-            variant="middle"
+          <Divider variant="middle"
             sx={{
               borderColor: "#242c54",
-            }}
-          />
-
+            }} />
           <Typography
             variant="h6"
             sx={{
@@ -493,36 +516,34 @@ export default function EditStudent() {
           >
             Account Configuration
           </Typography>
-            <Box
+          <Box
             sx={{
               display: "flex",
               flexDirection: { xs: "column", md: "row" },
               gap: 4,
               margin: "0 20px",
-              mb: "40px"
+              mb: "40px",
             }}
           >
             <TextField
               label="Learner's Reference Number"
+              name="lrn"
               value={student.lrn}
-              onChange={(e) =>
-                setStudent({ ...(student || {}), lrn: e.target.value })
-              }
+              onChange={handleChange}
               fullWidth
             />
             <TextField
               label="Password"
+              name="password"
               value={student.password}
-              onChange={(e) =>
-                setStudent({ ...(student || {}), password: e.target.value })
-              }
+              onChange={handleChange}
               fullWidth
               type="password"
             />
           </Box>
-
         </Box>
       </Box>
+
       <Box
         sx={{
           display: "flex",
@@ -541,7 +562,6 @@ export default function EditStudent() {
             width: { xs: "150px", sm: "200px", md: "250px" },
             "&:hover": {
               backgroundColor: "#bc4949",
-              transform: "scale(1.05)",
             },
           }}
           onClick={() => navigate(-1)}
@@ -557,15 +577,13 @@ export default function EditStudent() {
             width: { xs: "150px", sm: "200px", md: "250px" },
             "&:hover": {
               backgroundColor: "#4f5d9e",
-              transform: "scale(1.05)",
             },
           }}
-          onClick={() => {
-            handleSave();
-          }}
+          onClick={handleSave}
         >
           Save Changes
         </Button>
+
         <Dialog open={open} onClose={() => setOpen(false)}>
           <DialogTitle>Success</DialogTitle>
           <DialogContent>

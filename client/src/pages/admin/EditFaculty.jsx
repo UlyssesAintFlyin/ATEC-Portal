@@ -10,11 +10,29 @@ import {
   Autocomplete,
   Divider,
 } from "@mui/material";
-import { Table } from "../../components/Table";
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
+
+// Helper function to safely convert ISO date strings to YYYY-MM-DD without timezone shifts
+const formatDate = (rawDate) => {
+  if (!rawDate) return "";
+
+  // If already a simple YYYY-MM-DD string, return it as-is
+  if (typeof rawDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+    return rawDate;
+  }
+
+  // Parse ISO timestamps using local date getters
+  const d = new Date(rawDate);
+  if (isNaN(d.getTime())) return "";
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 export default function EditFaculty() {
   const { id } = useParams();
@@ -27,6 +45,15 @@ export default function EditFaculty() {
     birthdate: "",
     gender: "",
     email: "",
+    age: "",
+    address: "",
+    contact_Number: "",
+    position: "",
+    status: "",
+    faculty_ID: "",
+    password: "",
+    emergency_Name: "",
+    emergency_Number: "",
   });
 
   useEffect(() => {
@@ -40,11 +67,10 @@ export default function EditFaculty() {
           f_Name: data.f_Name || "",
           l_Name: data.l_Name || "",
           m_Name: data.m_Name || "",
-          birthdate: data.birthdate ? data.birthdate.split("T")[0] : "",
+          birthdate: formatDate(data.birthdate),
           gender: data.gender || "",
           email: data.email || "",
-          age: data.age || "",
-          gender: data.gender || "",
+          age: data.age ?? "",
           address: data.address || "",
           contact_Number: data.contact_Number || "",
           position: data.position || "",
@@ -63,11 +89,6 @@ export default function EditFaculty() {
     fetchFaculty();
   }, [id]);
 
-  console.log("Faculty data:", formData);
-  const handleChange = (field) => (e) => {
-    setFormData({ ...formData, [field]: e.target.value });
-  };
-
   const handleSave = async () => {
     try {
       const res = await fetch(`${API_URL}/faculty/updateFaculty/${id}`, {
@@ -81,12 +102,6 @@ export default function EditFaculty() {
       console.error(err);
     }
   };
-
-  const columns = [
-    { field: "id", headerName: "Section ID", flex: 0, minWidth: 60 },
-    { field: "gradeLevel", headerName: "Grade Level", flex: 0.5, minWidth: 60 },
-    { field: "sectionName", headerName: "Section Name", flex: 1 },
-  ];
 
   return (
     <Box
@@ -130,15 +145,8 @@ export default function EditFaculty() {
           >
             Faculty Member's Information
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 2,
-              marginRight: { xs: "20px", sm: "30px", md: "50px" },
-            }}
-          ></Box>
         </Box>
+
         <Box
           sx={{
             backgroundColor: "#F3F9FF",
@@ -162,6 +170,7 @@ export default function EditFaculty() {
           >
             Personal Information
           </Typography>
+
           <Box
             sx={{
               display: "flex",
@@ -208,16 +217,12 @@ export default function EditFaculty() {
               label="Age"
               type="number"
               fullWidth
-              value={
-                formData.age === null || formData.age === undefined
-                  ? ""
-                  : formData.age
-              }
+              value={formData.age ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
                 setFormData({
                   ...formData,
-                  age: val === "" ? null : Number(val),
+                  age: val === "" ? "" : Number(val),
                 });
               }}
               InputProps={{ inputProps: { min: 0 } }}
@@ -235,12 +240,13 @@ export default function EditFaculty() {
               type="date"
               fullWidth
               InputLabelProps={{ shrink: true }}
-              value={formData.birthdate}
+              value={formData.birthdate ?? ""}
               onChange={(e) =>
                 setFormData({ ...formData, birthdate: e.target.value })
               }
             />
           </Box>
+
           <Box
             sx={{
               display: "flex",
@@ -259,12 +265,7 @@ export default function EditFaculty() {
             />
           </Box>
 
-          <Divider
-            variant="middle"
-            sx={{
-              borderColor: "#242c54",
-            }}
-          />
+          <Divider variant="middle" sx={{ borderColor: "#242c54" }} />
 
           <Typography
             variant="h6"
@@ -304,12 +305,7 @@ export default function EditFaculty() {
             />
           </Box>
 
-          <Divider
-            variant="middle"
-            sx={{
-              borderColor: "#242c54",
-            }}
-          />
+          <Divider variant="middle" sx={{ borderColor: "#242c54" }} />
 
           <Typography
             variant="h6"
@@ -322,7 +318,8 @@ export default function EditFaculty() {
           >
             Incase of Emergency Contact Information
           </Typography>
-            <Box
+
+          <Box
             sx={{
               display: "flex",
               flexDirection: { xs: "column", md: "row" },
@@ -341,18 +338,14 @@ export default function EditFaculty() {
             <TextField
               label="Emergency Contact's Number"
               fullWidth
+              value={formData.emergency_Number ?? ""}
               onChange={(e) =>
                 setFormData({ ...formData, emergency_Number: e.target.value })
               }
             />
           </Box>
 
-          <Divider
-            variant="middle"
-            sx={{
-              borderColor: "#242c54",
-            }}
-          />
+          <Divider variant="middle" sx={{ borderColor: "#242c54" }} />
 
           <Typography
             variant="h6"
@@ -366,7 +359,7 @@ export default function EditFaculty() {
             Affiliation Status
           </Typography>
 
-             <Box
+          <Box
             sx={{
               display: "flex",
               flexDirection: { xs: "column", md: "row" },
@@ -390,12 +383,7 @@ export default function EditFaculty() {
               }
               isOptionEqualToValue={(option, value) => option === value}
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Position"
-                  fullWidth
-                  size="medium"
-                />
+                <TextField {...params} label="Position" fullWidth size="medium" />
               )}
             />
 
@@ -413,12 +401,7 @@ export default function EditFaculty() {
             />
           </Box>
 
-          <Divider
-            variant="middle"
-            sx={{
-              borderColor: "#242c54",
-            }}
-          />
+          <Divider variant="middle" sx={{ borderColor: "#242c54" }} />
 
           <Typography
             variant="h6"
@@ -438,11 +421,11 @@ export default function EditFaculty() {
               flexDirection: { xs: "column", md: "row" },
               gap: 4,
               margin: "0 20px",
-              mb: "40px"
+              mb: "40px",
             }}
           >
             <TextField
-              label="Employee ID "
+              label="Employee ID"
               fullWidth
               value={formData.faculty_ID ?? ""}
               inputProps={{ readOnly: true }}
@@ -462,7 +445,6 @@ export default function EditFaculty() {
         <Box
           sx={{
             width: "100%",
-            minHeight: { xs: "auto", md: "340px" },
             display: "flex",
             alignItems: "center",
             flexDirection: "column",
@@ -472,7 +454,7 @@ export default function EditFaculty() {
           <Button
             sx={{
               fontSize: { xs: "12px", sm: "15px", md: "17px" },
-              color: "#E8EDF2", // light gray text
+              color: "#E8EDF2",
               backgroundColor: "#242C54",
               borderRadius: "5px",
               width: { xs: "150px", sm: "200px", md: "250px" },
@@ -481,16 +463,14 @@ export default function EditFaculty() {
                 transform: "scale(1.05)",
               },
             }}
-            onClick={() => {
-              setOpen(true);
-              handleSave();
-            }}
+            onClick={handleSave}
           >
             Save Changes
           </Button>
         </Box>
       </Box>
-      {/*Saved Changes Dialog*/}
+
+      {/* Success Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Success</DialogTitle>
         <DialogContent>

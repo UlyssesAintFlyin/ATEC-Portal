@@ -8,30 +8,114 @@ import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   Box,
   Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+const API_URL = process.env.REACT_APP_API_URL || "";
+
 export const Header = () => {
   const [open, setOpen] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwForm, setPwForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [pwError, setPwError] = useState("");
+  const [pwSuccess, setPwSuccess] = useState("");
+
   const location = useLocation();
   const { user, logout } = useAuth();
+
   const toggleDrawer = (state) => () => {
     setOpen(state);
   };
+
   function getInitials(name) {
     if (!name) return "?";
     return name
-      .split(" ")
+      .trim()
+      .split(/\s+/)
       .map((part) => part[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
   }
+
+  const handlePwChange = (e) => {
+    setPwForm({ ...pwForm, [e.target.name]: e.target.value });
+  };
+
+  const handleOpenPwModal = () => {
+    setPwError("");
+    setPwSuccess("");
+    setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    setPwOpen(true);
+  };
+
+  const handleClosePwModal = () => {
+    setPwOpen(false);
+  };
+
+  const handleSubmitPasswordChange = async () => {
+    setPwError("");
+    setPwSuccess("");
+
+    if (!pwForm.currentPassword || !pwForm.newPassword || !pwForm.confirmPassword) {
+      setPwError("Please fill out all password fields.");
+      return;
+    }
+
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      setPwError("New password and confirm password do not match.");
+      return;
+    }
+
+    try {
+      // Fixed: Backticks used for template literal interpolation
+      const response = await fetch(`${API_URL}/admin/changePassword`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user?.id || user?.student_ID || user?.faculty_ID,
+          role: user?.role,
+          currentPassword: pwForm.currentPassword,
+          newPassword: pwForm.newPassword,
+          confirmPassword: pwForm.confirmPassword,
+        }),
+      });
+
+      // Fixed: Safe JSON parsing
+      const contentType = response.headers.get("content-type");
+      let data = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || `Server error (${response.status})`);
+      }
+
+      setPwSuccess("Password changed successfully!");
+      setTimeout(() => {
+        handleClosePwModal();
+      }, 1500);
+    } catch (err) {
+      setPwError(err.message || "Network error. Please try again.");
+    }
+  };
 
   return (
     <AppBar
@@ -98,7 +182,7 @@ export const Header = () => {
             <Typography
               variant="body1"
               sx={{
-                fontSize: { xs: 1, md: "13px" },
+                fontSize: { xs: "10px", md: "13px" },
                 color: "#e8edf2",
                 display: { xs: "none", md: "block" },
               }}
@@ -111,7 +195,7 @@ export const Header = () => {
         {location.pathname === "/" && (
           <Box
             sx={{
-              display: {xs: "none", md:"flex"},
+              display: { xs: "none", md: "flex" },
               flexDirection: { xs: "column", sm: "row" },
               gap: { xs: 0, sm: 2, md: 3 },
               ml: { xs: 1, sm: 2, md: 3 },
@@ -224,48 +308,64 @@ export const Header = () => {
               {user ? user.role : "Not signed in"}
             </Typography>
           </Box>
-          {/*add real profile photos, you'd just pass src={user.photoUrl} to the same Avatar*/}
+
           <List>
             {!user && (
-              <>
-              <ListItem
-                button
-                component={Link}
-                to="/enrollment"
-                onClick={toggleDrawer(false)}
-              >
-                <ListItemText primary="Enrollment" />
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to="/enrollment"
+                  onClick={toggleDrawer(false)}
+                >
+                  <ListItemText primary="Enrollment" />
+                </ListItemButton>
               </ListItem>
-              </>
             )}
             {user?.role === "Student" && (
               <>
-                <ListItem
-                  button
-                  component={Link}
-                  to="/evaluation"
-                  onClick={toggleDrawer(false)}
-                >
-                  <ListItemText primary="Evaluation" />
+                <ListItem disablePadding>
+                  <ListItemButton
+                    component={Link}
+                    to="/evaluation"
+                    onClick={toggleDrawer(false)}
+                  >
+                    <ListItemText primary="Evaluation" />
+                  </ListItemButton>
                 </ListItem>
-                <ListItem
-                  button
-                  component={Link}
-                  to="/grades"
-                  onClick={toggleDrawer(false)}
-                >
-                  <ListItemText primary="Grades" />
+                <ListItem disablePadding>
+                  <ListItemButton
+                    component={Link}
+                    to="/grades"
+                    onClick={toggleDrawer(false)}
+                  >
+                    <ListItemText primary="Grades" />
+                  </ListItemButton>
                 </ListItem>
               </>
             )}
-            {user?.role === "Teacher" && (
-              <ListItem
-                button
-                component={Link}
-                to="/evaluationFaculty"
-                onClick={toggleDrawer(false)}
-              >
-                <ListItemText primary="Evaluation" />
+            {(user?.role === "Teacher" || user?.role === "Faculty") && (
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to="/evaluationFaculty"
+                  onClick={toggleDrawer(false)}
+                >
+                  <ListItemText primary="Evaluation" />
+                </ListItemButton>
+              </ListItem>
+            )}
+            {(user?.role === "Student" ||
+              user?.role === "Teacher" ||
+              user?.role === "Faculty") && (
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    setOpen(false);
+                    handleOpenPwModal();
+                  }}
+                >
+                  <ListItemText primary="Change Password" />
+                </ListItemButton>
               </ListItem>
             )}
           </List>
@@ -280,7 +380,7 @@ export const Header = () => {
                 to="/signin"
                 onClick={() => {
                   logout();
-                  toggleDrawer(false)();
+                  setOpen(false);
                 }}
               >
                 Sign Out
@@ -299,6 +399,63 @@ export const Header = () => {
           </Box>
         </Box>
       </Drawer>
+
+      <Dialog open={pwOpen} onClose={handleClosePwModal} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ color: "#242C54", fontWeight: "bold" }}>
+          Change Password
+        </DialogTitle>
+        <DialogContent>
+          {pwError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {pwError}
+            </Alert>
+          )}
+          {pwSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {pwSuccess}
+            </Alert>
+          )}
+          <TextField
+            margin="dense"
+            label="Current Password"
+            type="password"
+            name="currentPassword"
+            fullWidth
+            value={pwForm.currentPassword}
+            onChange={handlePwChange}
+          />
+          <TextField
+            margin="dense"
+            label="New Password"
+            type="password"
+            name="newPassword"
+            fullWidth
+            value={pwForm.newPassword}
+            onChange={handlePwChange}
+          />
+          <TextField
+            margin="dense"
+            label="Confirm New Password"
+            type="password"
+            name="confirmPassword"
+            fullWidth
+            value={pwForm.confirmPassword}
+            onChange={handlePwChange}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleClosePwModal} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitPasswordChange}
+            variant="contained"
+            sx={{ bgcolor: "#242C54", "&:hover": { bgcolor: "#171B2E" } }}
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AppBar>
   );
 };

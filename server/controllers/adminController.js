@@ -392,16 +392,24 @@ async function convertEnrollees(req, res) {
     const createdStudents = [];
 
     for (const enrollee of enrollees) {
+      const formattedBirthdate = enrollee.birthdate
+        ? new Date(enrollee.birthdate).toISOString().split("T")[0].replace(/-/g, "")
+        : "";
+
+      const rawPassword = `${enrollee.l_Name.replace(/\s+/g, "").toLowerCase()}${formattedBirthdate}`;
+      const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
       const [studentResult] = await connection.query(
         `INSERT INTO student_table 
          (f_Name, m_Name, l_Name, password, gender, contact_Number, email, address, 
           father_Name, father_Contact, mother_Name, mother_Contact, guardian_Name, guardian_Contact, 
           birthdate, age, lrn, account_type_ID) 
-         VALUES (?, ?, ?, "password123", ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         [
           enrollee.f_Name,
           enrollee.m_Name,
           enrollee.l_Name,
+          hashedPassword,
           enrollee.gender,
           enrollee.contact_Number,
           enrollee.email,
@@ -666,20 +674,47 @@ async function getStudentById(req, res) {
 async function updateStudentById(req, res) {
   try {
     const { id } = req.params;
-    const { AYS_ID } = req.body;
-
     const {
-      f_Name, m_Name, l_Name, gender, contact_Number, email, address,
-      father_Name, father_Contact, mother_Name, mother_Contact,
-      guardian_Name, guardian_Contact,
-      birthdate, age, lrn, password,
-      department, program, section_ID
+      AYS_ID,
+      f_Name,
+      m_Name,
+      l_Name,
+      gender,
+      contact_Number,
+      email,
+      address,
+      father_Name,
+      father_Contact,
+      mother_Name,
+      mother_Contact,
+      guardian_Name,
+      guardian_Contact,
+      birthdate,
+      age,
+      lrn,
+      password,
+      department,
+      program,
+      section_ID,
     } = req.body;
 
-    let hashedPassword = null;
-    if (password) {
-      const saltRounds = 10;
-      hashedPassword = await bcrypt.hash(password, saltRounds);
+    const [existing] = await pool.query(
+      "SELECT password FROM student_table WHERE student_ID = ?",
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    let hashedPassword = existing[0].password;
+
+    if (password && password.trim() !== "") {
+      if (!password.startsWith("$2b$") && !password.startsWith("$2a$")) {
+        hashedPassword = await bcrypt.hash(password.trim(), 10);
+      } else {
+        hashedPassword = password;
+      }
     }
 
     await pool.query(
@@ -689,9 +724,24 @@ async function updateStudentById(req, res) {
            guardian_Name = ?, guardian_Contact = ?, birthdate = ?, age = ?, lrn = ?, password = ?
        WHERE student_ID = ?`,
       [
-        f_Name, m_Name, l_Name, gender, contact_Number, email, address,
-        father_Name, father_Contact, mother_Name, mother_Contact,
-        guardian_Name, guardian_Contact, birthdate, age, lrn, hashedPassword, id
+        f_Name || null,
+        m_Name || null,
+        l_Name || null,
+        gender || null,
+        contact_Number || null,
+        email || null,
+        address || null,
+        father_Name || null,
+        father_Contact || null,
+        mother_Name || null,
+        mother_Contact || null,
+        guardian_Name || null,
+        guardian_Contact || null,
+        birthdate || null,
+        age || null,
+        lrn || null,
+        hashedPassword,
+        id,
       ]
     );
 
@@ -715,10 +765,10 @@ async function updateStudentById(req, res) {
       [department, program, section_record_ID, id]
     );
 
-    res.json({ success: true, message: "Student updated successfully" });
+    return res.json({ success: true, message: "Student updated successfully" });
   } catch (err) {
     console.error("Error updating student:", err.sqlMessage || err);
-    res.status(500).json({ error: "Failed to update student" });
+    return res.status(500).json({ error: "Failed to update student" });
   }
 }
 
@@ -1010,28 +1060,35 @@ async function transferSection(req, res) {
       targetAYS_ID
     } = req.body;
 
+    if (!sourceSectionId || !sourceAYS_ID || !targetSectionId || !targetAYS_ID) {
+      return res.status(400).json({ error: "Missing required parameters" });
+    }
+
+    if (String(sourceAYS_ID) === String(targetAYS_ID)) {
+      return res.status(400).json({ error: "Cannot transfer to the same Academic Year/Semester" });
+    }
+
     const [[source]] = await pool.query(
       `SELECT *
-        FROM section_year_record_table
-        WHERE section_ID = ?
-        AND AYS_ID = ?`,
+       FROM section_year_record_table
+       WHERE section_ID = ?
+       AND AYS_ID = ?`,
       [sourceSectionId, sourceAYS_ID]
     );
 
     if (!source) {
-      return res.sendStatus(404);
+      return res.status(404).json({ error: "Source section record not found" });
     }
 
     const [[target]] = await pool.query(
       `SELECT section_record_ID
-        FROM section_year_record_table
-        WHERE section_ID = ?
-        AND AYS_ID = ?`,
+       FROM section_year_record_table
+       WHERE section_ID = ?
+       AND AYS_ID = ?`,
       [targetSectionId, targetAYS_ID]
     );
 
-    let targetSectionRecordId =
-      target?.section_record_ID;
+    let targetSectionRecordId = target?.section_record_ID;
 
     if (!targetSectionRecordId) {
       const [result] = await pool.query(
@@ -1046,18 +1103,17 @@ async function transferSection(req, res) {
         ]
       );
 
-      targetSectionRecordId =
-        result.insertId;
+      targetSectionRecordId = result.insertId;
     }
 
     await pool.query(
       `INSERT INTO student_year_record_table
         (
-        student_ID,
-        section_record_ID,
-        program,
-        department,
-        specialization
+          student_ID,
+          section_record_ID,
+          program,
+          department,
+          specialization
         )
         SELECT student_ID, ?, program, department, specialization
         FROM student_year_record_table
@@ -1086,10 +1142,10 @@ async function transferSection(req, res) {
       ]
     );
 
-    res.sendStatus(200);
+    return res.sendStatus(200);
   } catch (err) {
-    console.error(err);
-    res.sendStatus(500);
+    console.error("Error transferring section:", err);
+    return res.sendStatus(500);
   }
 }
 
@@ -1114,6 +1170,52 @@ async function dropStudents(req, res) {
     res.sendStatus(500);
   }
 }
+
+
+async function changePassword(req, res) {
+  const { userId, role, currentPassword, newPassword, confirmPassword } = req.body;
+
+  if (!userId || !role || !currentPassword || !newPassword || !confirmPassword) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ message: "New passwords do not match" });
+  }
+
+  try {
+    const normalizedRole = role.toString().trim().toLowerCase();
+    const tableName = normalizedRole === "student" ? "student_table" : "faculty_table";
+    const idColumn = normalizedRole === "student" ? "student_ID" : "faculty_ID";
+
+    const [rows] = await pool.query(
+      `SELECT password FROM ${tableName} WHERE ${idColumn} = ?`,
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    const match = await bcrypt.compare(currentPassword.trim(), rows[0].password);
+    if (!match) {
+      return res.status(401).json({ message: "Incorrect current password" });
+    }
+
+    const newHashedPassword = await bcrypt.hash(newPassword.trim(), 10);
+    await pool.query(
+      `UPDATE ${tableName} SET password = ? WHERE ${idColumn} = ?`,
+      [newHashedPassword, userId]
+    );
+
+    return res.status(200).json({ success: true, message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Error changing password:", err);
+    return res.status(500).json({ message: "Server error during password update" });
+  }
+}
+
+
 
 // Export functions
 module.exports = {
@@ -1149,5 +1251,6 @@ module.exports = {
   getAYSOptions,
   getSectionOptions,
   transferSection, 
-  dropStudents
+  dropStudents,
+  changePassword
 };

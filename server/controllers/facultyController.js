@@ -1,3 +1,4 @@
+const bcrypt = require("bcrypt");
 const pool = require('../config/db');
 const crypto = require('crypto');
 
@@ -44,19 +45,98 @@ async function getFacultyById(req, res) {
 };
 
 async function updateFaculty(req, res) {
-    const { id } = req.params;
-    const { f_Name, l_Name, m_Name, birthdate, gender, email } = req.body;
-    try {
-        const [result] = await pool.query('UPDATE faculty_table SET f_Name = ?, l_Name = ?, m_Name = ?, birthdate = ?, gender = ?, email = ? WHERE faculty_ID = ?', [f_Name, l_Name, m_Name, birthdate, gender, email, id]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Faculty not found' });
-        }
-        res.json({ faculty_ID: id, f_Name, l_Name, m_Name, birthdate, gender, email });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Internal server error' });
+  const { id } = req.params;
+  const {
+    f_Name,
+    l_Name,
+    m_Name,
+    birthdate,
+    gender,
+    email,
+    age,
+    address,
+    contact_Number,
+    position,
+    status,
+    emergency_Name,
+    emergency_Number,
+    password,
+  } = req.body;
+
+  try {
+    const [existing] = await pool.query(
+      "SELECT password FROM faculty_table WHERE faculty_ID = ?",
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({ error: "Faculty not found" });
     }
-};
+
+    let hashedPassword = existing[0].password;
+
+    if (password && password !== existing[0].password) {
+      if (!password.startsWith("$2b$") && !password.startsWith("$2a$")) {
+        hashedPassword = await bcrypt.hash(password.trim(), 10);
+      } else {
+        hashedPassword = password;
+      }
+    }
+
+    const query = `
+      UPDATE faculty_table 
+      SET 
+        f_Name = ?, 
+        l_Name = ?, 
+        m_Name = ?, 
+        birthdate = ?, 
+        gender = ?, 
+        email = ?, 
+        age = ?, 
+        address = ?, 
+        contact_Number = ?, 
+        position = ?, 
+        status = ?, 
+        emergency_Name = ?, 
+        emergency_Number = ?, 
+        password = ?
+      WHERE faculty_ID = ?
+    `;
+
+    const values = [
+      f_Name || null,
+      l_Name || null,
+      m_Name || null,
+      birthdate || null,
+      gender || null,
+      email || null,
+      age || null,
+      address || null,
+      contact_Number || null,
+      position || null,
+      status || null,
+      emergency_Name || null,
+      emergency_Number || null,
+      hashedPassword,
+      id,
+    ];
+
+    const [result] = await pool.query(query, values);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Faculty not found" });
+    }
+
+    return res.json({
+      message: "Faculty updated successfully",
+      faculty_ID: id,
+      ...req.body,
+    });
+  } catch (err) {
+    console.error("Error updating faculty:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
 
 async function createFaculty(req, res) {
   const {
@@ -68,7 +148,12 @@ async function createFaculty(req, res) {
     return res.status(400).json({ error: "Missing required faculty fields" });
   }
 
-  const tempPassword = crypto.randomBytes(4).toString("hex");
+  const formattedBirthdate = birthdate
+    ? new Date(birthdate).toISOString().split("T")[0].replace(/-/g, "")
+    : "";
+
+  const rawPassword = `${l_Name.replace(/\s+/g, "").toLowerCase()}${formattedBirthdate}`;
+  const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
   const connection = await pool.getConnection();
   try {
@@ -93,7 +178,7 @@ async function createFaculty(req, res) {
       email,
       contact_Number,
       address,
-      tempPassword,
+      hashedPassword,
       2
     ];
 
@@ -121,7 +206,6 @@ async function createFaculty(req, res) {
       email,
       contact_Number,
       address,
-      tempPassword,
       account_type_id: 2
     });
   } catch (err) {
