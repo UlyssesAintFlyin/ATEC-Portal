@@ -56,14 +56,14 @@ async function createCarouselPage(req, res) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
 
-  const { caoursel_title, caoursel_description } = parsed.data;
+  const { carousel_title, carousel_description } = parsed.data;
   const imagePath = req.file ? `/uploads/carousel/${req.file.filename}` : null;
 
   try {
     const [result] = await pool.query(
       `INSERT INTO carousel_table (carousel_title, carousel_description, carousel_image)
        VALUES (?, ?, ?)`,
-      [caoursel_title, caoursel_description, imagePath]
+      [carousel_title, carousel_description, imagePath]
     );
 
     const [rows] = await pool.query(

@@ -175,10 +175,9 @@ function CarouselConfig() {
     const results = await Promise.allSettled(
       pages.map(async (page) => {
         const formData = new FormData();
-        formData.append("caoursel_title", page.title);
-        formData.append("caoursel_description", page.description);
-        if (page.imageFile) formData.append("image", page.imageFile);
-
+        formData.append("carousel_title", page.title);
+        formData.append("carousel_description", page.description);
+        if (page.imageFile) formData.append("image", page.imageFile)
         const isUpdate = Boolean(page.carousel_ID);
         const url = isUpdate
           ? `${API_URL}/carousel/${page.carousel_ID}`
