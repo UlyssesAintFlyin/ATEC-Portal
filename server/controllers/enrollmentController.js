@@ -330,8 +330,7 @@ async function importEnrollees(req, res) {
         orNull(data.guardian_Name), orNull(data.guardian_Contact),
         bd.value, orNull(data.transferring_from), IMPORTED_ACCOUNT_TYPE_ID, aysId,
         orNull(data.Grade_level), data.student_type, orNull(data.term),
-        orNull(data.year_level), orNull(data.track), orNull(data.program),
-        generateEnrollmentCode(),
+        orNull(data.year_level), orNull(data.track), orNull(data.program)
       ]);
     });
 
@@ -349,7 +348,7 @@ async function importEnrollees(req, res) {
          father_Name, father_Contact, mother_Name, mother_Contact,
          guardian_Name, guardian_Contact, birthdate, transferring_from,
          account_type_ID, AYS_ID, Grade_level, student_type, term,
-         year_level, track, program, enrollment_code)
+         year_level, track, program)
        VALUES ?`,
       [records]
     );
