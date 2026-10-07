@@ -14,7 +14,33 @@ import {
 import { EditableTable } from "../../components/EditableTable";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = process.env.REACT_APP_API_URL; // adjust to your server's base URL
+const API_URL = process.env.REACT_APP_API_URL;
+
+/**
+ * Helper function for formatting term selection labels
+ * Normalizes year and semester inputs into "A.Y. [Year] — [Semester]" format
+ */
+export const formatTermOptionLabel = (term) => {
+  if (!term) return "";
+  if (typeof term === "string") return term;
+
+  const year = term.AY_Name || term.academic_Year || term.year || "";
+  const sem =
+    term.semester_name ||
+    term.semester ||
+    term.semester_Name ||
+    term.sem_Name ||
+    term.term ||
+    "";
+
+  if (year && sem) {
+    const formattedYear = year.startsWith("A.Y.") ? year : `A.Y. ${year}`;
+    return `${formattedYear} — ${sem}`;
+  }
+
+  if (year) return year.startsWith("A.Y.") ? year : `A.Y. ${year}`;
+  return sem;
+};
 
 export default function CurriculumConfig() {
   const navigate = useNavigate();
@@ -23,9 +49,23 @@ export default function CurriculumConfig() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [academicYears, setAcademicYears] = useState([]);
-
   const [selectedTerm, setSelectedTerm] = useState(null);
+
+  const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [newCurriculum, setNewCurriculum] = useState({
+    curriculum_ID: null,
+    curriculum_Name: "",
+    department: "",
+    AYS_ID: null,
+  });
+
+  const [initialAYS_ID, setInitialAYS_ID] = useState(null);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignAYS_ID, setAssignAYS_ID] = useState(null);
+
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [academicYearSemesters, setAcademicYearSemesters] = useState([]);
 
   const fetchCurrentAY = async () => {
     try {
@@ -38,48 +78,36 @@ export default function CurriculumConfig() {
         setRows([]);
         return;
       }
+      const currentAysId = data.AYS_ID ?? data.AY_ID;
       setSelectedTerm({
-        id: data.AY_ID,
-        label: `${data.AY_Name} — ${data.semester_name}`,
+        id: currentAysId,
+        AYS_ID: currentAysId,
+        label: formatTermOptionLabel(data),
       });
+      setInitialAYS_ID(currentAysId);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching current academic year:", err);
       setSelectedTerm(null);
       setRows([]);
     }
   };
 
-  // Adding Curriculum Dialog State
-  const [open, setOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [newCurriculum, setNewCurriculum] = useState({
-    curriculum_ID: null,
-    curriculum_Name: "",
-    department: "",
-  });
-
-  const [initialAYS_ID, setInitialAYS_ID] = useState(null);
-  const [assignOpen, setAssignOpen] = useState(false);
-  const [assignAYS_ID, setAssignAYS_ID] = useState(null);
-
-  // Track selected rows from Table
-  const [selectedIds, setSelectedIds] = useState([]);
-
-  const [academicYearSemesters, setAcademicYearSemesters] = useState([]);
-
   const fetchAcademicYearSemesters = async () => {
     try {
-      const res = await fetch(`${API_URL}/admin/loadAcademicYear`); // was currentAcademicYear
+      const res = await fetch(`${API_URL}/admin/loadAcademicYearSemesters`);
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data = await res.json();
+
       setAcademicYearSemesters(
         data.map((t) => ({
-          id: t.AYS_ID,
-          label: `${t.AY_Name} — ${t.semester_name}`,
-        })),
+          ...t,
+          id: t.AYS_ID ?? t.id,
+          AYS_ID: t.AYS_ID ?? t.id,
+          label: formatTermOptionLabel(t),
+        }))
       );
     } catch (err) {
-      console.error(err);
+      console.error("Error loading academic year semesters:", err);
     }
   };
 
@@ -100,17 +128,17 @@ export default function CurriculumConfig() {
       }
 
       const mapped = data.map((c) => ({
-        id: c.curriculum_record_ID, // row identity = the term-assignment, not the curriculum
+        id: c.curriculum_record_ID,
         curriculum_ID: c.curriculum_ID,
         AYS_ID: c.AYS_ID,
         curriculum: c.curriculum_Name,
         department: c.department,
-        term: `${c.AY_Name} — ${c.semester_name}`,
+        term: formatTermOptionLabel(c),
       }));
       setRows(mapped);
       setError(null);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching curricula:", err);
       setError("Failed to load curricula");
     } finally {
       setLoading(false);
@@ -118,11 +146,13 @@ export default function CurriculumConfig() {
   };
 
   const handleSaveCurriculum = async () => {
-    if (!newCurriculum.curriculum_Name || (!editMode && !initialAYS_ID)) {
+    const targetAYS_ID = initialAYS_ID || newCurriculum.AYS_ID || selectedTerm?.id;
+
+    if (!newCurriculum.curriculum_Name?.trim() || (!editMode && !targetAYS_ID)) {
       alert(
         editMode
           ? "Curriculum name is required"
-          : "Curriculum name and term are required",
+          : "Curriculum name and term are required"
       );
       return;
     }
@@ -132,21 +162,25 @@ export default function CurriculumConfig() {
         : `${API_URL}/curricula`;
       const body = editMode
         ? {
-            curriculum_Name: newCurriculum.curriculum_Name,
-            department: newCurriculum.department,
-          }
+          curriculum_Name: newCurriculum.curriculum_Name.trim(),
+          department: newCurriculum.department,
+        }
         : {
-            curriculum_Name: newCurriculum.curriculum_Name,
-            department: newCurriculum.department,
-            AYS_ID: initialAYS_ID,
-          };
+          curriculum_Name: newCurriculum.curriculum_Name.trim(),
+          department: newCurriculum.department,
+          AYS_ID: targetAYS_ID,
+        };
 
       const res = await fetch(url, {
         method: editMode ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || `Request failed with status ${res.status}`);
+      }
 
       setOpen(false);
       setEditMode(false);
@@ -154,52 +188,84 @@ export default function CurriculumConfig() {
         curriculum_ID: null,
         curriculum_Name: "",
         department: "",
+        AYS_ID: null,
       });
-      setInitialAYS_ID(null);
+      setInitialAYS_ID(selectedTerm?.id ?? null);
       if (selectedTerm) fetchCurricula(selectedTerm.id);
     } catch (err) {
       console.error(err);
-      alert(`Failed to ${editMode ? "update" : "add"} curriculum`);
+      alert(err.message || `Failed to ${editMode ? "update" : "add"} curriculum`);
     }
   };
 
   const handleAssignToTerm = async () => {
-    if (selectedIds.length !== 1 || !assignAYS_ID) return;
+    if (selectedIds.length !== 1) {
+      alert("Please select exactly one curriculum row to migrate.");
+      return;
+    }
+
+    if (!assignAYS_ID) {
+      alert("Please select a target term / semester from the dropdown.");
+      return;
+    }
+
+    const selectedRow = rows.find((r) => String(r.id) === String(selectedIds[0]));
+    if (!selectedRow) {
+      alert("Selected curriculum row could not be found.");
+      return;
+    }
+
     try {
-      const res = await fetch(`${API_URL}/curricula/${selectedIds[0]}/terms`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ AYS_ID: assignAYS_ID }),
-      });
+      const res = await fetch(
+        `${API_URL}/curricula/${selectedRow.curriculum_ID}/terms`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ AYS_ID: assignAYS_ID }),
+        }
+      );
+
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        if (res.status === 409) return alert("Already assigned to this term");
-        throw new Error(`Request failed: ${res.status}`);
+        if (res.status === 409) {
+          alert(data.message || "This curriculum is already assigned to the selected term.");
+          return;
+        }
+        throw new Error(data.message || `Request failed with status ${res.status}`);
       }
+
+      alert("Curriculum successfully assigned to the new term!");
       setAssignOpen(false);
       setAssignAYS_ID(null);
       if (selectedTerm) fetchCurricula(selectedTerm.id);
     } catch (err) {
-      console.error(err);
-      alert("Failed to assign curriculum to term");
+      console.error("Migration error:", err);
+      alert(err.message || "Failed to assign curriculum to term");
     }
   };
 
   const handleRemoveSelected = async () => {
     if (selectedIds.length !== 1) return;
-    const row = rows.find((r) => r.id === selectedIds[0]);
+    const row = rows.find((r) => String(r.id) === String(selectedIds[0]));
     if (!row) return;
+
     try {
       const res = await fetch(
         `${API_URL}/curricula/${row.curriculum_ID}/terms/${row.AYS_ID}`,
-        { method: "DELETE" },
+        { method: "DELETE" }
       );
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || `Request failed: ${res.status}`);
+      }
 
       setSelectedIds([]);
       if (selectedTerm) fetchCurricula(selectedTerm.id);
     } catch (err) {
       console.error(err);
-      alert("Failed to unassign curriculum from term");
+      alert(err.message || "Failed to unassign curriculum from term");
     }
   };
 
@@ -211,6 +277,7 @@ export default function CurriculumConfig() {
   useEffect(() => {
     if (selectedTerm) {
       fetchCurricula(selectedTerm.id);
+      setInitialAYS_ID(selectedTerm.id);
     } else {
       setRows([]);
     }
@@ -218,12 +285,14 @@ export default function CurriculumConfig() {
 
   const handleOpenEdit = () => {
     if (selectedIds.length !== 1) return;
-    const row = rows.find((r) => r.id === selectedIds[0]);
+    const row = rows.find((r) => String(r.id) === String(selectedIds[0]));
     if (!row) return;
+
     setNewCurriculum({
-      curriculum_ID: row.curriculum_ID, // was row.id
+      curriculum_ID: row.curriculum_ID,
       curriculum_Name: row.curriculum,
       department: row.department,
+      AYS_ID: row.AYS_ID,
     });
     setEditMode(true);
     setOpen(true);
@@ -244,7 +313,7 @@ export default function CurriculumConfig() {
           color="inherit"
           onClick={() =>
             navigate(
-              `/admin/systemSettings/curriculumConfig/curriculum/${params.row.curriculum_ID}`, // params.row.id
+              `/admin/systemSettings/curriculumConfig/curriculum/${params.row.curriculum_ID}`
             )
           }
           sx={{
@@ -339,19 +408,21 @@ export default function CurriculumConfig() {
               variant="contained"
               onClick={() => {
                 setEditMode(false);
+                const currentAysId = selectedTerm?.id ?? initialAYS_ID ?? null;
                 setNewCurriculum({
                   curriculum_ID: null,
                   curriculum_Name: "",
                   department: "",
+                  AYS_ID: currentAysId,
                 });
-                setInitialAYS_ID(selectedTerm?.id ?? null);
+                setInitialAYS_ID(currentAysId);
                 setOpen(true);
               }}
               sx={{
                 fontSize: { xs: "12px", sm: "14px", md: "16px" },
                 color: "#E8EDF2",
                 backgroundColor: "#245442",
-                maxHeight:"40px"
+                maxHeight: "40px",
               }}
             >
               Add Curriculum
@@ -368,22 +439,14 @@ export default function CurriculumConfig() {
             >
               Edit Selected
             </Button>
-            <Button
-              variant="contained"
-              onClick={handleRemoveSelected}
-              disabled={selectedIds.length !== 1}
-              sx={{
-                fontSize: { xs: "12px", sm: "14px", md: "16px" },
-                color: "#E8EDF2",
-                backgroundColor: "#54242b",
-              }}
-            >
-              Remove Selected
-            </Button>
+           
 
             <Button
               variant="contained"
-              onClick={() => setAssignOpen(true)}
+              onClick={() => {
+                setAssignAYS_ID(null);
+                setAssignOpen(true);
+              }}
               disabled={selectedIds.length !== 1}
               sx={{
                 fontSize: { xs: "12px", sm: "14px", md: "16px" },
@@ -424,32 +487,40 @@ export default function CurriculumConfig() {
         </Box>
       </Box>
 
+      {/* MIGRATE / ASSIGN TO TERM DIALOG */}
       <Dialog open={assignOpen} onClose={() => setAssignOpen(false)}>
-        <DialogTitle>Assign Curriculum to Term</DialogTitle>
-        <DialogContent sx={{ minWidth: "320px" }}>
+        <DialogTitle>Migrate / Assign Curriculum to Term</DialogTitle>
+        <DialogContent sx={{ minWidth: "320px", pt: 2 }}>
           <Autocomplete
-            options={academicYearSemesters} // [{ id: AYS_ID, label: "2025-2026 — 1st Semester" }, ...]
-            getOptionLabel={(o) => o.label || ""}
+            options={academicYearSemesters}
+            getOptionLabel={(option) => formatTermOptionLabel(option)}
             value={
-              academicYearSemesters.find((t) => t.id === assignAYS_ID) || null
+              academicYearSemesters.find(
+                (t) => String(t.AYS_ID ?? t.id) === String(assignAYS_ID)
+              ) || null
             }
-            isOptionEqualToValue={(o, v) => o.id === v.id}
-            onChange={(e, value) => setAssignAYS_ID(value?.id ?? null)}
+            isOptionEqualToValue={(o, v) =>
+              String(o.AYS_ID ?? o.id) === String(v?.AYS_ID ?? v?.id)
+            }
+            onChange={(e, value) =>
+              setAssignAYS_ID(value?.AYS_ID ?? value?.id ?? null)
+            }
             renderInput={(params) => (
-              <TextField {...params} label="Term" size="small" />
+              <TextField {...params} label="Target Term / Semester" size="small" />
             )}
-            sx={{ width: 220, marginTop: "8px" }}
+            sx={{ width: 280, marginTop: "8px" }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAssignOpen(false)}>Cancel</Button>
-          <Button onClick={handleAssignToTerm} variant="contained">
+          <Button onClick={handleAssignToTerm} variant="contained" color="primary">
             Assign
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={open} onClose={() => setOpen(false)}>
+      {/* ADD / EDIT CURRICULUM DIALOG */}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>
           {editMode ? "Edit Curriculum" : "Add New Curriculum"}
         </DialogTitle>
@@ -458,14 +529,14 @@ export default function CurriculumConfig() {
             display: "flex",
             flexDirection: "column",
             gap: 2,
-            minWidth: "320px",
+            pt: 1,
           }}
         >
           <TextField
             margin="dense"
             label="Curriculum Name"
             fullWidth
-            value={newCurriculum.curriculum_Name}
+            value={newCurriculum.curriculum_Name || ""}
             onChange={(e) =>
               setNewCurriculum({
                 ...newCurriculum,
@@ -473,24 +544,33 @@ export default function CurriculumConfig() {
               })
             }
           />
+
           {!editMode && (
             <Autocomplete
               options={academicYearSemesters}
-              getOptionLabel={(option) => option.label || ""}
+              getOptionLabel={(option) => formatTermOptionLabel(option)}
               value={
-                academicYearSemesters.find((t) => t.id === initialAYS_ID) ||
-                null
+                academicYearSemesters.find(
+                  (t) =>
+                    String(t.AYS_ID ?? t.id) ===
+                    String(newCurriculum.AYS_ID || initialAYS_ID || selectedTerm?.id)
+                ) || null
               }
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              onChange={(e, value) => setInitialAYS_ID(value?.id ?? null)}
-              renderInput={(params) => (
-                <TextField {...params} label="Term" size="small" />
-              )}
-              sx={{
-                width: 220,
-                marginLeft: { xs: "0", md: "50px" },
-                marginTop: "8px",
+              isOptionEqualToValue={(option, value) =>
+                String(option.AYS_ID ?? option.id) === String(value?.AYS_ID ?? value?.id)
+              }
+              onChange={(e, value) => {
+                const selectedId = value?.AYS_ID ?? value?.id ?? null;
+                setInitialAYS_ID(selectedId);
+                setNewCurriculum((prev) => ({
+                  ...prev,
+                  AYS_ID: selectedId,
+                }));
               }}
+              renderInput={(params) => (
+                <TextField {...params} label="Term / Academic Year" fullWidth />
+              )}
+              fullWidth
             />
           )}
 
@@ -503,14 +583,11 @@ export default function CurriculumConfig() {
                 department: value ?? "Not Assigned",
               }))
             }
+            isOptionEqualToValue={(option, value) => option === value}
             renderInput={(params) => (
-              <TextField {...params} label="Department" size="small" />
+              <TextField {...params} label="Department" fullWidth />
             )}
-            sx={{
-              width: 220,
-              marginLeft: { xs: "0", md: "50px" },
-              marginTop: "8px",
-            }}
+            fullWidth
           />
         </DialogContent>
         <DialogActions>
