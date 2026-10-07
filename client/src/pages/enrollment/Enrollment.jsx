@@ -315,7 +315,6 @@ export default function Enrollment() {
                     name="middleName"
                     value={studentDetails.middleName}
                     onChange={handleDetailsChange}
-                    required
                   />
                 </div>
               </div>
