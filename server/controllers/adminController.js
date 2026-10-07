@@ -367,7 +367,7 @@ async function getEnrolleeById(req, res) {
 async function convertEnrollees(req, res) {
   console.log("Request body:", req.body);
   const { sectionId, enrolleeIds, AYS_ID } = req.body;
-
+  console.log("Section ID:", sectionId, "Enrollee IDs:", enrolleeIds, "AYS_ID:", AYS_ID);
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -442,7 +442,7 @@ async function convertEnrollees(req, res) {
         [
           studentId,
           section_record_ID,
-          enrollee.track,
+          enrollee.program || null,
           normalizedDepartment,
           enrollee.specialization,
         ]
