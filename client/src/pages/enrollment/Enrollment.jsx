@@ -49,15 +49,32 @@ export default function Enrollment() {
     program: "",
   });
 
+  const SHS_TRACKS = {
+  Academic: [
+    { value: "STEM", label: "Science, Technology, Engineering, and Mathematics (STEM)" },
+    { value: "BE", label: "Business and Entrepreneurship" },
+    { value: "ASSH", label: "Arts, Social Sciences, and Humanities" },
+  ],
+  TechPro: [
+    { value: "ICT", label: "Information, Communication, and Technology (ICT)" },
+    { value: "INDTECH", label: "Industrial Technology" },
+    { value: "HT", label: "Hospitality Tourism" },
+  ],
+};
+
   const handleDetailsChange = (e) => {
     const { name, value } = e.target;
     setStudentDetails({ ...studentDetails, [name]: value });
   };
 
   const handleProgramChange = (e) => {
-    const { name, value } = e.target;
+  const { name, value } = e.target;
+  if (name === "program" && studentType === "seniorHigh") {
+    setProgramTerm({ ...programTerm, program: value, track: "" });
+  } else {
     setProgramTerm({ ...programTerm, [name]: value });
-  };
+  }
+};
 
   const handleDetailsSubmit = (e) => {
     e.preventDefault();
@@ -66,6 +83,13 @@ export default function Enrollment() {
 
   const handleTypeSelect = (type) => {
     setStudentType(type);
+    setProgramTerm({
+      term: "",
+      year: "",
+      gradeLevel: "",
+      track: "",
+      program: "",
+    });
     setStep(2);
   };
 
@@ -78,11 +102,11 @@ export default function Enrollment() {
             return;
         }
     } else if (studentType === "seniorHigh") {
-        if (!programTerm.gradeLevel || !programTerm.track) {
-            alert("Please fill out all fields: Grade Level and Track & Specialization.");
-            return;
-        }
+    if (!programTerm.gradeLevel || !programTerm.track || !programTerm.program) {
+        alert("Please fill out all fields: Grade Level, Track & Specialization, and Program.");
+        return;
     }
+}
 
     setStep(4);
   };
@@ -94,13 +118,13 @@ export default function Enrollment() {
   const handleBackToEnrollment = () => {
     setStep(1);
 
-    // Clear student type
+    
     setStudentType("");
 
-    // Clear enrollment code
+    
     setEnrollmentCode("");
 
-    // Clear student details
+  
     setStudentDetails({
       lastName: "",
       firstName: "",
@@ -120,7 +144,7 @@ export default function Enrollment() {
       guardiansContact: "",
     });
 
-    // Clear program/term
+    
     setProgramTerm({
       term: "",
       year: "",
@@ -563,7 +587,37 @@ export default function Enrollment() {
               </div>
             )}
 
-          {studentType === "seniorHigh" ? (
+          <div className="formGroup">
+            <label htmlFor="program">Program</label>
+            <select
+              id="program"
+              name="program"
+              value={programTerm.program}
+              onChange={handleProgramChange}
+            >
+              <option value="">Select Program</option>
+              {studentType === "college" ? (
+                <>
+                  <option value="Diploma in Information Technology">
+                    Diploma in Information Technology
+                  </option>
+                  <option value="Diploma in Restaurant Technology">
+                    Diploma in Restaurant Technology
+                  </option>
+                  <option value="Diploma in Hospitality Technology">
+                    Diploma in Hospitality Technology
+                  </option>
+                </>
+              ) : (
+                <>
+                  <option value="Academic">Academic</option>
+                  <option value="TechPro">TechPro</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          {studentType === "seniorHigh" && (
             <div className="formGroup">
               <label htmlFor="track">Track & Specialization</label>
               <select
@@ -571,33 +625,14 @@ export default function Enrollment() {
                 name="track"
                 value={programTerm.track}
                 onChange={handleProgramChange}
+                disabled={!programTerm.program}
               >
-                <option value="">Select Track & Specialization</option>
-                <option value="ASSH">Art, Social Sciences and Humanities(ASSH)</option>
-                <option value="ABM">Accountancy, Business and Management(ABM)</option>
-                <option value="STEM">Science, Technology, Engineering and Mathematics(STEM)</option>
-                <option value="ICT">Information, Communication and Technology(TVL)</option>
-              </select>
-            </div>
-          ) : (
-            <div className="formGroup">
-              <label htmlFor="program">Program</label>
-              <select
-                id="program"
-                name="program"
-                value={programTerm.program}
-                onChange={handleProgramChange}
-              >
-                <option value="">Select Program</option>
-                <option value="Diploma in Information Technology">
-                  Diploma in Information Technology
+                <option value="">
+                  {programTerm.program ? "Select Track & Specialization" : "Select a program first"}
                 </option>
-                <option value="Diploma in Restaurant Technology">
-                  Diploma in Restaurant Technology
-                </option>
-                <option value="Diploma in Hospitality Technology">
-                  Diploma in Hospitality Technology
-                </option>
+                {(SHS_TRACKS[programTerm.program] || []).map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
               </select>
             </div>
           )}
@@ -708,13 +743,15 @@ export default function Enrollment() {
                   />
                 </div>
                 <div className="formGroup">
-                  <label>{studentType === "seniorHigh" ? "Track" : "Program"}</label>
-                  <input
-                    type="text"
-                    value={studentType === "seniorHigh" ? programTerm.track : programTerm.program}
-                    readOnly
-                  />
+                <label>Program</label>
+                <input type="text" value={programTerm.program} readOnly />
+              </div>
+              {studentType === "seniorHigh" && (
+                <div className="formGroup">
+                  <label>Track</label>
+                  <input type="text" value={programTerm.track} readOnly />
                 </div>
+              )}
               </div>
               </div>
 
