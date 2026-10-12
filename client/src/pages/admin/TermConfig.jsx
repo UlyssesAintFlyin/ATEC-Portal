@@ -31,7 +31,7 @@ export default function TermConfig() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
-  const handleAddRecords = async () => {
+const handleAddRecords = async () => {
     try {
       const response = await fetch(`${API_URL}/admin/addAcademicYear`, {
         method: "POST",
@@ -45,6 +45,18 @@ export default function TermConfig() {
 
       await response.json();
 
+      const res = await fetch(`${API_URL}/admin/sections/initialize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Failed to initialize records.");
+        return;
+      }
+
       const reload = await fetch(`${API_URL}/admin/loadAcademicYear`);
       const updatedData = await reload.json();
       setRows(updatedData);
@@ -54,7 +66,6 @@ export default function TermConfig() {
       console.error("Error adding term:", err);
     }
   };
-
   const [selectedIds, setSelectedIds] = useState([]);
 
   const columns = [{ field: "AY_Name", headerName: "Term", flex: 1.5 }];
