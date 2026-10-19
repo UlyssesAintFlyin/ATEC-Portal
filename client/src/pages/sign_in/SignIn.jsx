@@ -165,7 +165,18 @@ function SignIn() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
               />
-
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, mb: 1 }}>
+                <Link
+                  component="button"
+                  type="button"
+                  variant="body2"
+                  underline="hover"
+                  onClick={() => navigate('/forgot-password')}
+                  sx={{ color: '#242C54', fontWeight: 500 }}
+                >
+                  Forgot Password?
+                </Link>
+              </Box>
               <Box sx={{ mt: 2 }}>
                 <Button
                   type="submit"

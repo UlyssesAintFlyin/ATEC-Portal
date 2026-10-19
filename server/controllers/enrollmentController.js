@@ -33,9 +33,12 @@ const createEnrollment = async (req, res) => {
         }
         if (studentType === 'college' && !programTerm.term) {
             return res.status(400).json({ message: 'Please select a term.' });
-        }
+        } 
         if (studentType === 'seniorHigh' && !programTerm.gradeLevel) {
             return res.status(400).json({ message: 'Please select a grade level.' });
+        }
+        if (studentType === 'seniorHigh' && !programTerm.program) {
+            return res.status(400).json({ message: 'Please select a program.' });
         }
 
         // Pull the currently active AYS_ID from system settings,
@@ -83,7 +86,7 @@ const createEnrollment = async (req, res) => {
             studentType === 'college' ? programTerm.year : null,
             studentType === 'seniorHigh' ? programTerm.gradeLevel : null,
             studentType === 'seniorHigh' ? programTerm.track : null,
-            studentType === 'college' ? programTerm.program : null
+            programTerm.program || null
         ];
 
         const [result] = await pool.query(sql, values);

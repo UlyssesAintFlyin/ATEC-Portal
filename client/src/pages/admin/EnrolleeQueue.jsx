@@ -37,49 +37,49 @@ export default function EnrolleeQueue() {
 
     fetchCurrentAY();
   }, []);
-  
+
   const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
 
-useEffect(() => {
-  const fetchSystemSettings = async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/systemSettings`);
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      const data = await res.json();
+  useEffect(() => {
+    const fetchSystemSettings = async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/systemSettings`);
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const data = await res.json();
 
-      setCurrentAYS_ID(data.enrollment_AYS_ID);
-    } catch (err) {
-      console.error("Error loading system settings:", err);
-      setCurrentAYS_ID(null);
-    }
-  };
+        setCurrentAYS_ID(data.enrollment_AYS_ID);
+      } catch (err) {
+        console.error("Error loading system settings:", err);
+        setCurrentAYS_ID(null);
+      }
+    };
 
-  fetchSystemSettings();
-}, []);
+    fetchSystemSettings();
+  }, []);
 
-useEffect(() => {
-  const fetchValidatedEnrollees = async () => {
-    try {
-      const url = currentAYS_ID
-        ? `${API_URL}/admin/loadValidatedEnrollees?aysId=${currentAYS_ID}&sectionId=${sectionId}`
-        : `${API_URL}/admin/loadValidatedEnrollees`;
-      const res = await fetch(url);
-      const data = await res.json();
-      setRows(data);
-    } catch (err) {
-      console.error("Error loading validated enrollees:", err);
+  useEffect(() => {
+    const fetchValidatedEnrollees = async () => {
+      try {
+        const url = currentAYS_ID
+          ? `${API_URL}/admin/loadValidatedEnrollees?aysId=${currentAYS_ID}&sectionId=${sectionId}`
+          : `${API_URL}/admin/loadValidatedEnrollees`;
+        const res = await fetch(url);
+        const data = await res.json();
+        setRows(data);
+      } catch (err) {
+        console.error("Error loading validated enrollees:", err);
+        setRows([]);
+      }
+      setSelectedIds([]);
+    };
+
+    if (currentAYS_ID && sectionId) {
+      fetchValidatedEnrollees();
+    } else {
       setRows([]);
+      setSelectedIds([]);
     }
-    setSelectedIds([]);
-  };
-
-  if (currentAYS_ID && sectionId) {
-    fetchValidatedEnrollees();
-  } else {
-    setRows([]);
-    setSelectedIds([]);
-  }
-}, [currentAYS_ID, sectionId]);
+  }, [currentAYS_ID, sectionId]);
 
 
   const columns = [
@@ -88,17 +88,25 @@ useEffect(() => {
   ];
 
   const handleTransfer = async () => {
-    if (!currentAYS_ID) return; 
+    if (!currentAYS_ID || selectedIds.length === 0 || !sectionId) return;
+
     try {
       const res = await fetch(`${API_URL}/admin/sections/convertEnrollees`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sectionId,
+          sectionId: sectionId,
           enrolleeIds: selectedIds,
           AYS_ID: currentAYS_ID,
         }),
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error("Server error:", res.status, errData);
+        return;
+      }
+
       const data = await res.json();
       if (data.success) {
         setRows(rows.filter((r) => !selectedIds.includes(r.id)));

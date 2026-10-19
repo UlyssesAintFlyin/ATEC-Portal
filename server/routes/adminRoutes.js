@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   loadAcademicYear,
+  loadAcademicYearSemesters,
   addAcademicYear,
   removeAcademicYears,
   loadEnrollees,
@@ -38,6 +39,7 @@ const {
 } = require('../controllers/adminController');
 
 router.get('/loadAcademicYear', loadAcademicYear); //this pulls in the loadAcademicYear function
+router.get('/loadAcademicYearSemesters', loadAcademicYearSemesters); //this pulls in the loadAcademicYearSemesters function
 router.post('/addAcademicYear', addAcademicYear); //this pulls in the addAcademicYear function
 router.delete('/removeAcademicYears', removeAcademicYears); //this pulls in the removeAcademicYears function
 router.get('/loadEnrollees', loadEnrollees); //this pulls in the loadEnrollees function

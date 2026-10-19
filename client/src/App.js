@@ -29,9 +29,11 @@ import AddSubject from './pages/admin/AddSubject'
 import EnrolleeQueue from './pages/admin/EnrolleeQueue';
 import FacultyReport from './pages/evaluation/FacultyReportPublic'
 import SectionSubject from './pages/admin/SectionSubject'
+import ForgotPassword from './pages/sign_in/ForgotPassword'; 
 import { Link } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
+
 
 function LayoutWithHeader() {
   return (
@@ -99,7 +101,7 @@ function App() {
 
             {/* signin without header */}
             <Route path="/signin" element={<SignIn />} />
-
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             {/* Catch-all: any unmatched path (typos, stale bookmarks) goes home
                 instead of the blank "No routes matched" screen */}
             <Route path="*" element={<Navigate to="/" replace />} />

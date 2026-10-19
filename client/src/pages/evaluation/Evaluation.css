@@ -260,6 +260,10 @@
     gap: 8px;
 }
 
+.grade .questions p{
+    color: rgb(165, 165, 165);
+}
+
 .questions p {
     position: static;
     font-family: Arial, Helvetica, sans-serif;
