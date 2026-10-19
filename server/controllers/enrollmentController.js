@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 const ExcelJS = require('exceljs');
-const crypto = require('crypto');
 
 const generateEnrollmentCode = async () => {
     const currentYear = new Date().getFullYear();
