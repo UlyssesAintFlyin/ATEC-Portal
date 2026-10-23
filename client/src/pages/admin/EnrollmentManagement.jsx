@@ -129,7 +129,6 @@ export default function EnrollmentManagement() {
 
   useEffect(() => {
     fetchCurrentAY();
-    fetchAcademicYears();
   }, []);
 
   useEffect(() => {
