@@ -3,8 +3,8 @@ import Carousel from "react-material-ui-carousel";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import Item from "./Item";
 
-const API_URL = process.env.REACT_APP_API_URL; // move to an env var when deploying
-const STATIC_URL = API_URL.replace(/\/api\/?$/, "");
+const API_URL = process.env.REACT_APP_API_URL;
+const STATIC_URL = API_URL ? API_URL.replace(/\/api\/?$/, "") : "";
 
 function CarouselComponent() {
   const [items, setItems] = useState([]);
