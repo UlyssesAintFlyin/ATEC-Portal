@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { Typography, Box, TextField, Autocomplete } from "@mui/material";
 import { StandardTable } from "../../components/StandardTable";
 
@@ -7,10 +7,9 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 function EditGrade() {
   const { studentId } = useParams();
-  const navigate = useNavigate();
   const location = useLocation();
   const sectionName = location.state?.sectionName;
-  const studentName = location.state?.studentName; 
+  const studentName = location.state?.studentName;
 
   const [aysOptions, setAysOptions] = useState([]);
   const [selectedAYS, setSelectedAYS] = useState(null);
@@ -21,11 +20,21 @@ function EditGrade() {
 
   const columns = [
     { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
-    { field: "subjectName", headerName: "Subject Name", flex: 1, minWidth: 160 },
+    {
+      field: "subjectName",
+      headerName: "Subject Name",
+      flex: 1,
+      minWidth: 160,
+    },
     { field: "instructor", headerName: "Instructor", flex: 1, minWidth: 140 },
     {
-      field: "grade", headerName: "Final Grade", type: "number",
-      flex: 0.7, minWidth: 110, headerAlign: "center", align: "center",
+      field: "grade",
+      headerName: "Final Grade",
+      type: "number",
+      flex: 0.7,
+      minWidth: 110,
+      headerAlign: "center",
+      align: "center",
     },
   ];
 
@@ -33,7 +42,9 @@ function EditGrade() {
     if (!studentId) return;
     const fetchOptions = async () => {
       try {
-        const res = await fetch(`${API_URL}/grades/recordList?studentId=${studentId}`);
+        const res = await fetch(
+          `${API_URL}/grades/recordList?studentId=${studentId}`,
+        );
         const data = await res.json();
         setAysOptions(data);
         if (data.length > 0) setSelectedAYS(data[0]);
@@ -53,7 +64,7 @@ function EditGrade() {
       setLoading(true);
       try {
         const res = await fetch(
-          `${API_URL}/grades/studReport?studentId=${studentId}&aysId=${selectedAYS.id}`
+          `${API_URL}/grades/studReport?studentId=${studentId}&aysId=${selectedAYS.id}`,
         );
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
@@ -73,7 +84,9 @@ function EditGrade() {
 
   const finalGrade =
     rows.length > 0
-      ? (rows.reduce((sum, r) => sum + Number(r.grade), 0) / rows.length).toFixed(1)
+      ? (
+          rows.reduce((sum, r) => sum + Number(r.grade), 0) / rows.length
+        ).toFixed(1)
       : null;
 
   return (
@@ -109,19 +122,33 @@ function EditGrade() {
         >
           <Typography
             variant="h2"
-            sx={{ color: "#242c54", fontWeight: "bold", fontSize: { xs: "28px", md: "35px" }, textAlign: "center" }}
+            sx={{
+              color: "#242c54",
+              fontWeight: "bold",
+              fontSize: { xs: "28px", md: "35px" },
+              textAlign: "center",
+            }}
           >
             Grade Report
           </Typography>
           <Typography
             variant="h3"
-            sx={{ color: "#242c54", fontSize: { xs: "20px", md: "27px" }, textAlign: "center" }}
+            sx={{
+              color: "#242c54",
+              fontSize: { xs: "20px", md: "27px" },
+              textAlign: "center",
+            }}
           >
             {studentName ?? "—"}
           </Typography>
           <Typography
             variant="body1"
-            sx={{ color: "#242c54", fontWeight: "bold", fontSize: { xs: "12", md: "17" }, textAlign: "center" }}
+            sx={{
+              color: "#242c54",
+              fontWeight: "bold",
+              fontSize: { xs: "12", md: "17" },
+              textAlign: "center",
+            }}
           >
             {sectionName}.
           </Typography>
@@ -159,7 +186,11 @@ function EditGrade() {
             <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
               <Typography
                 variant="h1"
-                sx={{ fontWeight: "bold", fontSize: { xs: "20px", md: "30px" }, lineHeight: 1 }}
+                sx={{
+                  fontWeight: "bold",
+                  fontSize: { xs: "20px", md: "30px" },
+                  lineHeight: 1,
+                }}
               >
                 {finalGrade ?? "—"}
               </Typography>
@@ -172,9 +203,14 @@ function EditGrade() {
             getOptionLabel={(option) => option?.label ?? ""}
             isOptionEqualToValue={(option, value) => option?.id === value?.id}
             value={selectedAYS}
-            sx={{ width: { xs: "150px", md: "300px" }, marginRight: { xs: "20px", md: "50px" } }}
+            sx={{
+              width: { xs: "150px", md: "300px" },
+              marginRight: { xs: "20px", md: "50px" },
+            }}
             onChange={(event, newValue) => handleAYSChange(newValue)}
-            renderInput={(params) => <TextField {...params} label="Academic Year" />}
+            renderInput={(params) => (
+              <TextField {...params} label="Academic Year" />
+            )}
           />
         </Box>
 
@@ -186,6 +222,11 @@ function EditGrade() {
             minWidth: 0,
           }}
         >
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           <StandardTable
             rows={rows}
             columns={columns}
@@ -195,7 +236,9 @@ function EditGrade() {
           />
         </Box>
 
-        <Box sx={{ display: "flex", minHeight: { xs: "100", md: "200px" } }}></Box>
+        <Box
+          sx={{ display: "flex", minHeight: { xs: "100", md: "200px" } }}
+        ></Box>
       </Box>
     </Box>
   );

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import Blockade from "../../components/Blockade";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function Enrollment() {
   const [step, setStep] = useState(1);
   const [studentType, setStudentType] = useState("");
@@ -11,8 +13,6 @@ export default function Enrollment() {
   const [statusCodeInput, setStatusCodeInput] = useState("");
   const [statusResult, setStatusResult] = useState(null);
   const [statusError, setStatusError] = useState("");
-
-  const API_URL = process.env.REACT_APP_API_URL;
   
   const handleCloseStatusModal = () => {
     setShowStatusModal(false);

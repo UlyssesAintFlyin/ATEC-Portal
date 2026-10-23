@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Typography,
   Box,
@@ -11,12 +11,11 @@ import {
   Chip,
 } from "@mui/material";
 import { EditableTable } from "../../components/EditableTable";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function AddSubject() {
-  const navigate = useNavigate();
   const { id } = useParams(); // curriculum_ID
 
   const [curriculumName, setCurriculumName] = useState("");
@@ -37,11 +36,12 @@ export default function AddSubject() {
     units: "",
   });
 
-  const fetchAllSubjects = async () => {
+  const fetchAllSubjects = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/subjects`);
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
       const data = await res.json();
 
       const mapped = data.map((s) => ({
@@ -50,6 +50,7 @@ export default function AddSubject() {
         subject_code: s.subject_code,
         units: s.units,
       }));
+
       setRows(mapped);
       setError(null);
     } catch (err) {
@@ -58,28 +59,34 @@ export default function AddSubject() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchAssignedSubjects = async () => {
+  const fetchAssignedSubjects = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/curricula/${id}`);
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
       const data = await res.json();
+
       setCurriculumName(data.curriculum_Name);
       setAssignedIds(data.subjects.map((s) => s.subject_ID));
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchAllSubjects();
     fetchAssignedSubjects();
-  }, [id]);
+  }, [fetchAllSubjects, fetchAssignedSubjects]);
 
   // Create or update a subject in the master list
   const handleSaveSubject = async () => {
-    if (!subjectForm.subject_Name || !subjectForm.subject_code || subjectForm.units === "") {
+    if (
+      !subjectForm.subject_Name ||
+      !subjectForm.subject_code ||
+      subjectForm.units === ""
+    ) {
       alert("Subject name, code, and units are all required");
       return;
     }
@@ -100,7 +107,12 @@ export default function AddSubject() {
 
       setOpen(false);
       setEditMode(false);
-      setSubjectForm({ subject_ID: null, subject_Name: "", subject_code: "", units: "" });
+      setSubjectForm({
+        subject_ID: null,
+        subject_Name: "",
+        subject_code: "",
+        units: "",
+      });
       fetchAllSubjects();
     } catch (err) {
       console.error(err);
@@ -125,14 +137,18 @@ export default function AddSubject() {
   // Delete subject(s) entirely from the master list
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm("Delete the selected subject(s) permanently? This removes them from every curriculum they're assigned to.")) {
+    if (
+      !window.confirm(
+        "Delete the selected subject(s) permanently? This removes them from every curriculum they're assigned to.",
+      )
+    ) {
       return;
     }
     try {
       await Promise.all(
         selectedIds.map((sid) =>
-          fetch(`${API_URL}/subjects/${sid}`, { method: "DELETE" })
-        )
+          fetch(`${API_URL}/subjects/${sid}`, { method: "DELETE" }),
+        ),
       );
       setSelectedIds([]);
       fetchAllSubjects();
@@ -167,13 +183,14 @@ export default function AddSubject() {
   };
 
   const columns = [
-    { field: "subject", headerName: "Subjects", flex: 1, minWidth: 120  },
-    { field: "subject_code", headerName: "Code", flex: 0.5, minWidth: 100  },
-    { field: "units", headerName: "Units", flex: 0.3, minWidth: 80  },
+    { field: "subject", headerName: "Subjects", flex: 1, minWidth: 120 },
+    { field: "subject_code", headerName: "Code", flex: 0.5, minWidth: 100 },
+    { field: "units", headerName: "Units", flex: 0.3, minWidth: 80 },
     {
       field: "assigned",
       headerName: "Status",
-      flex: 0.4, minWidth: 120,
+      flex: 0.4,
+      minWidth: 120,
       renderCell: (params) =>
         assignedIds.includes(params.row.id) ? (
           <Chip label="Assigned" color="success" size="small" />
@@ -242,13 +259,14 @@ export default function AddSubject() {
                 marginLeft: { xs: "20px", sm: "30px", md: "50px" },
               }}
             >
-              Manage subjects and assign them to <b>{curriculumName ? `${curriculumName}` : ""}</b>.
+              Manage subjects and assign them to{" "}
+              <b>{curriculumName ? `${curriculumName}` : ""}</b>.
             </Typography>
           </Box>
           <Box
             sx={{
               display: "flex",
-              justifyContent: {xs:"center", md:"flex-end"},
+              justifyContent: { xs: "center", md: "flex-end" },
               alignItems: "center",
               flexDirection: "row",
               flexWrap: "wrap",
@@ -263,7 +281,12 @@ export default function AddSubject() {
               variant="contained"
               onClick={() => {
                 setEditMode(false);
-                setSubjectForm({ subject_ID: null, subject_Name: "", subject_code: "", units: "" });
+                setSubjectForm({
+                  subject_ID: null,
+                  subject_Name: "",
+                  subject_code: "",
+                  units: "",
+                });
                 setOpen(true);
               }}
               sx={{
@@ -338,12 +361,16 @@ export default function AddSubject() {
             rows={rows}
             columns={columns}
             loading={loading}
-            onSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
+            onSelectionModelChange={(newSelection) =>
+              setSelectedIds(newSelection)
+            }
           />
         </Box>
 
         <Dialog open={open} onClose={() => setOpen(false)}>
-          <DialogTitle>{editMode ? "Edit Subject" : "Add New Subject"}</DialogTitle>
+          <DialogTitle>
+            {editMode ? "Edit Subject" : "Add New Subject"}
+          </DialogTitle>
           <DialogContent
             sx={{
               display: "flex",

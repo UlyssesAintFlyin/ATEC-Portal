@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Typography,
-  Box,
-  Button,
-} from "@mui/material";
+import { Typography, Box, Button } from "@mui/material";
 
 import { EditableTable } from "../../components/EditableTable";
 import { useNavigate, useParams } from "react-router-dom";
@@ -12,7 +8,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 export default function CurriculumSubjects() {
   const navigate = useNavigate();
-  const { id } = useParams(); 
+  const { id } = useParams();
 
   const [curriculumName, setCurriculumName] = useState("");
   const [rows, setRows] = useState([]);
@@ -22,12 +18,55 @@ export default function CurriculumSubjects() {
   // Track selected rows from Table
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const fetchCurriculumSubjects = async () => {
-    setLoading(true);
+  useEffect(() => {
+    const fetchCurriculumSubjects = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/curricula/${id}`);
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
+        const data = await res.json();
+
+        setCurriculumName(data.curriculum_Name);
+        setRows(
+          data.subjects.map((s) => ({
+            id: s.subject_ID,
+            subject: s.subject_Name,
+            subject_code: s.subject_code,
+            units: s.units,
+          })),
+        );
+
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load curriculum subjects");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCurriculumSubjects();
+  }, [id]);
+
+  const handleRemoveSelected = async () => {
+    if (selectedIds.length !== 1) return;
+
+    const subjectIdToRemove = selectedIds[0];
+
     try {
-      const res = await fetch(`${API_URL}/curricula/${id}`);
+      const res = await fetch(
+        `${API_URL}/curricula/${id}/subjects/${subjectIdToRemove}`,
+        { method: "DELETE" },
+      );
+
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      const data = await res.json();
+
+      setSelectedIds([]);
+
+      // Refresh data
+      const reload = await fetch(`${API_URL}/curricula/${id}`);
+      const data = await reload.json();
 
       setCurriculumName(data.curriculum_Name);
       setRows(
@@ -36,33 +75,8 @@ export default function CurriculumSubjects() {
           subject: s.subject_Name,
           subject_code: s.subject_code,
           units: s.units,
-        }))
+        })),
       );
-      setError(null);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load curriculum subjects");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCurriculumSubjects();
-  }, [id]);
-
-  const handleRemoveSelected = async () => {
-    if (selectedIds.length !== 1) return;
-    const subjectIdToRemove = selectedIds[0];
-    try {
-      const res = await fetch(
-        `${API_URL}/curricula/${id}/subjects/${subjectIdToRemove}`,
-        { method: "DELETE" }
-      );
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-
-      setSelectedIds([]);
-      fetchCurriculumSubjects();
     } catch (err) {
       console.error(err);
       alert("Failed to remove subject from curriculum");
@@ -130,12 +144,12 @@ export default function CurriculumSubjects() {
               sx={{
                 color: "#242c54",
                 fontSize: { xs: "12px", md: "16px" },
-                textAlign: "left",
                 marginLeft: { xs: "20px", sm: "30px", md: "50px" },
                 textAlign: { xs: "center", md: "left" },
               }}
             >
-              These are the subjects under <b>{curriculumName ? `${curriculumName}` : ""}</b>.
+              These are the subjects under{" "}
+              <b>{curriculumName ? `${curriculumName}` : ""}</b>.
             </Typography>
           </Box>
 
@@ -200,7 +214,9 @@ export default function CurriculumSubjects() {
             rows={rows}
             columns={columns}
             loading={loading}
-            onSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
+            onSelectionModelChange={(newSelection) =>
+              setSelectedIds(newSelection)
+            }
           />
         </Box>
       </Box>

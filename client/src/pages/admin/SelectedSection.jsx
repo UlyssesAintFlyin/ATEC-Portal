@@ -28,9 +28,6 @@ export default function SelectedSection() {
   const [sectionOptions, setSectionOptions] = useState([]);
   const [aysOptions, setAYSOptions] = useState([]);
 
-  const [currentSection, setCurrentSection] = useState(null);
-  const [currentAYS, setCurrentAYS] = useState(null);
-
   const [targetSection, setTargetSection] = useState(null);
   const [targetAYS, setTargetAYS] = useState(null);
 
@@ -193,8 +190,6 @@ export default function SelectedSection() {
       console.error(err);
     }
   };
-  // Adding Student Dialog State
-  const [open, setOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   console.log(selectedIds)
  const handleRemoveSelected = async () => {

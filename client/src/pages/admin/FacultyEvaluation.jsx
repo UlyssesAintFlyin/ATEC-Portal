@@ -11,7 +11,7 @@ import {
   Autocomplete,
 } from "@mui/material";
 import { StandardTable } from "../../components/StandardTable";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -19,8 +19,6 @@ export default function FacultyEvaluation() {
   const navigate = useNavigate();
 
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   useEffect(() => {
     const fetchFaculty = async () => {
       try {

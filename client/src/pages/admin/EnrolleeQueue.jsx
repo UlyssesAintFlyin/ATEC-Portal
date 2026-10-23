@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Button } from "@mui/material";
 import { Table } from "../../components/Table";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function EnrolleeQueue() {
-  const navigate = useNavigate();
   const { sectionName } = useParams();
   const location = useLocation();
   const sectionId = location.state?.section_ID;

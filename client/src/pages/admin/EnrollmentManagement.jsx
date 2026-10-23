@@ -12,7 +12,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Table } from "../../components/Table";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -20,10 +20,7 @@ export default function EnrollmentManagement() {
   const navigate = useNavigate();
 
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [academicYears, setAcademicYears] = useState([]);
   const [selectedAY, setSelectedAY] = useState(null);
 
   const [selectedIds, setSelectedIds] = useState([]);
@@ -114,19 +111,7 @@ export default function EnrollmentManagement() {
     }
   };
 
-  const fetchAcademicYears = async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/loadAcademicYear`);
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      const data = await res.json();
-      setAcademicYears(data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const fetchEnrollees = async (ayId) => {
-    setLoading(true);
     try {
       const url = ayId
         ? `${API_URL}/admin/loadEnrollees?ayId=${ayId}`
@@ -139,8 +124,6 @@ export default function EnrollmentManagement() {
     } catch (err) {
       console.error(err);
       setError("Failed to load enrollees");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -343,7 +326,11 @@ export default function EnrollmentManagement() {
             justifyContent: "center",
           }}
         >
-          {/*Table Component*/}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           <Table
             rows={rows}
             columns={columns}

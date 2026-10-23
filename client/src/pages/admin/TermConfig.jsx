@@ -12,12 +12,10 @@ import {
   Alert,
 } from "@mui/material";
 import { Table } from "../../components/Table";
-import { Link, useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function TermConfig() {
-  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   useEffect(() => {
     fetch(`${API_URL}/admin/loadAcademicYear`)
@@ -31,7 +29,7 @@ export default function TermConfig() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
-const handleAddRecords = async () => {
+  const handleAddRecords = async () => {
     try {
       const response = await fetch(`${API_URL}/admin/addAcademicYear`, {
         method: "POST",
@@ -60,6 +58,8 @@ const handleAddRecords = async () => {
       const reload = await fetch(`${API_URL}/admin/loadAcademicYear`);
       const updatedData = await reload.json();
       setRows(updatedData);
+      setSnackbarMessage("Academic year added successfully.");
+      setSnackbarOpen(true);
       setOpen(false);
       setTerm({ term: "" });
     } catch (err) {

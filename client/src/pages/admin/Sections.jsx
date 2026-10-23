@@ -11,7 +11,7 @@ import {
   Autocomplete,
 } from "@mui/material";
 import { Table } from "../../components/Table";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 

@@ -15,12 +15,11 @@ import {
 } from "@mui/material";
 
 import { Table } from "../../components/Table";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function SectionSubject() {
-  const navigate = useNavigate();
   const { sectionName } = useParams();
   const location = useLocation();
   const sectionId = location.state?.section_ID;
@@ -28,7 +27,7 @@ export default function SectionSubject() {
   const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
 
   const [adviserList, setAdviserList] = useState([]);
-  const [currentAdviser, setCurrentAdviser] = useState(null);
+  const [, setCurrentAdviser] = useState(null);
   const [pendingAdviser, setPendingAdviser] = useState(null);
 
   const [curriculumList, setCurriculumList] = useState([]);
@@ -37,13 +36,11 @@ export default function SectionSubject() {
 
   const [teacherList, setTeacherList] = useState([]);
   const [pendingTeachers, setPendingTeachers] = useState({});
-  const [currentTeachers, setCurrentTeachers] = useState({});
 
   const [openDialog, setOpenDialog] = useState(false);
   const [subjectId, setSubjectId] = useState(null);
 
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -57,141 +54,137 @@ export default function SectionSubject() {
   const [importErrors, setImportErrors] = useState([]);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
 
- useEffect(() => {
-  const fetchSystemSettings = async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/systemSettings`);
-      const data = await res.json();
-      setCurrentAYS_ID(data.enrollment_AYS_ID);
-    } catch (err) {
-      console.error("Error loading system settings:", err);
-    }
+  useEffect(() => {
+    const fetchSystemSettings = async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/systemSettings`);
+        const data = await res.json();
+        setCurrentAYS_ID(data.enrollment_AYS_ID);
+      } catch (err) {
+        console.error("Error loading system settings:", err);
+      }
+    };
+    fetchSystemSettings();
+  }, []);
+
+  useEffect(() => {
+    if (!sectionId || !currentAYS_ID) return;
+    const fetchSectionAdvisers = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/admin/faculty/getSectionAdvisers?sectionId=${sectionId}&AYS_ID=${currentAYS_ID}`,
+        );
+        const data = await res.json();
+        setAdviserList(data.facultyOptions);
+        setCurrentAdviser(data.currentAdviser);
+        setPendingAdviser(data.currentAdviser);
+      } catch (err) {
+        console.error("Error loading advisers:", err);
+      }
+    };
+    fetchSectionAdvisers();
+  }, [sectionId, currentAYS_ID]);
+
+  useEffect(() => {
+    if (!sectionId || !currentAYS_ID) return;
+    const fetchCurriculums = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/admin/curriculum/listBySection?sectionId=${sectionId}&AYS_ID=${currentAYS_ID}`,
+        );
+        const data = await res.json();
+        setCurriculumList(data.curriculumOptions);
+        const current =
+          data.curriculumOptions.find(
+            (c) => c.id === data.currentCurriculumId,
+          ) || null;
+        setCurrentCurriculum(current);
+        setPendingCurriculum(current);
+      } catch (err) {
+        console.error("Error loading curriculums:", err);
+      }
+    };
+    fetchCurriculums();
+  }, [sectionId, currentAYS_ID]);
+
+  const handleOpenDialog = (subjectId) => {
+    setSubjectId(subjectId);
+    setOpenDialog(true);
   };
-  fetchSystemSettings();
-}, []);
 
-useEffect(() => {
-  if (!sectionId || !currentAYS_ID) return;
-  const fetchSectionAdvisers = async () => {
-    try {
-      const res = await fetch(
-        `${API_URL}/admin/faculty/getSectionAdvisers?sectionId=${sectionId}&AYS_ID=${currentAYS_ID}`
-      );
-      const data = await res.json();
-      setAdviserList(data.facultyOptions);
-      setCurrentAdviser(data.currentAdviser);
-      setPendingAdviser(data.currentAdviser);
-    } catch (err) {
-      console.error("Error loading advisers:", err);
-    }
+  useEffect(() => {
+    if (!openDialog || !subjectId || !currentAYS_ID) return;
+    const fetchTeachers = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/admin/faculty/getTeachersBySubject?subjectId=${subjectId}&sectionId=${sectionId}&AYS_ID=${currentAYS_ID}`,
+        );
+        const data = await res.json();
+        setTeacherList(data.teacherOptions);
+        setPendingTeachers((prev) => ({
+          ...prev,
+          [subjectId]: data.currentTeacher,
+        }));
+      } catch (err) {
+        console.error("Error loading teachers:", err);
+      }
+    };
+    fetchTeachers();
+  }, [openDialog, subjectId, sectionId, currentAYS_ID]);
+
+  const handleAdviserChange = (newValue) => setPendingAdviser(newValue);
+  const handleCurriculumChange = (newValue) => setPendingCurriculum(newValue);
+  const handleTeacherChange = (subjectId, newValue) => {
+    setPendingTeachers((prev) => ({
+      ...prev,
+      [subjectId]: newValue,
+    }));
   };
-  fetchSectionAdvisers();
-}, [sectionId, currentAYS_ID]);
 
-useEffect(() => {
-  if (!sectionId || !currentAYS_ID) return;
-  const fetchCurriculums = async () => {
+  const handleSaveChanges = async () => {
     try {
-      const res = await fetch(
-        `${API_URL}/admin/curriculum/listBySection?sectionId=${sectionId}&AYS_ID=${currentAYS_ID}`
-      );
-      const data = await res.json();
-      setCurriculumList(data.curriculumOptions);
-      const current =
-        data.curriculumOptions.find((c) => c.id === data.currentCurriculumId) || null;
-      setCurrentCurriculum(current);
-      setPendingCurriculum(current);
-    } catch (err) {
-      console.error("Error loading curriculums:", err);
-    }
-  };
-  fetchCurriculums();
-}, [sectionId, currentAYS_ID]);
-
-const handleOpenDialog = (subjectId) => {
-  setSubjectId(subjectId);
-  setOpenDialog(true);
-};
-
-useEffect(() => {
-  if (!openDialog || !subjectId || !currentAYS_ID) return;
-  const fetchTeachers = async () => {
-    try {
-      const res = await fetch(
-        `${API_URL}/admin/faculty/getTeachersBySubject?subjectId=${subjectId}&sectionId=${sectionId}&AYS_ID=${currentAYS_ID}`
-      );
-      const data = await res.json();
-      setTeacherList(data.teacherOptions);
-      setCurrentTeachers((prev) => ({
-        ...prev,
-        [subjectId]: data.currentTeacher,
-      }));
-      setPendingTeachers((prev) => ({
-        ...prev,
-        [subjectId]: data.currentTeacher,
-      }));
-    } catch (err) {
-      console.error("Error loading teachers:", err);
-    }
-  };
-  fetchTeachers();
-}, [openDialog, subjectId, sectionId, currentAYS_ID]);
-
-const handleAdviserChange = (newValue) => setPendingAdviser(newValue);
-const handleCurriculumChange = (newValue) => setPendingCurriculum(newValue);
-const handleTeacherChange = (subjectId, newValue) => {
-  setPendingTeachers((prev) => ({
-    ...prev,
-    [subjectId]: newValue,
-  }));
-};
-
-const handleSaveChanges = async () => {
-  try {
-    const requests = [
-      fetch(`${API_URL}/admin/faculty/assignAdviser`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sectionId,
-          AYS_ID: currentAYS_ID,
-          facultyId: pendingAdviser ? pendingAdviser.id : null,
-        }),
-      }),
-      fetch(`${API_URL}/admin/curriculum/updateSectionCurriculum`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sectionId,
-          AYS_ID: currentAYS_ID,
-          curriculumId: pendingCurriculum ? pendingCurriculum.id : null,
-        }),
-      }),
-      ...Object.entries(pendingTeachers).map(([subjId, teacher]) =>
-        fetch(`${API_URL}/admin/faculty/assignTeacherToSubject`, {
+      const requests = [
+        fetch(`${API_URL}/admin/faculty/assignAdviser`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            subjectId: subjId,
             sectionId,
             AYS_ID: currentAYS_ID,
-            teacherId: teacher ? teacher.id : null,
+            facultyId: pendingAdviser ? pendingAdviser.id : null,
           }),
-        })
-      ),
-    ];
+        }),
+        fetch(`${API_URL}/admin/curriculum/updateSectionCurriculum`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sectionId,
+            AYS_ID: currentAYS_ID,
+            curriculumId: pendingCurriculum ? pendingCurriculum.id : null,
+          }),
+        }),
+        ...Object.entries(pendingTeachers).map(([subjId, teacher]) =>
+          fetch(`${API_URL}/admin/faculty/assignTeacherToSubject`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subjectId: subjId,
+              sectionId,
+              AYS_ID: currentAYS_ID,
+              teacherId: teacher ? teacher.id : null,
+            }),
+          }),
+        ),
+      ];
 
-    await Promise.all(requests);
+      await Promise.all(requests);
 
-    setCurrentAdviser(pendingAdviser);
-    setCurrentCurriculum(pendingCurriculum);
-    setCurrentTeachers(pendingTeachers);
-    setOpenDialog(false);
-  } catch (err) {
-    console.error("Error saving changes:", err);
-  }
-};
-
+      setCurrentAdviser(pendingAdviser);
+      setCurrentCurriculum(pendingCurriculum);
+      setOpenDialog(false);
+    } catch (err) {
+      console.error("Error saving changes:", err);
+    }
+  };
 
   const handleGetTemplate = async () => {
     if (!currentCurriculum || !sectionId || !currentAYS_ID) return;
@@ -297,7 +290,6 @@ const handleSaveChanges = async () => {
   useEffect(() => {
     if (!currentCurriculum) return;
     (async () => {
-      setLoading(true);
       try {
         const res = await fetch(`${API_URL}/curricula/${currentCurriculum.id}`);
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
@@ -314,9 +306,7 @@ const handleSaveChanges = async () => {
       } catch (err) {
         console.error(err);
         setError("Failed to load curriculum subjects");
-      } finally {
-        setLoading(false);
-      }
+      } 
     })();
   }, [currentCurriculum]);
 
@@ -383,7 +373,7 @@ const handleSaveChanges = async () => {
           <Box
             sx={{
               display: "flex",
-              justifyContent: {xs:"center", md:"flex-end"},
+              justifyContent: { xs: "center", md: "flex-end" },
               alignItems: "center",
               flexDirection: "row",
               flexWrap: "wrap",
@@ -458,6 +448,11 @@ const handleSaveChanges = async () => {
             height: { xs: "600px", md: "500px" },
           }}
         >
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           <Table
             rows={rows}
             columns={columns}

@@ -37,7 +37,6 @@ const formatDate = (rawDate) => {
 export default function EditFaculty() {
   const { id } = useParams();
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     f_Name: "",
     l_Name: "",
@@ -82,8 +81,6 @@ export default function EditFaculty() {
         });
       } catch (err) {
         console.error(err);
-      } finally {
-        setLoading(false);
       }
     };
     fetchFaculty();

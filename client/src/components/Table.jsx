@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import {
   DataGrid,
   GridToolbarContainer,
@@ -10,9 +9,6 @@ import {
 } from "@mui/x-data-grid";
 import Paper from "@mui/material/Paper";
 
-{
-  /*Table toolbar*/
-}
 function CustomToolbar() {
   return (
     <GridToolbarContainer

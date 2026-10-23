@@ -8,7 +8,6 @@ import {
     FormControlLabel,
     Button
 } from "@mui/material";
-import { Table } from "../../components/Table";
 import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -16,7 +15,6 @@ const API_URL = process.env.REACT_APP_API_URL;
 export default function SystemSettings() {
     const navigate = useNavigate();
     const [academicYears, setAcademicYears] = useState([]);
-    const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
     const [semesters, setSemesters] = useState([]);
     const [selectedAY, setSelectedAY] = useState(null);
     const [selectedSemester, setSelectedSemester] = useState(null);
@@ -31,21 +29,6 @@ export default function SystemSettings() {
             setSelectedSemester(data.currentSemester);
         };
         fetchData();
-    }, []);
-    useEffect(() => {
-        const fetchSystemSettings = async () => {
-            try {
-                const res = await fetch(`${API_URL}/admin/systemSettings`);
-                if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-                const data = await res.json();
-                setCurrentAYS_ID(data.enrollment_AYS_ID);
-            } catch (err) {
-                console.error("Error loading system settings:", err);
-                setCurrentAYS_ID(null);
-            }
-        };
-
-        fetchSystemSettings();
     }, []);
     const updateSystemSettings = async (ay_ID, semester_ID) => {
         try {

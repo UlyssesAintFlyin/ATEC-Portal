@@ -19,7 +19,6 @@ export default function EditStudent() {
   const { studentId } = useParams();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [currentAYS_ID, setCurrentAYS_ID] = useState("");
   const [sections, setSections] = useState([]);
   const [student, setStudent] = useState({
@@ -103,8 +102,6 @@ export default function EditStudent() {
         });
       } catch (err) {
         console.error("Error loading student:", err);
-      } finally {
-        setLoading(false);
       }
     };
 

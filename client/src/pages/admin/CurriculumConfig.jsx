@@ -245,30 +245,6 @@ export default function CurriculumConfig() {
     }
   };
 
-  const handleRemoveSelected = async () => {
-    if (selectedIds.length !== 1) return;
-    const row = rows.find((r) => String(r.id) === String(selectedIds[0]));
-    if (!row) return;
-
-    try {
-      const res = await fetch(
-        `${API_URL}/curricula/${row.curriculum_ID}/terms/${row.AYS_ID}`,
-        { method: "DELETE" }
-      );
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.message || `Request failed: ${res.status}`);
-      }
-
-      setSelectedIds([]);
-      if (selectedTerm) fetchCurricula(selectedTerm.id);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "Failed to unassign curriculum from term");
-    }
-  };
-
   useEffect(() => {
     fetchCurrentAY();
     fetchAcademicYearSemesters();

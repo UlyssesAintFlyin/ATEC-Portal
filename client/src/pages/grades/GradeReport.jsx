@@ -10,7 +10,7 @@ function GradeReport() {
   const studentId = user?.id;
 
   const [sectionName, setSectionName] = useState("---");
-  const [studentName, setStudentName] = useState(user?.name ?? "---");
+  const studentName = user?.name ?? "---";
 
   const [aysOptions, setAysOptions] = useState([]);
   const [selectedAYS, setSelectedAYS] = useState(null);
@@ -45,7 +45,9 @@ function GradeReport() {
     if (!studentId) return;
     const fetchOptions = async () => {
       try {
-        const res = await fetch(`${API_URL}/grades/recordList?studentId=${studentId}`);
+        const res = await fetch(
+          `${API_URL}/grades/recordList?studentId=${studentId}`,
+        );
         const data = await res.json();
         setAysOptions(data);
         if (data.length > 0) setSelectedAYS(data[0]);
@@ -65,7 +67,7 @@ function GradeReport() {
       setLoading(true);
       try {
         const res = await fetch(
-          `${API_URL}/grades/studReport?studentId=${studentId}&aysId=${selectedAYS.id}`
+          `${API_URL}/grades/studReport?studentId=${studentId}&aysId=${selectedAYS.id}`,
         );
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
@@ -86,7 +88,9 @@ function GradeReport() {
 
   const finalGrade =
     rows.length > 0
-      ? (rows.reduce((sum, r) => sum + Number(r.grade), 0) / rows.length).toFixed(1)
+      ? (
+          rows.reduce((sum, r) => sum + Number(r.grade), 0) / rows.length
+        ).toFixed(1)
       : null;
 
   return (
@@ -206,9 +210,14 @@ function GradeReport() {
             getOptionLabel={(option) => option?.label ?? ""}
             isOptionEqualToValue={(option, value) => option?.id === value?.id}
             value={selectedAYS}
-            sx={{ width: { xs: "150px", md: "300px" }, marginRight: { xs: "20px", md: "50px" } }}
+            sx={{
+              width: { xs: "150px", md: "300px" },
+              marginRight: { xs: "20px", md: "50px" },
+            }}
             onChange={(event, newValue) => handleAYSChange(newValue)}
-            renderInput={(params) => <TextField {...params} label="Academic Year" />}
+            renderInput={(params) => (
+              <TextField {...params} label="Academic Year" />
+            )}
           />
         </Box>
 
@@ -222,6 +231,11 @@ function GradeReport() {
             flexDirection: "column",
           }}
         >
+          {error && (
+            <Typography color="error" sx={{ mb: 2 }}>
+              {error}
+            </Typography>
+          )}
           {/*Table Component*/}
           <StandardTable
             rows={rows}

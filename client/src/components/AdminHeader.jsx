@@ -13,12 +13,11 @@ import {
   Avatar,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export const AdminHeader = () => {
   const [open, setOpen] = useState(false);
-  const location = useLocation();
   const { user, logout } = useAuth();
   const toggleDrawer = (state) => () => {
     setOpen(state);
