@@ -4,7 +4,6 @@ import { Box, Typography, CircularProgress } from "@mui/material";
 import Item from "./Item";
 
 const API_URL = process.env.REACT_APP_API_URL;
-const STATIC_URL = API_URL.replace(/\/api\/?$/, "");
 
 function CarouselComponent() {
   const [items, setItems] = useState([]);
@@ -21,7 +20,7 @@ function CarouselComponent() {
         const mapped = data.map((page) => ({
           name: page.carousel_title,
           description: page.carousel_description,
-          image: page.carousel_image ? `${STATIC_URL}${page.carousel_image}` : undefined,
+          image: page.carousel_image || undefined,
         }));
 
         setItems(mapped);

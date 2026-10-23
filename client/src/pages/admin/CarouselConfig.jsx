@@ -15,7 +15,6 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 
 const API_URL = process.env.REACT_APP_API_URL;
-const STATIC_URL = API_URL.replace(/\/api\/?$/, "");
 
 function makeEmptyPage() {
   return {
@@ -177,7 +176,7 @@ function CarouselConfig() {
         const formData = new FormData();
         formData.append("carousel_title", page.title);
         formData.append("carousel_description", page.description);
-        if (page.imageFile) formData.append("image", page.imageFile)
+        if (page.imageFile) formData.append("image", page.imageFile);
         const isUpdate = Boolean(page.carousel_ID);
         const url = isUpdate
           ? `${API_URL}/carousel/${page.carousel_ID}`
@@ -373,7 +372,7 @@ function CarouselConfig() {
                           src={
                             page.imageFile
                               ? URL.createObjectURL(page.imageFile)
-                              : `${STATIC_URL}${page.existingImagePath}`
+                              : page.existingImagePath
                           }
                           alt="Preview"
                           sx={{
