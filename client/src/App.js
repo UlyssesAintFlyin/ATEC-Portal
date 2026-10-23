@@ -195,7 +195,7 @@ function Home() {
                 "&:hover": { transform: "scale(1.05)" },
               }}
             >
-              <Box component="img" src="/resources/studentLife1.jpg" alt="ATEC" className="studentLife-image" />
+              <Box component="img" src="/resources/studentLife1.JPG" alt="ATEC" className="studentLife-image" />
             </Box>
             <Typography variant="body1" className="studentLife-item-title">
               Events That Inspire Camaraderie
@@ -213,7 +213,7 @@ function Home() {
                 "&:hover": { transform: "scale(1.05)" },
               }}
             >
-              <Box component="img" src="/resources/studentLife2.jpg" alt="ATEC" className="studentLife-image" />
+              <Box component="img" src="/resources/studentLife2.JPG" alt="ATEC" className="studentLife-image" />
             </Box>
             <Typography variant="body1" className="studentLife-item-title">
               Life Inside The Campus
@@ -244,7 +244,7 @@ function Home() {
       </Box>
 
       <Box className="program-section" id="offers">
-        <Box component="img" src="/resources/progBg.jpg" className="bg-image-wrapper" />
+        <Box component="img" src="/resources/progBg.JPG" className="bg-image-wrapper" />
         <Box className="bg-image-overlay">
           <Typography variant="h4" className="program-title">
             Programs Offered
