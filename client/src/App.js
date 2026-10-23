@@ -29,7 +29,7 @@ import AddSubject from './pages/admin/AddSubject'
 import EnrolleeQueue from './pages/admin/EnrolleeQueue';
 import FacultyReport from './pages/evaluation/FacultyReportPublic'
 import SectionSubject from './pages/admin/SectionSubject'
-import ForgotPassword from './pages/sign_in/ForgotPassword'; 
+import ForgotPassword from './pages/sign_in/ForgotPassword';
 import { Link } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
@@ -118,7 +118,7 @@ function Home() {
   return (
     <div className="home-root">
       <CarouselComponent />
-      <Box className="divider-bar"/>
+      <Box className="divider-bar" />
       <Box className="about-section" id="about">
         <Box className="about-text">
           <Typography variant="h4" className="about-title">
@@ -189,7 +189,12 @@ function Home() {
 
         <Box className="studentLife-items">
           <Box className="studentLife-item">
-            <Box className="studentLife-image-wrap">
+            <Box className="studentLife-image-wrap"
+              sx={{
+                transition: "transform 0.3s ease",
+                "&:hover": { transform: "scale(1.05)" },
+              }}
+            >
               <Box component="img" src="/resources/studentLife1.jpg" alt="ATEC" className="studentLife-image" />
             </Box>
             <Typography variant="body1" className="studentLife-item-title">
@@ -202,7 +207,12 @@ function Home() {
           </Box>
 
           <Box className="studentLife-item">
-            <Box className="studentLife-image-wrap">
+            <Box className="studentLife-image-wrap"
+              sx={{
+                transition: "transform 0.3s ease",
+                "&:hover": { transform: "scale(1.05)" },
+              }}
+            >
               <Box component="img" src="/resources/studentLife2.jpg" alt="ATEC" className="studentLife-image" />
             </Box>
             <Typography variant="body1" className="studentLife-item-title">
@@ -215,7 +225,11 @@ function Home() {
           </Box>
 
           <Box className="studentLife-item">
-            <Box className="studentLife-image-wrap">
+            <Box className="studentLife-image-wrap"
+              sx={{
+                transition: "transform 0.3s ease",
+                "&:hover": { transform: "scale(1.05)" },
+              }}>
               <Box component="img" src="/resources/studentLife3.jpg" alt="ATEC" className="studentLife-image" />
             </Box>
             <Typography variant="body1" className="studentLife-item-title">

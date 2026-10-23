@@ -1,4 +1,3 @@
-import styles from "./Evaluation.css";
 import { useState, useEffect } from "react";
 import Blockade from "../../components/Blockade";
 import { useAuth } from "../../context/AuthContext";

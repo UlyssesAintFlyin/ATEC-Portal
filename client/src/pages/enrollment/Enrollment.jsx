@@ -1,4 +1,3 @@
-import styles from "./Enrollment.css";
 import { useState, useEffect } from 'react';
 import Blockade from "../../components/Blockade";
 
