@@ -39,3 +39,7 @@
     res.status(500).json({ message: 'Something went wrong' });
   }); //Sends a 500 Internal Server Error
 
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`AXIOM server running on port ${PORT}`);
+  }); 
