@@ -39,27 +39,3 @@
     res.status(500).json({ message: 'Something went wrong' });
   }); //Sends a 500 Internal Server Error
 
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`AXIOM server running on port ${PORT}`);
-  }); 
-
-  app.get('/api/health/db', async (req, res) => {
-  try {
-    const [rows] = await pool.query(
-      'SELECT 1 AS connected'
-    );
-
-    res.json({
-      success: true,
-      database: rows[0].connected
-    });
-  } catch (error) {
-    console.error('Database connection failed:', error.message);
-
-    res.status(500).json({
-      success: false,
-      message: 'Database connection failed'
-    });
-  }
-});
