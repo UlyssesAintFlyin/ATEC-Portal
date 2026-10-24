@@ -8,6 +8,8 @@ const RATING_MAP = {
     'Strongly Agree': 5
 };
 
+
+
 // GET /api/evaluation/faculty/:studentId
 // Returns only the professors actually teaching this student's section
 // for the currently active evaluation AYS_ID
@@ -112,7 +114,7 @@ const getQuestions = async (req, res) => {
 const submitEvaluation = async (req, res) => {
     const connection = await pool.getConnection();
     try {
-        const { evaluationId, studentId, answers } = req.body;
+        const { evaluationId, studentId, answers, comments } = req.body;
 
         if (!evaluationId || !studentId || !answers || Object.keys(answers).length === 0) {
             connection.release();
@@ -165,6 +167,14 @@ const submitEvaluation = async (req, res) => {
             await connection.query(
                 'INSERT INTO student_evaluation_table (category_Mean, category_ID, evaluation_ID, student_ID) VALUES (?, ?, ?, ?)',
                 [mean, categoryId, evaluationId, studentId]
+            );
+        }
+
+        const commentText = (comments || '').trim().slice(0, 500);
+        if (commentText) {
+            await connection.query(
+                'INSERT INTO evaluation_comment_table (evaluation_ID, student_ID, comment_text) VALUES (?, ?, ?)',
+                [evaluationId, studentId, commentText]
             );
         }
 
