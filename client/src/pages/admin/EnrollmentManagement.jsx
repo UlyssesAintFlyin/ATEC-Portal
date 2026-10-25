@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import { Table } from "../../components/Table";
 import { useNavigate } from "react-router-dom";
@@ -77,8 +78,8 @@ export default function EnrollmentManagement() {
       }
       if (!res.ok) throw new Error(body.message || "Import failed");
 
-      snackbar.error(err.message);
-      fetchEnrollees(selectedAY.id); // refresh the table
+      snackbar.success(body.message);
+      fetchEnrollees(selectedAY.id); 
     } catch (err) {
       snackbar.error(err.message);
     } finally {
