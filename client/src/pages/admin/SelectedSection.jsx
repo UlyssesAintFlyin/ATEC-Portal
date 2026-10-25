@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { Table } from "../../components/Table";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -30,6 +31,7 @@ export default function SelectedSection() {
 
   const [targetSection, setTargetSection] = useState(null);
   const [targetAYS, setTargetAYS] = useState(null);
+  const snackbar = useSnackbar();
 
   useEffect(() => {
     const fetchSystemSettings = async () => {
@@ -113,9 +115,14 @@ export default function SelectedSection() {
             color="inherit"
             onClick={() =>
               navigate(
-                `/admin/section/${sectionName}/${params.row.id}/gradeReport`, {
-                state: { sectionName: sectionName, studentName: params.row.studentName },
-              })
+                `/admin/section/${sectionName}/${params.row.id}/gradeReport`,
+                {
+                  state: {
+                    sectionName: sectionName,
+                    studentName: params.row.studentName,
+                  },
+                },
+              )
             }
             sx={{
               marginLeft: "10px",
@@ -137,7 +144,7 @@ export default function SelectedSection() {
       try {
         const [sectionsRes, aysRes] = await Promise.all([
           fetch(`${API_URL}/admin/sections/options`),
-          fetch(`${API_URL}/admin/academicYearSemester/options`)
+          fetch(`${API_URL}/admin/academicYearSemester/options`),
         ]);
 
         const sections = await sectionsRes.json();
@@ -147,16 +154,15 @@ export default function SelectedSection() {
         setAYSOptions(ays);
 
         const matchedSection = sections.find(
-          (s) => Number(s.section_ID) === Number(sectionId)
+          (s) => Number(s.section_ID) === Number(sectionId),
         );
 
         const matchedAYS = ays.find(
-          (a) => Number(a.AYS_ID) === Number(currentAYS_ID)
+          (a) => Number(a.AYS_ID) === Number(currentAYS_ID),
         );
 
         setTargetSection(matchedSection || null);
         setTargetAYS(matchedAYS || null);
-
       } catch (err) {
         console.error(err);
       }
@@ -165,51 +171,51 @@ export default function SelectedSection() {
     loadTransferData();
   }, [openTransfer, sectionId, currentAYS_ID]);
 
-
-
   const handleTransfer = async () => {
     try {
-      await fetch(
-        `${API_URL}/admin/sections/transferSection`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sourceSectionId: sectionId,
-            sourceAYS_ID: currentAYS_ID,
-            targetSectionId: targetSection.section_ID,
-            targetAYS_ID: targetAYS.AYS_ID,
-          }),
-        }
+      await fetch(`${API_URL}/admin/sections/transferSection`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sourceSectionId: sectionId,
+          sourceAYS_ID: currentAYS_ID,
+          targetSectionId: targetSection.section_ID,
+          targetAYS_ID: targetAYS.AYS_ID,
+        }),
+      });
+
+      snackbar.success(
+        `Student(s) successfully transferred!`,
       );
 
       setOpenTransfer(false);
     } catch (err) {
       console.error(err);
+      snackbar.error(err.message || "Failed to transfer students");
     }
   };
   const [selectedIds, setSelectedIds] = useState([]);
-  console.log(selectedIds)
- const handleRemoveSelected = async () => {
-  try {
-    await fetch(`${API_URL}/admin/students/drop`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        studentIds: selectedIds,
-      }),
-    });
+  console.log(selectedIds);
+  const handleRemoveSelected = async () => {
+    try {
+      await fetch(`${API_URL}/admin/students/drop`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          studentIds: selectedIds,
+        }),
+      });
 
-    setRows(rows.filter((r) => !selectedIds.includes(r.id)));
-    setSelectedIds([]);
-  } catch (err) {
-    console.error("Error dropping students:", err);
-  }
-};
+      setRows(rows.filter((r) => !selectedIds.includes(r.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      console.error("Error dropping students:", err);
+    }
+  };
 
   return (
     <Box
@@ -375,7 +381,7 @@ export default function SelectedSection() {
               backgroundColor: "#242C54",
               justifyContent: "center",
               alignItems: "flex-start",
-              borderRadius: "10px"
+              borderRadius: "10px",
             }}
           >
             <Box
@@ -393,8 +399,8 @@ export default function SelectedSection() {
                   color: "#E8EDF2",
                 }}
               >
-                Migrate the following selected students to a different school year or
-                semester.
+                Migrate the following selected students to a different school
+                year or semester.
               </Typography>
               <Button
                 variant="contained"
@@ -421,9 +427,7 @@ export default function SelectedSection() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          Transfer Section Data
-        </DialogTitle>
+        <DialogTitle>Transfer Section Data</DialogTitle>
 
         <DialogContent
           sx={{
@@ -440,15 +444,8 @@ export default function SelectedSection() {
             isOptionEqualToValue={(option, value) =>
               option.section_ID === value.section_ID
             }
-            getOptionLabel={(option) =>
-              option?.section_Name || ""
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Section"
-              />
-            )}
+            getOptionLabel={(option) => option?.section_Name || ""}
+            renderInput={(params) => <TextField {...params} label="Section" />}
           />
 
           <Autocomplete
@@ -459,23 +456,16 @@ export default function SelectedSection() {
               option.AYS_ID === value.AYS_ID
             }
             getOptionLabel={(option) =>
-              option
-                ? `${option.AY_Name} • ${option.semester_name}`
-                : ""
+              option ? `${option.AY_Name} • ${option.semester_name}` : ""
             }
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Academic Year & Semester"
-              />
+              <TextField {...params} label="Academic Year & Semester" />
             )}
           />
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setOpenTransfer(false)}>
-            Cancel
-          </Button>
+          <Button onClick={() => setOpenTransfer(false)}>Cancel</Button>
 
           <Button
             variant="contained"

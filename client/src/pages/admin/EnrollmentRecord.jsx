@@ -3,12 +3,16 @@ import { Typography, Box, Button } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
+
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function EnrollmentRecord() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [enrollee, setEnrollee] = useState(null);
+  const snackbar = useSnackbar();
+
   useEffect(() => {
     fetch(`${API_URL}/admin/enrollees/${id}`)
       .then((res) => res.json())
@@ -27,6 +31,27 @@ export default function EnrollmentRecord() {
     const d = new Date(isoString);
     // Use local year, month, day
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const [validating, setValidating] = useState(false);
+  const handleValidate = async () => {
+    setValidating(true);
+    try {
+      const res = await fetch(`${API_URL}/admin/enrollees/${id}/validate`, {
+        method: "PUT",
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok)
+        throw new Error(data.message || "Failed to validate enrollment");
+
+      snackbar.success("Enrollment validated successfully");
+      navigate("/admin/enrollmentList");
+    } catch (err) {
+      console.error("Error validating enrollee:", err);
+      snackbar.error(err.message || "Failed to validate enrollment");
+      setValidating(false);
+    }
   };
   return (
     <Box
@@ -84,7 +109,7 @@ export default function EnrollmentRecord() {
                 color: "#242c54",
                 fontSize: { xs: "12px", md: "16px" },
                 textAlign: "left",
-                marginLeft: { xs: "20px", md: 0},
+                marginLeft: { xs: "20px", md: 0 },
               }}
             >
               Here is the information for the selected enrollee.
@@ -97,7 +122,7 @@ export default function EnrollmentRecord() {
               alignItems: "center",
               flexDirection: "row",
               gap: 2,
-              marginRight: { xs: "20px", md: 0},
+              marginRight: { xs: "20px", md: 0 },
             }}
           >
             <Button
@@ -112,23 +137,7 @@ export default function EnrollmentRecord() {
                 fontSize: { xs: "12px", sm: "14px", md: "16px" },
                 padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
               }}
-              onClick={() => {
-                fetch(
-                  `${API_URL}/admin/enrollees/${id}/validate`,
-                  {
-                    method: "PUT",
-                  },
-                )
-                  .then((res) => res.json())
-                  .then((data) => {
-                    console.log("Enrollee validated:", data);
-                    setEnrollee((prev) => ({ ...prev, status: "Accepted" }));
-                    navigate(`/admin/enrollmentList`);
-                  })
-                  .catch((err) =>
-                    console.error("Error validating enrollee:", err),
-                  );
-              }}
+              onClick={handleValidate}
             >
               Validate Enrollment
             </Button>
@@ -406,7 +415,6 @@ export default function EnrollmentRecord() {
             <TextField
               label="Department"
               fullWidth
-              
               InputProps={{
                 readOnly: true,
               }}

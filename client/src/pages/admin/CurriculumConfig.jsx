@@ -10,16 +10,12 @@ import {
   TextField,
   Autocomplete,
 } from "@mui/material";
-
 import { EditableTable } from "../../components/EditableTable";
 import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-/**
- * Helper function for formatting term selection labels
- * Normalizes year and semester inputs into "A.Y. [Year] — [Semester]" format
- */
 export const formatTermOptionLabel = (term) => {
   if (!term) return "";
   if (typeof term === "string") return term;
@@ -66,6 +62,7 @@ export default function CurriculumConfig() {
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [academicYearSemesters, setAcademicYearSemesters] = useState([]);
+  const snackbar = useSnackbar();
 
   const fetchCurrentAY = async () => {
     try {
@@ -104,7 +101,7 @@ export default function CurriculumConfig() {
           id: t.AYS_ID ?? t.id,
           AYS_ID: t.AYS_ID ?? t.id,
           label: formatTermOptionLabel(t),
-        }))
+        })),
       );
     } catch (err) {
       console.error("Error loading academic year semesters:", err);
@@ -146,13 +143,17 @@ export default function CurriculumConfig() {
   };
 
   const handleSaveCurriculum = async () => {
-    const targetAYS_ID = initialAYS_ID || newCurriculum.AYS_ID || selectedTerm?.id;
+    const targetAYS_ID =
+      initialAYS_ID || newCurriculum.AYS_ID || selectedTerm?.id;
 
-    if (!newCurriculum.curriculum_Name?.trim() || (!editMode && !targetAYS_ID)) {
-      alert(
+    if (
+      !newCurriculum.curriculum_Name?.trim() ||
+      (!editMode && !targetAYS_ID)
+    ) {
+      snackbar.warning(
         editMode
           ? "Curriculum name is required"
-          : "Curriculum name and term are required"
+          : "Curriculum name and term are required",
       );
       return;
     }
@@ -162,14 +163,14 @@ export default function CurriculumConfig() {
         : `${API_URL}/curricula`;
       const body = editMode
         ? {
-          curriculum_Name: newCurriculum.curriculum_Name.trim(),
-          department: newCurriculum.department,
-        }
+            curriculum_Name: newCurriculum.curriculum_Name.trim(),
+            department: newCurriculum.department,
+          }
         : {
-          curriculum_Name: newCurriculum.curriculum_Name.trim(),
-          department: newCurriculum.department,
-          AYS_ID: targetAYS_ID,
-        };
+            curriculum_Name: newCurriculum.curriculum_Name.trim(),
+            department: newCurriculum.department,
+            AYS_ID: targetAYS_ID,
+          };
 
       const res = await fetch(url, {
         method: editMode ? "PUT" : "POST",
@@ -179,8 +180,16 @@ export default function CurriculumConfig() {
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.message || `Request failed with status ${res.status}`);
+        throw new Error(
+          errJson.message || `Request failed with status ${res.status}`,
+        );
       }
+
+      snackbar.success(
+        editMode
+          ? "Curriculum updated successfully"
+          : "Curriculum added successfully",
+      );
 
       setOpen(false);
       setEditMode(false);
@@ -194,24 +203,30 @@ export default function CurriculumConfig() {
       if (selectedTerm) fetchCurricula(selectedTerm.id);
     } catch (err) {
       console.error(err);
-      alert(err.message || `Failed to ${editMode ? "update" : "add"} curriculum`);
+      snackbar.error(
+        err.message || `Failed to ${editMode ? "update" : "add"} curriculum`,
+      );
     }
   };
 
   const handleAssignToTerm = async () => {
     if (selectedIds.length !== 1) {
-      alert("Please select exactly one curriculum row to migrate.");
+      snackbar.warning("Please select exactly one curriculum row to migrate.");
       return;
     }
 
     if (!assignAYS_ID) {
-      alert("Please select a target term / semester from the dropdown.");
+      snackbar.warning(
+        "Please select a target term / semester from the dropdown.",
+      );
       return;
     }
 
-    const selectedRow = rows.find((r) => String(r.id) === String(selectedIds[0]));
+    const selectedRow = rows.find(
+      (r) => String(r.id) === String(selectedIds[0]),
+    );
     if (!selectedRow) {
-      alert("Selected curriculum row could not be found.");
+      snackbar.error("Selected curriculum row could not be found.");
       return;
     }
 
@@ -222,26 +237,31 @@ export default function CurriculumConfig() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ AYS_ID: assignAYS_ID }),
-        }
+        },
       );
 
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         if (res.status === 409) {
-          alert(data.message || "This curriculum is already assigned to the selected term.");
+          snackbar.warning(
+            data.message ||
+              "This curriculum is already assigned to the selected term.",
+          );
           return;
         }
-        throw new Error(data.message || `Request failed with status ${res.status}`);
+        throw new Error(
+          data.message || `Request failed with status ${res.status}`,
+        );
       }
 
-      alert("Curriculum successfully assigned to the new term!");
+      snackbar.success("Curriculum successfully assigned to the new term!");
       setAssignOpen(false);
       setAssignAYS_ID(null);
       if (selectedTerm) fetchCurricula(selectedTerm.id);
     } catch (err) {
       console.error("Migration error:", err);
-      alert(err.message || "Failed to assign curriculum to term");
+      snackbar.error(err.message || "Failed to assign curriculum to term");
     }
   };
 
@@ -289,7 +309,7 @@ export default function CurriculumConfig() {
           color="inherit"
           onClick={() =>
             navigate(
-              `/admin/systemSettings/curriculumConfig/curriculum/${params.row.curriculum_ID}`
+              `/admin/systemSettings/curriculumConfig/curriculum/${params.row.curriculum_ID}`,
             )
           }
           sx={{
@@ -333,7 +353,7 @@ export default function CurriculumConfig() {
             alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
-            marginBottom: "30px",
+            marginBottom: {xs:"5px", sm:"10px", md:"30px"},
           }}
         >
           <Box
@@ -415,7 +435,6 @@ export default function CurriculumConfig() {
             >
               Edit Selected
             </Button>
-           
 
             <Button
               variant="contained"
@@ -472,7 +491,7 @@ export default function CurriculumConfig() {
             getOptionLabel={(option) => formatTermOptionLabel(option)}
             value={
               academicYearSemesters.find(
-                (t) => String(t.AYS_ID ?? t.id) === String(assignAYS_ID)
+                (t) => String(t.AYS_ID ?? t.id) === String(assignAYS_ID),
               ) || null
             }
             isOptionEqualToValue={(o, v) =>
@@ -482,21 +501,34 @@ export default function CurriculumConfig() {
               setAssignAYS_ID(value?.AYS_ID ?? value?.id ?? null)
             }
             renderInput={(params) => (
-              <TextField {...params} label="Target Term / Semester" size="small" />
+              <TextField
+                {...params}
+                label="Target Term / Semester"
+                size="small"
+              />
             )}
             sx={{ width: 280, marginTop: "8px" }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAssignOpen(false)}>Cancel</Button>
-          <Button onClick={handleAssignToTerm} variant="contained" color="primary">
+          <Button
+            onClick={handleAssignToTerm}
+            variant="contained"
+            color="primary"
+          >
             Assign
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* ADD / EDIT CURRICULUM DIALOG */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>
           {editMode ? "Edit Curriculum" : "Add New Curriculum"}
         </DialogTitle>
@@ -529,11 +561,14 @@ export default function CurriculumConfig() {
                 academicYearSemesters.find(
                   (t) =>
                     String(t.AYS_ID ?? t.id) ===
-                    String(newCurriculum.AYS_ID || initialAYS_ID || selectedTerm?.id)
+                    String(
+                      newCurriculum.AYS_ID || initialAYS_ID || selectedTerm?.id,
+                    ),
                 ) || null
               }
               isOptionEqualToValue={(option, value) =>
-                String(option.AYS_ID ?? option.id) === String(value?.AYS_ID ?? value?.id)
+                String(option.AYS_ID ?? option.id) ===
+                String(value?.AYS_ID ?? value?.id)
               }
               onChange={(e, value) => {
                 const selectedId = value?.AYS_ID ?? value?.id ?? null;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Typography, Box, Button } from "@mui/material";
 import { Table } from "../../components/Table";
 import { useParams, useLocation } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -13,6 +14,7 @@ export default function EnrolleeQueue() {
   const [rows, setRows] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [currentAYS, setCurrentAYS] = useState(null); // { AYS_ID, AY_ID, AY_Name }
+  const snackbar = useSnackbar();
 
   useEffect(() => {
     const fetchCurrentAY = async () => {
@@ -100,9 +102,13 @@ export default function EnrolleeQueue() {
         }),
       });
 
+      snackbar.success(
+        `Enroollee was successfully added to the section!`,
+      );
+
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        console.error("Server error:", res.status, errData);
+        snackbar.error(err.message || "Failed to add the enrollee to the section");
         return;
       }
 

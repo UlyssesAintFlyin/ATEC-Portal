@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -22,6 +23,7 @@ function SignIn() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const snackbar = useSnackbar();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,6 +51,8 @@ function SignIn() {
       }
 
       login(data.token); // stores token + decodes user into context
+
+      snackbar.success(`Welcome back, ${data.user.name}!`, { bgColor: "#4a5690" });
 
       // Redirect based on role
       switch (data.user.role) {

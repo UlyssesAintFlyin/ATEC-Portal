@@ -235,7 +235,7 @@ export default function Enrollment() {
         greeting="Pleasant Day, Aspiring Atecian!"
         messageDetail={
           termLabel
-            ? `Enrollment for ${termLabel} is currently closed.`
+            ? `Enrollment for the next academic year is currently closed.`
             : "This page is currently unavailable as enrollment is temporarily closed."
         }
         statusDetail="Enrollment Closed"

@@ -12,11 +12,13 @@ import {
 } from "@mui/material";
 import { EditableTable } from "../../components/EditableTable";
 import { useParams } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function AddSubject() {
   const { id } = useParams(); // curriculum_ID
+  const snackbar = useSnackbar();
 
   const [curriculumName, setCurriculumName] = useState("");
   const [rows, setRows] = useState([]);
@@ -26,7 +28,6 @@ export default function AddSubject() {
 
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Add/Edit Subject Dialog State
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [subjectForm, setSubjectForm] = useState({
@@ -35,6 +36,7 @@ export default function AddSubject() {
     subject_code: "",
     units: "",
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const fetchAllSubjects = useCallback(async () => {
     setLoading(true);
@@ -87,7 +89,7 @@ export default function AddSubject() {
       !subjectForm.subject_code ||
       subjectForm.units === ""
     ) {
-      alert("Subject name, code, and units are all required");
+      snackbar.warning("Subject name, code, and units are all required");
       return;
     }
     try {
@@ -105,6 +107,12 @@ export default function AddSubject() {
       });
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
 
+      snackbar.success(
+        editMode
+          ? "Subject updated successfully"
+          : "Subject added successfully",
+      );
+
       setOpen(false);
       setEditMode(false);
       setSubjectForm({
@@ -116,7 +124,7 @@ export default function AddSubject() {
       fetchAllSubjects();
     } catch (err) {
       console.error(err);
-      alert(`Failed to ${editMode ? "update" : "add"} subject`);
+      snackbar.error(`Failed to ${editMode ? "update" : "add"} subject`);
     }
   };
 
@@ -137,25 +145,29 @@ export default function AddSubject() {
   // Delete subject(s) entirely from the master list
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (
-      !window.confirm(
-        "Delete the selected subject(s) permanently? This removes them from every curriculum they're assigned to.",
-      )
-    ) {
-      return;
-    }
+    setDeleteDialogOpen(false);
     try {
-      await Promise.all(
+      const results = await Promise.all(
         selectedIds.map((sid) =>
           fetch(`${API_URL}/subjects/${sid}`, { method: "DELETE" }),
         ),
       );
+
+      const failed = results.filter((r) => !r.ok).length;
+      if (failed > 0) {
+        snackbar.error(
+          `Failed to delete ${failed} of ${results.length} subject(s)`,
+        );
+      } else {
+        snackbar.success(`${results.length} subject(s) deleted`);
+      }
+
       setSelectedIds([]);
       fetchAllSubjects();
       fetchAssignedSubjects();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete selected subjects");
+      snackbar.error("Failed to delete selected subjects");
     }
   };
 
@@ -163,7 +175,9 @@ export default function AddSubject() {
   const handleAssignSelected = async () => {
     const toAssign = selectedIds.filter((sid) => !assignedIds.includes(sid));
     if (toAssign.length === 0) {
-      alert("Selected subject(s) are already assigned to this curriculum");
+      snackbar.warning(
+        "Selected subject(s) are already assigned to this curriculum",
+      );
       return;
     }
     try {
@@ -174,11 +188,15 @@ export default function AddSubject() {
       });
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
 
+      snackbar.success(
+        `${toAssign.length} subject(s) assigned to ${curriculumName || "curriculum"}`,
+      );
+
       setSelectedIds([]);
       fetchAssignedSubjects();
     } catch (err) {
       console.error(err);
-      alert("Failed to assign subjects to curriculum");
+      snackbar.error("Failed to assign subjects to curriculum");
     }
   };
 
@@ -229,7 +247,7 @@ export default function AddSubject() {
             alignItems: { xs: "center", md: "flex-start" },
             width: "100%",
             marginTop: "20px",
-            marginBottom: "30px",
+            marginBottom: { xs: "5px", sm: "10px", md: "30px" },
           }}
         >
           <Box
@@ -313,7 +331,7 @@ export default function AddSubject() {
             </Button>
             <Button
               variant="contained"
-              onClick={handleDeleteSelected}
+              onClick={() => setDeleteDialogOpen(true)}
               disabled={selectedIds.length === 0}
               sx={{
                 fontSize: { xs: "12px", sm: "14px", md: "16px" },
@@ -412,6 +430,39 @@ export default function AddSubject() {
             <Button onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveSubject} variant="contained">
               {editMode ? "Save" : "Add"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Delete Subject(s)</DialogTitle>
+
+          <DialogContent>
+            <Typography>
+              Are you sure you want to permanently delete{" "}
+              <strong>{selectedIds.length}</strong> selected subject
+              {selectedIds.length > 1 ? "s" : ""}?
+            </Typography>
+
+            <Typography color="error" sx={{ mt: 2 }}>
+              This action cannot be undone and will remove the subject(s) from
+              every curriculum where they are assigned.
+            </Typography>
+          </DialogContent>
+
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+
+            <Button
+              onClick={handleDeleteSelected}
+              color="error"
+              variant="contained"
+            >
+              Delete
             </Button>
           </DialogActions>
         </Dialog>

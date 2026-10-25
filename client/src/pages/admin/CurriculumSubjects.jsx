@@ -3,6 +3,7 @@ import { Typography, Box, Button } from "@mui/material";
 
 import { EditableTable } from "../../components/EditableTable";
 import { useNavigate, useParams } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -17,6 +18,7 @@ export default function CurriculumSubjects() {
 
   // Track selected rows from Table
   const [selectedIds, setSelectedIds] = useState([]);
+  const snackbar = useSnackbar();
 
   useEffect(() => {
     const fetchCurriculumSubjects = async () => {
@@ -67,6 +69,7 @@ export default function CurriculumSubjects() {
       // Refresh data
       const reload = await fetch(`${API_URL}/curricula/${id}`);
       const data = await reload.json();
+      snackbar.success("Selected subject was successfully removed!");
 
       setCurriculumName(data.curriculum_Name);
       setRows(
@@ -79,7 +82,7 @@ export default function CurriculumSubjects() {
       );
     } catch (err) {
       console.error(err);
-      alert("Failed to remove subject from curriculum");
+      snackbar.error(err.message || "Failed to remove subject from curriculum");
     }
   };
 
@@ -118,7 +121,7 @@ export default function CurriculumSubjects() {
             alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
-            marginBottom: "30px",
+            marginBottom: {xs:"5px", sm:"10px", md:"30px"},
           }}
         >
           <Box

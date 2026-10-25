@@ -15,10 +15,12 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useSnackbar } from "./AppSnackbar";
 
 export const AdminHeader = () => {
   const [open, setOpen] = useState(false);
   const { user, logout } = useAuth();
+  const snackbar = useSnackbar();
   const toggleDrawer = (state) => () => {
     setOpen(state);
   };
@@ -57,7 +59,7 @@ export const AdminHeader = () => {
           src="/resources/ATECLogo.svg"
           alt="Logo"
           sx={{
-            width: { xs: 28, md: 50 },
+            width: { xs: 28, sm: 50 },
             height: "auto",
           }}
         />
@@ -72,22 +74,32 @@ export const AdminHeader = () => {
             gap: "8px",
           }}
         >
-          <Typography
-            variant="h2"
-            component="div"
+          <Box
+            component={Link}
+            to="/admin"
             sx={{
-              fontFamily: '"Alfa Slab One", serif',
-              fontSize: { xs: "1.3rem", md: "3rem" },
-              fontWeight: 400,
-              backgroundImage: "linear-gradient(180deg, #DBDFF1, #515880)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-              letterSpacing: "0.01em",
+              display: "inline-flex",
+              textDecoration: "none",
             }}
           >
-            AXIOM
-          </Typography>
+            <Typography
+              variant="h2"
+              component="div"
+              sx={{
+                fontFamily: '"Alfa Slab One", serif',
+                fontSize: { xs: "1.3rem", sm: "3rem" },
+                fontWeight: 400,
+                backgroundImage: "linear-gradient(180deg, #DBDFF1, #515880)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+                letterSpacing: "0.01em",
+              }}
+            >
+              AXIOM
+            </Typography>
+          </Box>
+
           <Box
             sx={{
               width: { xs: "10px", md: "200px" },
@@ -167,23 +179,44 @@ export const AdminHeader = () => {
           {/*add real profile photos, you'd just pass src={user.photoUrl} to the same Avatar*/}
 
           <List>
-            <ListItem button component={Link} to="/admin/sections" onClick={toggleDrawer(false)}>
+            <ListItem
+              button
+              component={Link}
+              to="/admin/sections"
+              onClick={toggleDrawer(false)}
+            >
               <ListItemText primary="Student Grades" />
             </ListItem>
-            <ListItem button component={Link} to="/admin/facultyEvaluation" onClick={toggleDrawer(false)}>
+            <ListItem
+              button
+              component={Link}
+              to="/admin/facultyEvaluation"
+              onClick={toggleDrawer(false)}
+            >
               <ListItemText primary="Faculty Evaluation" />
             </ListItem>
-            <ListItem button component={Link} to="/admin/enrollmentList" onClick={toggleDrawer(false)}>
+            <ListItem
+              button
+              component={Link}
+              to="/admin/enrollmentList"
+              onClick={toggleDrawer(false)}
+            >
               <ListItemText primary="Enrollment" />
             </ListItem>
-            <ListItem button component={Link} to="/admin/systemSettings" onClick={toggleDrawer(false)}>
+            <ListItem
+              button
+              component={Link}
+              to="/admin/systemSettings"
+              onClick={toggleDrawer(false)}
+            >
               <ListItemText primary="Settings Configuration" />
             </ListItem>
           </List>
 
           <Box sx={{ p: 2, mt: "auto" }}>
             {user ? (
-              <Button sx={{backgroundColor: "#542425", color: "#E8EDF2"}}
+              <Button
+                sx={{ backgroundColor: "#542425", color: "#E8EDF2" }}
                 variant="contained"
                 fullWidth
                 component={Link}
@@ -191,6 +224,9 @@ export const AdminHeader = () => {
                 onClick={() => {
                   logout();
                   toggleDrawer(false)();
+                  snackbar.success(`Signing off, goodbye!`, {
+                    bgColor: "#904b4a",
+                  });
                 }}
               >
                 Sign Out

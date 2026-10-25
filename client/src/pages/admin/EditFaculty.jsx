@@ -1,17 +1,9 @@
 import React, { useState, useEffect } from "react";
-import {
-  Typography,
-  Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Autocomplete,
-  Divider,
-} from "@mui/material";
+import { Typography, Box, Button, Autocomplete, Divider } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import { useParams } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -36,7 +28,6 @@ const formatDate = (rawDate) => {
 
 export default function EditFaculty() {
   const { id } = useParams();
-  const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     f_Name: "",
     l_Name: "",
@@ -53,6 +44,60 @@ export default function EditFaculty() {
     password: "",
     emergency_Name: "",
     emergency_Number: "",
+  });
+  const snackbar = useSnackbar();
+  const navigate = useNavigate();
+
+  const calculateAge = (birthdate) => {
+    if (!birthdate) return "";
+    const [y, m, d] = birthdate.split("-").map(Number);
+    if (!y || !m || !d) return "";
+    const today = new Date();
+    let age = today.getFullYear() - y;
+    const hadBirthday =
+      today.getMonth() + 1 > m ||
+      (today.getMonth() + 1 === m && today.getDate() >= d);
+    if (!hadBirthday) age--;
+    return age;
+  };
+
+  const requiredFields = {
+    f_Name: "First name",
+    l_Name: "Surname",
+    birthdate: "Birthdate",
+    gender: "Gender",
+    address: "Home address",
+    email: "Email address",
+    contact_Number: "Contact number",
+    emergency_Name: "Emergency contact's name",
+    emergency_Number: "Emergency contact's number",
+    position: "Position",
+    status: "Status",
+  };
+
+  const [showErrors, setShowErrors] = useState(false);
+
+  const age = calculateAge(formData.birthdate);
+
+  const getErrors = () => {
+    const errs = {};
+    Object.entries(requiredFields).forEach(([field, label]) => {
+      if (!String(formData[field] ?? "").trim()) {
+        errs[field] = `${label} is required`;
+      }
+    });
+    if (formData.birthdate) {
+      if (age < 0) errs.birthdate = "Birthdate can't be in the future";
+      else if (age < 20)
+        errs.birthdate = "Faculty must be at least 20 years old";
+    }
+    return errs;
+  };
+
+  const errors = showErrors ? getErrors() : {};
+  const fieldProps = (field) => ({
+    error: Boolean(errors[field]),
+    helperText: errors[field] || "",
   });
 
   useEffect(() => {
@@ -87,16 +132,29 @@ export default function EditFaculty() {
   }, [id]);
 
   const handleSave = async () => {
+    if (Object.keys(getErrors()).length > 0) {
+      setShowErrors(true);
+      snackbar.warning("Please fix the highlighted fields.");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/faculty/updateFaculty/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, age }),
       });
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      setOpen(true);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(
+          errBody.error || errBody.message || `Request failed: ${res.status}`,
+        );
+      }
+      snackbar.success("Faculty information saved successfully");
+      navigate("/admin/facultyEvaluation");
     } catch (err) {
       console.error(err);
+      snackbar.error(err.message || "Failed to save faculty information");
     }
   };
 
@@ -183,6 +241,7 @@ export default function EditFaculty() {
               onChange={(e) =>
                 setFormData({ ...formData, f_Name: e.target.value })
               }
+              {...fieldProps("f_Name")}
             />
             <TextField
               label="Middle Name"
@@ -199,6 +258,7 @@ export default function EditFaculty() {
               onChange={(e) =>
                 setFormData({ ...formData, l_Name: e.target.value })
               }
+              {...fieldProps("l_Name")}
             />
           </Box>
 
@@ -211,18 +271,24 @@ export default function EditFaculty() {
             }}
           >
             <TextField
-              label="Age"
-              type="number"
+              label="Birthdate"
+              type="date"
+              required
               fullWidth
-              value={formData.age ?? ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                setFormData({
-                  ...formData,
-                  age: val === "" ? "" : Number(val),
-                });
-              }}
-              InputProps={{ inputProps: { min: 0 } }}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ max: formatDate(new Date()) }}
+              value={formData.birthdate ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, birthdate: e.target.value })
+              }
+              {...fieldProps("birthdate")}
+            />
+            <TextField
+              label="Age"
+              fullWidth
+              value={age}
+              InputProps={{ readOnly: true }}
+              helperText="Calculated from birthdate"
             />
             <TextField
               label="Gender"
@@ -231,16 +297,7 @@ export default function EditFaculty() {
               onChange={(e) =>
                 setFormData({ ...formData, gender: e.target.value })
               }
-            />
-            <TextField
-              label="Birthdate"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={formData.birthdate ?? ""}
-              onChange={(e) =>
-                setFormData({ ...formData, birthdate: e.target.value })
-              }
+              {...fieldProps("gender")}
             />
           </Box>
 
@@ -259,6 +316,7 @@ export default function EditFaculty() {
               onChange={(e) =>
                 setFormData({ ...formData, address: e.target.value })
               }
+              {...fieldProps("address")}
             />
           </Box>
 
@@ -291,6 +349,7 @@ export default function EditFaculty() {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
+              {...fieldProps("email")}
             />
             <TextField
               label="Contact Number"
@@ -299,6 +358,7 @@ export default function EditFaculty() {
               onChange={(e) =>
                 setFormData({ ...formData, contact_Number: e.target.value })
               }
+              {...fieldProps("contact_number")}
             />
           </Box>
 
@@ -331,6 +391,7 @@ export default function EditFaculty() {
               onChange={(e) =>
                 setFormData({ ...formData, emergency_Name: e.target.value })
               }
+              {...fieldProps("emergency_Name")}
             />
             <TextField
               label="Emergency Contact's Number"
@@ -339,6 +400,7 @@ export default function EditFaculty() {
               onChange={(e) =>
                 setFormData({ ...formData, emergency_Number: e.target.value })
               }
+              {...fieldProps("emergency_Number")}
             />
           </Box>
 
@@ -380,7 +442,14 @@ export default function EditFaculty() {
               }
               isOptionEqualToValue={(option, value) => option === value}
               renderInput={(params) => (
-                <TextField {...params} label="Position" fullWidth size="medium" />
+                <TextField
+                  {...params}
+                  label="Position"
+                  required
+                  fullWidth
+                  size="medium"
+                  {...fieldProps("position")}
+                />
               )}
             />
 
@@ -393,7 +462,13 @@ export default function EditFaculty() {
               }
               isOptionEqualToValue={(option, value) => option === value}
               renderInput={(params) => (
-                <TextField {...params} label="Status" fullWidth size="medium" />
+                <TextField
+                  {...params}
+                  label="Status"
+                  fullWidth
+                  size="medium"
+                  {...fieldProps("status")}
+                />
               )}
             />
           </Box>
@@ -466,25 +541,6 @@ export default function EditFaculty() {
           </Button>
         </Box>
       </Box>
-
-      {/* Success Dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Success</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Faculty information has been successfully changed.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setOpen(false)}
-            variant="contained"
-            color="primary"
-          >
-            OK
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

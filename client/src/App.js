@@ -33,7 +33,8 @@ import ForgotPassword from './pages/sign_in/ForgotPassword';
 import { Link } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
-
+import { useAuth } from "./context/AuthContext";
+import { SnackbarProvider } from './components/AppSnackbar';
 
 function LayoutWithHeader() {
   return (
@@ -49,72 +50,77 @@ function LayoutWithHeader() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="app-root">
-          <Routes>
-            {/* Public layout */}
-            <Route element={<LayoutWithHeader />}>
-              <Route path="/" element={<Home />} />
+    <SnackbarProvider>
+      <AuthProvider>
+        <Router>
+          <div className="app-root">
+            <Routes>
+              {/* Public layout */}
+              <Route element={<LayoutWithHeader />}>
+                <Route path="/" element={<Home />} />
 
-              {/* Guest-only: signed-in users bounce to "/" */}
-              <Route element={<GuestOnlyRoute />}>
-                <Route path="/enrollment" element={<Enrollment />} />
+                {/* Guest-only: signed-in users bounce to "/" */}
+                <Route element={<GuestOnlyRoute />}>
+                  <Route path="/enrollment" element={<Enrollment />} />
+                </Route>
+
+                {/* Student-only */}
+                <Route element={<ProtectedRoute allowedRoles={["Student"]} />}>
+                  <Route path="/grades" element={<GradeReport />} />
+                  <Route path="/evaluation" element={<Evaluation />} />
+                </Route>
+
+                {/* Teacher-only */}
+                <Route element={<ProtectedRoute allowedRoles={["Teacher"]} />}>
+                  <Route path="/evaluationFaculty" element={<FacultyReport />} />
+                </Route>
               </Route>
 
-              {/* Student-only */}
-              <Route element={<ProtectedRoute allowedRoles={["Student"]} />}>
-                <Route path="/grades" element={<GradeReport />} />
-                <Route path="/evaluation" element={<Evaluation />} />
-              </Route>
-
-              {/* Teacher-only */}
-              <Route element={<ProtectedRoute allowedRoles={["Teacher"]} />}>
-                <Route path="/evaluationFaculty" element={<FacultyReport />} />
-              </Route>
-            </Route>
-
-            {/* Admin layout — guard wraps the whole subtree, so every nested
+              {/* Admin layout — guard wraps the whole subtree, so every nested
                 route under /admin is covered by this one check */}
-            <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Admin />} />
-                <Route path="enrollmentList" element={<EnrollmentManagement />} />
-                <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
-                <Route path="facultyEvaluation" element={<FacultyEvaluation />} />
-                <Route path="facultyEvaluation/editFaculty/:id" element={<EditFaculty />} />
-                <Route path="facultyEvaluation/evaluation/:id" element={<AdminEval />} />
-                <Route path="sections" element={<Sections />} />
-                <Route path="sections/:sectionName" element={<SelectedSection />} />
-                <Route path="sections/:sectionName/SectionSubject" element={<SectionSubject />} />
-                <Route path="sections/:sectionName/addStudent" element={<EnrolleeQueue />} />
-                <Route path="section/:sectionName/:studentId" element={<EditStudent />} />
-                <Route path="section/:sectionName/:studentId/gradeReport" element={<EditGrade />} />
-                <Route path="systemSettings" element={<SystemSettings />} />
-                <Route path="systemSettings/termConfig" element={<TermConfig />} />
-                <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />
-                <Route path="systemSettings/curriculumConfig/curriculum/:id" element={<CurriculumSubjects />} />
-                <Route path="systemSettings/curriculumConfig/curriculum/:id/addSubject" element={<AddSubject />} />
-                <Route path="systemSettings/carouselConfig" element={<CarouselConfig />} />
+              <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<Admin />} />
+                  <Route path="enrollmentList" element={<EnrollmentManagement />} />
+                  <Route path="enrollmentList/enrollmentRecord/:id" element={<EnrollmentRecord />} />
+                  <Route path="facultyEvaluation" element={<FacultyEvaluation />} />
+                  <Route path="facultyEvaluation/editFaculty/:id" element={<EditFaculty />} />
+                  <Route path="facultyEvaluation/evaluation/:id" element={<AdminEval />} />
+                  <Route path="sections" element={<Sections />} />
+                  <Route path="sections/:sectionName" element={<SelectedSection />} />
+                  <Route path="sections/:sectionName/SectionSubject" element={<SectionSubject />} />
+                  <Route path="sections/:sectionName/addStudent" element={<EnrolleeQueue />} />
+                  <Route path="section/:sectionName/:studentId" element={<EditStudent />} />
+                  <Route path="section/:sectionName/:studentId/gradeReport" element={<EditGrade />} />
+                  <Route path="systemSettings" element={<SystemSettings />} />
+                  <Route path="systemSettings/termConfig" element={<TermConfig />} />
+                  <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />
+                  <Route path="systemSettings/curriculumConfig/curriculum/:id" element={<CurriculumSubjects />} />
+                  <Route path="systemSettings/curriculumConfig/curriculum/:id/addSubject" element={<AddSubject />} />
+                  <Route path="systemSettings/carouselConfig" element={<CarouselConfig />} />
+                </Route>
               </Route>
-            </Route>
 
-            {/* signin without header */}
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            {/* Catch-all: any unmatched path (typos, stale bookmarks) goes home
+              {/* signin without header */}
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              {/* Catch-all: any unmatched path (typos, stale bookmarks) goes home
                 instead of the blank "No routes matched" screen */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </Router>
-    </AuthProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </Router>
+      </AuthProvider>
+    </SnackbarProvider>
   );
 }
 
 export default App;
 
 function Home() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user?.role === "Admin") return <Navigate to="/admin" replace />;
   return (
     <div className="home-root">
       <CarouselComponent />
@@ -329,7 +335,7 @@ function Home() {
               <ul>
                 <li><b>A</b> - Attitude </li>
                 <li><b>T</b> - Teamwork </li>
-                <li><b>E</b> - Emopowerment </li>
+                <li><b>E</b> - Empowerment </li>
                 <li><b>C</b> - Christ Centered </li>
               </ul>
             </Box>

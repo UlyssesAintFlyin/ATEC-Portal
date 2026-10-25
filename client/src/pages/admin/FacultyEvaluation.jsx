@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Typography,
   Box,
@@ -12,25 +12,32 @@ import {
 } from "@mui/material";
 import { StandardTable } from "../../components/StandardTable";
 import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function FacultyEvaluation() {
   const navigate = useNavigate();
+  const snackbar = useSnackbar();
+  const [showErrors, setShowErrors] = useState(false);
 
   const [rows, setRows] = useState([]);
+
+  const fetchFaculty = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/faculty/getAllFaculties`);
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const data = await res.json();
+      setRows(data);
+    } catch (err) {
+      console.error("Error loading faculty:", err);
+      snackbar.error("Failed to load faculty list");
+    }
+  }, [snackbar]);
+
   useEffect(() => {
-    const fetchFaculty = async () => {
-      try {
-        const res = await fetch(`${API_URL}/faculty/getAllFaculties`);
-        const data = await res.json();
-        setRows(data);
-      } catch (err) {
-        console.error("Error loading faculty:", err);
-      }
-    };
     fetchFaculty();
-  }, []);
+  }, [fetchFaculty]);
 
   // Adding Student Dialog State
   const [open, setOpen] = useState(false);
@@ -53,7 +60,8 @@ export default function FacultyEvaluation() {
       !newFaculty.contact_Number ||
       !newFaculty.address
     ) {
-      console.error("Missing required fields");
+      setShowErrors(true);
+      snackbar.warning("Please fill in all required fields.");
       return;
     }
 
@@ -70,8 +78,11 @@ export default function FacultyEvaluation() {
         const errBody = await res.json().catch(() => ({}));
         throw new Error(errBody.error || `Request failed: ${res.status}`);
       }
+      snackbar.success(
+        `${newFaculty.f_Name} successfully added to the faculty!`,
+      );
 
-      setOpen(false);
+      handleClose();
       setNewFaculty({
         f_Name: "",
         l_Name: "",
@@ -84,8 +95,19 @@ export default function FacultyEvaluation() {
       });
     } catch (err) {
       console.error(err);
+      snackbar.error(err.message || "Failed to add the faculty");
     }
   };
+
+  const handleClose = () => {
+    setOpen(false);
+    setShowErrors(false);
+  };
+
+  const maxBirthdate = new Date();
+  maxBirthdate.setFullYear(maxBirthdate.getFullYear() - 20);
+
+  const maxBirthdateString = maxBirthdate.toISOString().split("T")[0];
 
   const columns = [
     {
@@ -127,7 +149,9 @@ export default function FacultyEvaluation() {
           <Button
             variant="contained"
             color="inherit"
-            onClick={() => navigate(`/admin/facultyEvaluation/evaluation/${params.row.id}`)}
+            onClick={() =>
+              navigate(`/admin/facultyEvaluation/evaluation/${params.row.id}`)
+            }
             sx={{
               ml: 1,
               fontSize: { xs: "12px", sm: "15px", md: "15px" },
@@ -145,7 +169,7 @@ export default function FacultyEvaluation() {
     <Box
       sx={{
         backgroundColor: "#BAC5D1",
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
@@ -154,7 +178,7 @@ export default function FacultyEvaluation() {
       <Box
         sx={{
           backgroundColor: "#E8EDF2",
-          height: "100%",
+          minHeight: "100vh",
           width: { xs: "100%", sm: "600px", md: "1200px" },
           margin: "0 auto",
           display: "flex",
@@ -170,7 +194,7 @@ export default function FacultyEvaluation() {
             alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
-            marginBottom: "30px",
+            marginBottom: {xs:"10px", sm:"15px", md:"30px"},
           }}
         >
           <Box
@@ -236,8 +260,12 @@ export default function FacultyEvaluation() {
           sx={{
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
-            height: { xs: "600px", md: "500px" },
-            minWidth: 0,
+            marginBottom: { xs: "20px", md: "50px" },
+            height: { xs: "580px", md: "540px" },
+            maxWidth: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
           }}
         >
           {/*Table Component*/}
@@ -257,6 +285,11 @@ export default function FacultyEvaluation() {
             label="First Name"
             fullWidth
             value={newFaculty.f_Name}
+            required
+            error={showErrors && !newFaculty.f_Name}
+            helperText={
+              showErrors && !newFaculty.f_Name ? "First name is required" : ""
+            }
             onChange={(e) =>
               setNewFaculty({ ...newFaculty, f_Name: e.target.value })
             }
@@ -275,6 +308,11 @@ export default function FacultyEvaluation() {
             label="Last Name"
             fullWidth
             value={newFaculty.l_Name}
+            required
+            error={showErrors && !newFaculty.l_Name}
+            helperText={
+              showErrors && !newFaculty.l_Name ? "Last name is required" : ""
+            }
             onChange={(e) =>
               setNewFaculty({ ...newFaculty, l_Name: e.target.value })
             }
@@ -286,8 +324,21 @@ export default function FacultyEvaluation() {
             fullWidth
             InputLabelProps={{ shrink: true }}
             value={newFaculty.birthdate}
+            required
+            error={showErrors && !newFaculty.birthdate}
+            helperText={
+              showErrors && !newFaculty.birthdate
+                ? "Birthdate is required"
+                : "Faculty must be at least 20 years old"
+            }
+            inputProps={{
+              max: maxBirthdateString,
+            }}
             onChange={(e) =>
-              setNewFaculty({ ...newFaculty, birthdate: e.target.value })
+              setNewFaculty({
+                ...newFaculty,
+                birthdate: e.target.value,
+              })
             }
           />
           <TextField
@@ -295,6 +346,11 @@ export default function FacultyEvaluation() {
             label="Email"
             fullWidth
             value={newFaculty.email}
+            required
+            error={showErrors && !newFaculty.email}
+            helperText={
+              showErrors && !newFaculty.email ? "Email is required" : ""
+            }
             onChange={(e) =>
               setNewFaculty({ ...newFaculty, email: e.target.value })
             }
@@ -304,6 +360,13 @@ export default function FacultyEvaluation() {
             label="Contact Number"
             fullWidth
             value={newFaculty.contact_Number}
+            required
+            error={showErrors && !newFaculty.contact_Number}
+            helperText={
+              showErrors && !newFaculty.contact_Number
+                ? "Contact Number is required"
+                : ""
+            }
             onChange={(e) =>
               setNewFaculty({ ...newFaculty, contact_Number: e.target.value })
             }

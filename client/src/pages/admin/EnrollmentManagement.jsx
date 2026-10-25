@@ -7,12 +7,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Snackbar,
-  Alert,
   CircularProgress,
 } from "@mui/material";
 import { Table } from "../../components/Table";
 import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -27,11 +26,7 @@ export default function EnrollmentManagement() {
 
   const fileInputRef = useRef(null);
   const [importing, setImporting] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    severity: "success",
-    message: "",
-  });
+  const snackbar = useSnackbar();
   const [importErrors, setImportErrors] = useState([]);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
 
@@ -49,7 +44,7 @@ export default function EnrollmentManagement() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setSnackbar({ open: true, severity: "error", message: err.message });
+      snackbar.error(err.message);
     }
   };
 
@@ -82,10 +77,10 @@ export default function EnrollmentManagement() {
       }
       if (!res.ok) throw new Error(body.message || "Import failed");
 
-      setSnackbar({ open: true, severity: "success", message: body.message });
+      snackbar.error(err.message);
       fetchEnrollees(selectedAY.id); // refresh the table
     } catch (err) {
-      setSnackbar({ open: true, severity: "error", message: err.message });
+      snackbar.error(err.message);
     } finally {
       setImporting(false);
     }
@@ -167,6 +162,10 @@ export default function EnrollmentManagement() {
   ];
 
   const handleRejectSelected = async () => {
+    if (selectedIds.length === 0) {
+      snackbar.warning("Select at least one enrollee to reject.");
+      return;
+    }
     try {
       const response = await fetch(`${API_URL}/admin/rejectEnrollees`, {
         method: "POST",
@@ -176,12 +175,14 @@ export default function EnrollmentManagement() {
 
       if (!response.ok) throw new Error("Failed to reject enrollees");
 
+      snackbar.success(`${selectedIds.length} enrollee(s) rejected`);
       setRows((prevRows) =>
         prevRows.filter((r) => !selectedIds.includes(r.id)),
       );
       setSelectedIds([]);
     } catch (err) {
       console.error("Error rejecting enrollees:", err);
+      snackbar.error(err.message || "Failed to reject enrollees");
     }
   };
 
@@ -361,19 +362,6 @@ export default function EnrollmentManagement() {
           <Button onClick={() => setErrorDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

@@ -17,7 +17,8 @@ export function GuestOnlyRoute() {
   const { user, loading } = useAuth();
   if (loading) return null;
 
-  if (user) return <Navigate to="/" replace />;
-
+  if (user) {
+    return <Navigate to={user.role === "Admin" ? "/admin" : "/"} replace />;
+  }
   return <Outlet />;
 }

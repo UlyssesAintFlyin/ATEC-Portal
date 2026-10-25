@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { Table } from "../../components/Table";
 import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -24,6 +25,7 @@ export default function Sections() {
     sectionName: "",
     department: null,
   });
+  const snackbar = useSnackbar();
 
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -58,8 +60,8 @@ export default function Sections() {
         console.error("Error loading sections:", err);
       }
     };
-     fetchSections();
-  }, );
+    fetchSections();
+  });
   const handleAdd = async () => {
     try {
       const res = await fetch(`${API_URL}/admin/sections/addSection`, {
@@ -71,8 +73,11 @@ export default function Sections() {
       setRows([...rows, created]); // append new section
       setOpen(false);
       setNewSection({ gradeLevel: "", sectionName: "", department: "" });
+      snackbar.success(
+        `${newSection.sectionName} was successfully added!`,
+      );
     } catch (err) {
-      console.error("Error creating section:", err);
+      snackbar.error(err.message || "Error creating section:");
     }
   };
 
@@ -151,7 +156,7 @@ export default function Sections() {
     <Box
       sx={{
         backgroundColor: "#BAC5D1",
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
@@ -160,7 +165,7 @@ export default function Sections() {
       <Box
         sx={{
           backgroundColor: "#E8EDF2",
-          height: "100%",
+          minHeight: "100vh",
           width: { xs: "100%", sm: "600px", md: "1200px" },
           margin: "0 auto",
           display: "flex",
@@ -176,7 +181,7 @@ export default function Sections() {
             alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
-            marginBottom: "30px",
+            marginBottom: { xs: "10px", sm: "15px", md: "30px" },
           }}
         >
           <Box
@@ -253,8 +258,13 @@ export default function Sections() {
           sx={{
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
-            height: { xs: "600px", md: "500px" },
-            minWidth: 0,
+            marginBottom: { xs: "20px", md: "50px" },
+            height: { xs: "580px", md: "540px" },
+            maxWidth: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            
           }}
         >
           {/*Table Component*/}

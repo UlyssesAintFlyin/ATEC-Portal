@@ -33,8 +33,6 @@ function CarouselConfig() {
   const [saving, setSaving] = useState(false);
   const [pageErrors, setPageErrors] = useState({}); // { localKey: "message" }
 
-  // Snackbar replaces the old full-width global Alert so messages no longer
-  // push the layout around when they appear/disappear.
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",

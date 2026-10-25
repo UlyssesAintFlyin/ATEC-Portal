@@ -8,10 +8,9 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Snackbar,
-  Alert,
 } from "@mui/material";
 import { Table } from "../../components/Table";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -26,8 +25,7 @@ export default function TermConfig() {
 
   const [open, setOpen] = useState(false);
   const [newTerm, setTerm] = useState({ term: "" });
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const snackbar = useSnackbar();
 
   const handleAddRecords = async () => {
     try {
@@ -58,8 +56,7 @@ export default function TermConfig() {
       const reload = await fetch(`${API_URL}/admin/loadAcademicYear`);
       const updatedData = await reload.json();
       setRows(updatedData);
-      setSnackbarMessage("Academic year added successfully.");
-      setSnackbarOpen(true);
+      snackbar.success(`${newTerm}, Successfully Added!`, { bgColor: "#408f4b" });
       setOpen(false);
       setTerm({ term: "" });
     } catch (err) {
@@ -206,20 +203,6 @@ export default function TermConfig() {
           </Button>
         </DialogActions>
       </Dialog>
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

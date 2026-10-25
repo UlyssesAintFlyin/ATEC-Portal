@@ -22,6 +22,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useSnackbar } from "./AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL || "";
 
@@ -38,6 +39,7 @@ export const Header = () => {
 
   const location = useLocation();
   const { user, logout } = useAuth();
+  const snackbar = useSnackbar();
 
   const toggleDrawer = (state) => () => {
     setOpen(state);
@@ -73,7 +75,11 @@ export const Header = () => {
     setPwError("");
     setPwSuccess("");
 
-    if (!pwForm.currentPassword || !pwForm.newPassword || !pwForm.confirmPassword) {
+    if (
+      !pwForm.currentPassword ||
+      !pwForm.newPassword ||
+      !pwForm.confirmPassword
+    ) {
       setPwError("Please fill out all password fields.");
       return;
     }
@@ -141,7 +147,7 @@ export const Header = () => {
           src="/resources/ATECLogo.svg"
           alt="Logo"
           sx={{
-            width: { xs: 40, md: 50 },
+            width: { xs: 40, sm: 50 },
             height: "auto",
           }}
         />
@@ -156,22 +162,31 @@ export const Header = () => {
             gap: "8px",
           }}
         >
-          <Typography
-            variant="h2"
-            component="div"
+          <Box
+            component={Link}
+            to="/admin"
             sx={{
-              fontFamily: '"Alfa Slab One", serif',
-              fontSize: { xs: "1.3rem", md: "3rem" },
-              fontWeight: 400,
-              backgroundImage: "linear-gradient(180deg, #DBDFF1, #515880)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-              letterSpacing: "0.01em",
+              display: "inline-flex",
+              textDecoration: "none",
             }}
           >
-            AXIOM
-          </Typography>
+            <Typography
+              variant="h2"
+              component="div"
+              sx={{
+                fontFamily: '"Alfa Slab One", serif',
+                fontSize: { xs: "1.3rem", sm: "3rem" },
+                fontWeight: 400,
+                backgroundImage: "linear-gradient(180deg, #DBDFF1, #515880)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+                letterSpacing: "0.01em",
+              }}
+            >
+              AXIOM
+            </Typography>
+          </Box>
           <Box
             sx={{
               width: { xs: "10px", md: "200px" },
@@ -381,6 +396,9 @@ export const Header = () => {
                 onClick={() => {
                   logout();
                   setOpen(false);
+                  snackbar.success(`Signing off, goodbye!`, {
+                    bgColor: "#904b4a",
+                  });
                 }}
               >
                 Sign Out
@@ -400,7 +418,12 @@ export const Header = () => {
         </Box>
       </Drawer>
 
-      <Dialog open={pwOpen} onClose={handleClosePwModal} maxWidth="xs" fullWidth>
+      <Dialog
+        open={pwOpen}
+        onClose={handleClosePwModal}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle sx={{ color: "#242C54", fontWeight: "bold" }}>
           Change Password
         </DialogTitle>

@@ -9,10 +9,10 @@ import {
   DialogActions,
   TextField,
   Autocomplete,
-  Snackbar,
   Alert,
   CircularProgress,
 } from "@mui/material";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 import { Table } from "../../components/Table";
 import { useParams, useLocation } from "react-router-dom";
@@ -46,13 +46,10 @@ export default function SectionSubject() {
   const fileInputRef = useRef(null);
   const [importing, setImporting] = useState(false);
   const [templateLoading, setTemplateLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    severity: "success",
-    message: "",
-  });
   const [importErrors, setImportErrors] = useState([]);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const snackbar = useSnackbar();
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchSystemSettings = async () => {
@@ -66,6 +63,14 @@ export default function SectionSubject() {
     };
     fetchSystemSettings();
   }, []);
+
+  useEffect(() => {
+    if (!sectionId) {
+      snackbar.warning(
+        "Section details are missing. Please open this page from the Sections list.",
+      );
+    }
+  }, [sectionId, snackbar]);
 
   useEffect(() => {
     if (!sectionId || !currentAYS_ID) return;
@@ -135,54 +140,68 @@ export default function SectionSubject() {
   const handleAdviserChange = (newValue) => setPendingAdviser(newValue);
   const handleCurriculumChange = (newValue) => setPendingCurriculum(newValue);
   const handleTeacherChange = (subjectId, newValue) => {
-    setPendingTeachers((prev) => ({
-      ...prev,
-      [subjectId]: newValue,
-    }));
+    setPendingTeachers((prev) =>
+      prev[subjectId] !== undefined
+        ? prev
+        : { ...prev, [subjectId]: data.currentTeacher ?? null },
+    );
   };
 
   const handleSaveChanges = async () => {
+    if (!sectionId || !currentAYS_ID) {
+      snackbar.error(
+        "Section or academic year is missing. Go back and reopen this section.",
+      );
+      return;
+    }
+
+    setSaving(true);
     try {
-      const requests = [
-        fetch(`${API_URL}/admin/faculty/assignAdviser`, {
+      const put = (path, payload) =>
+        fetch(`${API_URL}${path}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sectionId,
-            AYS_ID: currentAYS_ID,
-            facultyId: pendingAdviser ? pendingAdviser.id : null,
-          }),
+          body: JSON.stringify(payload),
+        });
+
+      const results = await Promise.all([
+        put("/admin/faculty/assignAdviser", {
+          sectionId,
+          AYS_ID: currentAYS_ID,
+          facultyId: pendingAdviser ? pendingAdviser.id : null,
         }),
-        fetch(`${API_URL}/admin/curriculum/updateSectionCurriculum`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sectionId,
-            AYS_ID: currentAYS_ID,
-            curriculumId: pendingCurriculum ? pendingCurriculum.id : null,
-          }),
+        put("/admin/curriculum/updateSectionCurriculum", {
+          sectionId,
+          AYS_ID: currentAYS_ID,
+          curriculumId: pendingCurriculum ? pendingCurriculum.id : null,
         }),
         ...Object.entries(pendingTeachers).map(([subjId, teacher]) =>
-          fetch(`${API_URL}/admin/faculty/assignTeacherToSubject`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              subjectId: subjId,
-              sectionId,
-              AYS_ID: currentAYS_ID,
-              teacherId: teacher ? teacher.id : null,
-            }),
+          put("/admin/faculty/assignTeacherToSubject", {
+            subjectId: subjId,
+            sectionId,
+            AYS_ID: currentAYS_ID,
+            teacherId: teacher ? teacher.id : null,
           }),
         ),
-      ];
+      ]);
 
-      await Promise.all(requests);
+      const failed = results.filter((r) => !r.ok).length;
+      if (failed > 0) {
+        snackbar.error(
+          `${failed} of ${results.length} updates failed. Some changes may not have been saved.`,
+        );
+        return; // keep the dialog open so the user can retry
+      }
 
       setCurrentAdviser(pendingAdviser);
       setCurrentCurriculum(pendingCurriculum);
       setOpenDialog(false);
+      snackbar.success("Changes saved successfully");
     } catch (err) {
       console.error("Error saving changes:", err);
+      snackbar.error("Could not reach the server. Changes were not saved.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -211,7 +230,7 @@ export default function SectionSubject() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Error downloading template:", err);
-      setSnackbar({ open: true, severity: "error", message: err.message });
+      snackbar.error(err.message);
     } finally {
       setTemplateLoading(false);
     }
@@ -250,16 +269,16 @@ export default function SectionSubject() {
         throw new Error(body.message || "Import failed");
       }
 
-      setSnackbar({ open: true, severity: "success", message: body.message });
+      snackbar.success(body.message);
     } catch (err) {
       console.error("Error importing grades:", err);
-      setSnackbar({ open: true, severity: "error", message: err.message });
+      snackbar.error(err.message);
     } finally {
       setImporting(false);
     }
   };
 
-  const gradesDisabled = !pendingCurriculum;
+  const gradesDisabled = !currentCurriculum;
 
   const columns = [
     { field: "subject", headerName: "Subject Name", flex: 1, minWidth: 150 },
@@ -306,7 +325,7 @@ export default function SectionSubject() {
       } catch (err) {
         console.error(err);
         setError("Failed to load curriculum subjects");
-      } 
+      }
     })();
   }, [currentCurriculum]);
 
@@ -590,19 +609,6 @@ export default function SectionSubject() {
           <Button onClick={() => setErrorDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }
