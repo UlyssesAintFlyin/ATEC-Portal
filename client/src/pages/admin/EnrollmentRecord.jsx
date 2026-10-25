@@ -138,6 +138,7 @@ export default function EnrollmentRecord() {
                 padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
               }}
               onClick={handleValidate}
+              disabled={validating}
             >
               Validate Enrollment
             </Button>
