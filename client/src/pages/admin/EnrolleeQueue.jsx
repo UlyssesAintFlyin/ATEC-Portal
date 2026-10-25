@@ -82,7 +82,6 @@ export default function EnrolleeQueue() {
     }
   }, [currentAYS_ID, sectionId]);
 
-
   const columns = [
     { field: "enrollee", headerName: "Enrollee Name", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
@@ -102,18 +101,21 @@ export default function EnrolleeQueue() {
         }),
       });
 
-      snackbar.success(
-        `Enroollee was successfully added to the section!`,
-      );
-
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        snackbar.error(err.message || "Failed to add the enrollee to the section");
+
+        snackbar.error(
+          errData.error || "Failed to add the enrollee to the section",
+        );
+
         return;
       }
 
       const data = await res.json();
       if (data.success) {
+        snackbar.success(
+          `${selectedIds.length} enrollee${selectedIds.length > 1 ? "s" : ""} successfully added to ${sectionName}!`,
+        );
         setRows(rows.filter((r) => !selectedIds.includes(r.id)));
         setSelectedIds([]);
       }
@@ -123,33 +125,92 @@ export default function EnrolleeQueue() {
   };
 
   return (
-    <Box sx={{ backgroundColor: "#BAC5D1", height: "100vh", display: "flex", flexDirection: "column" }}>
-      <Box sx={{ backgroundColor: "#E8EDF2", height: "100vh", width: { xs: "100%", sm: "600px", md: "1200px" }, margin: "0 auto", display: "flex", flexDirection: "column" }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "20px", marginBottom: "30px" }}>
+    <Box
+      sx={{
+        backgroundColor: "#BAC5D1",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Box
+        sx={{
+          backgroundColor: "#E8EDF2",
+          height: "100vh",
+          width: { xs: "100%", sm: "600px", md: "1200px" },
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            marginTop: "20px",
+            marginBottom: "30px",
+          }}
+        >
           <Box>
-            <Typography sx={{ color: "#242c54", fontWeight: "bold", fontSize: { xs: "22px", md: "35px" }, marginLeft: { xs: "20px", sm: "30px", md: "50px" } }}>
+            <Typography
+              sx={{
+                color: "#242c54",
+                fontWeight: "bold",
+                fontSize: { xs: "22px", md: "35px" },
+                marginLeft: { xs: "20px", sm: "30px", md: "50px" },
+              }}
+            >
               Enrollee Queue
             </Typography>
             {currentAYS && (
-              <Typography variant="body2" sx={{ color: "#242c54", marginLeft: { xs: "20px", sm: "30px", md: "50px" } }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#242c54",
+                  marginLeft: { xs: "20px", sm: "30px", md: "50px" },
+                }}
+              >
                 Academic Year: {currentAYS.AY_Name}
               </Typography>
             )}
           </Box>
-          <Box sx={{ display: "flex", gap: 2, marginRight: { xs: "20px", sm: "30px", md: "50px" } }}>
-            <Button variant="contained" color="primary"
-              onClick={handleTransfer} disabled={selectedIds.length === 0 || !currentAYS_ID}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              marginRight: { xs: "20px", sm: "30px", md: "50px" },
+            }}
+          >
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleTransfer}
+              disabled={selectedIds.length === 0 || !currentAYS_ID}
+            >
               Add Student to {sectionName}
             </Button>
           </Box>
         </Box>
-        <Box sx={{ marginLeft: { xs: "20px", md: "50px" }, marginRight: { xs: "20px", md: "50px" }, height: { xs: "600px", md: "500px" }, maxWidth: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <Box
+          sx={{
+            marginLeft: { xs: "20px", md: "50px" },
+            marginRight: { xs: "20px", md: "50px" },
+            height: { xs: "600px", md: "500px" },
+            maxWidth: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
           <Table
             rows={rows}
             columns={columns}
             checkboxSelection
             disableRowSelectionOnClick
-            onSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
+            onSelectionModelChange={(newSelection) =>
+              setSelectedIds(newSelection)
+            }
             selectionModel={selectedIds}
           />
         </Box>

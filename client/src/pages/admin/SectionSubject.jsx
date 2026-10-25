@@ -126,10 +126,11 @@ export default function SectionSubject() {
         );
         const data = await res.json();
         setTeacherList(data.teacherOptions);
-        setPendingTeachers((prev) => ({
-          ...prev,
-          [subjectId]: data.currentTeacher,
-        }));
+        setPendingTeachers((prev) =>
+          prev[subjectId] !== undefined
+            ? prev
+            : { ...prev, [subjectId]: data.currentTeacher ?? null },
+        );
       } catch (err) {
         console.error("Error loading teachers:", err);
       }
@@ -140,11 +141,10 @@ export default function SectionSubject() {
   const handleAdviserChange = (newValue) => setPendingAdviser(newValue);
   const handleCurriculumChange = (newValue) => setPendingCurriculum(newValue);
   const handleTeacherChange = (subjectId, newValue) => {
-    setPendingTeachers((prev) =>
-      prev[subjectId] !== undefined
-        ? prev
-        : { ...prev, [subjectId]: data.currentTeacher ?? null },
-    );
+    setPendingTeachers((prev) => ({
+      ...prev,
+      [subjectId]: newValue,
+    }));
   };
 
   const handleSaveChanges = async () => {
@@ -405,6 +405,7 @@ export default function SectionSubject() {
           >
             <Button
               variant="contained"
+              disabled={saving}
               sx={{
                 fontSize: { xs: "12px", sm: "14px", md: "16px" },
                 padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
@@ -585,6 +586,7 @@ export default function SectionSubject() {
             variant="contained"
             color="primary"
             onClick={handleSaveChanges}
+            disabled={saving}
           >
             Save Teacher
           </Button>
