@@ -258,6 +258,17 @@ const getFacultySummary = async (req, res) => {
             [facultyId, AYS_ID]
         );
 
+        // NEW: get the student comments for this teacher and term
+        const [commentRows] = await pool.query(
+            `SELECT c.comment_text
+             FROM evaluation_comment_table c
+             JOIN evaluation_table e ON c.evaluation_ID = e.evaluation_ID
+             WHERE e.faculty_ID = ? AND e.AYS_ID = ?`,
+            [facultyId, AYS_ID]
+        );
+
+        const comments = commentRows.map(row => row.comment_text);
+
         const categories = categoryRows.map(row => ({
             category_ID: row.category_ID,
             category_Name: row.category_Name,
@@ -271,7 +282,8 @@ const getFacultySummary = async (req, res) => {
         res.json({
             faculty: facultyRows[0],
             overall,
-            categories
+            categories,
+            comments // NEW
         });
 
     } catch (error) {
