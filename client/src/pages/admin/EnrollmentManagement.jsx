@@ -79,7 +79,7 @@ export default function EnrollmentManagement() {
       if (!res.ok) throw new Error(body.message || "Import failed");
 
       snackbar.success(body.message);
-      fetchEnrollees(selectedAY.id); 
+      fetchEnrollees(selectedAY.id);
     } catch (err) {
       snackbar.error(err.message);
     } finally {
@@ -191,7 +191,7 @@ export default function EnrollmentManagement() {
     <Box
       sx={{
         backgroundColor: "#BAC5D1",
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
@@ -200,7 +200,7 @@ export default function EnrollmentManagement() {
       <Box
         sx={{
           backgroundColor: "#E8EDF2",
-          height: "100%",
+          minHeight: "100vh",
           width: { xs: "100%", sm: "600px", md: "1200px" },
           margin: "0 auto",
           display: "flex",
@@ -320,7 +320,8 @@ export default function EnrollmentManagement() {
           sx={{
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
-            height: { xs: "600px", md: "540px" },
+            marginBottom: { xs: "20px", md: "50px" },
+            height: { xs: "580px", md: "540px" },
             maxWidth: "100%",
             display: "flex",
             flexDirection: "column",

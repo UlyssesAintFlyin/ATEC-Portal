@@ -1,17 +1,14 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
-const { login } = require('../controllers/authController');
-const { requestOtp, verifyOtpAndReset } = require('../controllers/authController');
-router.post('/login', login); //this pulls in the login function
+const { login, requestOtp, verifyOtpAndReset, verifyMaster } = require('../controllers/authController');
+const { verifyToken, requireRole } = require('../middleware/auth');
+
+const verifyLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
+
+router.post('/login', login);
 router.post('/forgot-password', requestOtp);
 router.post('/verify-otp', verifyOtpAndReset);
+router.post('/verify-master', verifyToken, requireRole('Admin'), verifyLimiter, verifyMaster);
 
 module.exports = router;
-
-//Makes this router available to index.js.
-
-
-/*
-use this like
-const { verifyToken, requireRole } = require('../middleware/auth');
-router.get('/', verifyToken, requireRole('Student'), gradeController.getGrades);*/

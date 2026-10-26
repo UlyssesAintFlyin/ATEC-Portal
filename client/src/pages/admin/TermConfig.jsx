@@ -56,7 +56,9 @@ export default function TermConfig() {
       const reload = await fetch(`${API_URL}/admin/loadAcademicYear`);
       const updatedData = await reload.json();
       setRows(updatedData);
-      snackbar.success(`${newTerm}, Successfully Added!`, { bgColor: "#408f4b" });
+      snackbar.success(`${newTerm}, Successfully Added!`, {
+        bgColor: "#408f4b",
+      });
       setOpen(false);
       setTerm({ term: "" });
     } catch (err) {
@@ -71,7 +73,7 @@ export default function TermConfig() {
     <Box
       sx={{
         backgroundColor: "#BAC5D1",
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
@@ -80,7 +82,7 @@ export default function TermConfig() {
       <Box
         sx={{
           backgroundColor: "#E8EDF2",
-          height: "100%",
+          minHeight: "100vh",
           width: { xs: "100%", sm: "600px", md: "1200px" },
           margin: "0 auto",
           display: "flex",
@@ -126,7 +128,7 @@ export default function TermConfig() {
                 marginLeft: { xs: "20px", md: "50px" },
               }}
             >
-              Choose and manage Academic Term.
+              Manage Existing Academic Terms.
             </Typography>
           </Box>
           <Box
@@ -168,8 +170,12 @@ export default function TermConfig() {
           sx={{
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
-            height: { xs: "600px", md: "500px" },
-            minWidth: 0,
+            marginBottom: { xs: "20px", md: "50px" },
+            height: { xs: "580px", md: "540px" },
+            maxWidth: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
           }}
         >
           {/*Table Component*/}

@@ -35,6 +35,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 import { SnackbarProvider } from './components/AppSnackbar';
+import { MasterPasswordRoute } from "./components/MasterPasswordRoute";
 
 function LayoutWithHeader() {
   return (
@@ -91,13 +92,15 @@ function App() {
                   <Route path="sections/:sectionName/SectionSubject" element={<SectionSubject />} />
                   <Route path="sections/:sectionName/addStudent" element={<EnrolleeQueue />} />
                   <Route path="section/:sectionName/:studentId" element={<EditStudent />} />
-                  <Route path="section/:sectionName/:studentId/gradeReport" element={<EditGrade />} />
-                  <Route path="systemSettings" element={<SystemSettings />} />
-                  <Route path="systemSettings/termConfig" element={<TermConfig />} />
-                  <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />
-                  <Route path="systemSettings/curriculumConfig/curriculum/:id" element={<CurriculumSubjects />} />
-                  <Route path="systemSettings/curriculumConfig/curriculum/:id/addSubject" element={<AddSubject />} />
-                  <Route path="systemSettings/carouselConfig" element={<CarouselConfig />} />
+                  <Route path="section/:sectionName/:studentId/gradeReport" element={<EditGrade />} />  
+                  <Route element={<MasterPasswordRoute />}>
+                    <Route path="systemSettings" element={<SystemSettings />} />
+                    <Route path="systemSettings/termConfig" element={<TermConfig />} />
+                    <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />
+                    <Route path="systemSettings/curriculumConfig/curriculum/:id" element={<CurriculumSubjects />} />
+                    <Route path="systemSettings/curriculumConfig/curriculum/:id/addSubject" element={<AddSubject />} />
+                    <Route path="systemSettings/carouselConfig" element={<CarouselConfig />} />
+                  </Route>
                 </Route>
               </Route>
 

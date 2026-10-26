@@ -4,6 +4,28 @@ const pool = require('../config/db'); // database connection
 const { sendEmail } = require('../config/emailService');
 const crypto = require('crypto');
 
+const MASTER_ID = 2;
+
+async function verifyMaster(req, res) {
+  const { password } = req.body;
+
+  const [rows] = await pool.execute(
+    "SELECT password FROM faculty_table WHERE faculty_ID = ? AND status = 'Active'",
+    [MASTER_ID]
+  );
+
+  const ok = rows.length > 0 && (await bcrypt.compare(password || "", rows[0].password));
+  if (!ok) return res.status(401).json({ message: "Incorrect password." });
+
+  const masterToken = jwt.sign(
+    { sub: req.user.id, master: true },
+    process.env.JWT_SECRET,
+    { expiresIn: "30m" }
+  );
+
+  res.json({ masterToken, expiresIn: 30 * 60 * 1000 });
+};
+
 async function login(req, res) {
   const { email, password } = req.body;
 
@@ -122,7 +144,7 @@ async function verifyOtpAndReset(req, res) {
       return res.status(400).json({ message: 'Invalid or expired OTP code.' });
     }
 
-    const tempPassword = crypto.randomBytes(4).toString('hex'); 
+    const tempPassword = crypto.randomBytes(4).toString('hex');
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     await pool.query(
@@ -143,4 +165,4 @@ async function verifyOtpAndReset(req, res) {
   }
 }
 
-module.exports = { login, requestOtp, verifyOtpAndReset };
+module.exports = { login, requestOtp, verifyOtpAndReset, verifyMaster };

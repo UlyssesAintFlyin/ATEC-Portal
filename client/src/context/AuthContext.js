@@ -3,7 +3,7 @@ import { jwtDecode } from "jwt-decode";
 
 const AuthContext = createContext(null);
 
-const INACTIVITY_LIMIT = 5 * 60 * 60 * 1000; 
+const INACTIVITY_LIMIT = 5 * 60 * 60 * 1000;
 const ACTIVITY_KEY = "lastActivity";
 
 function readValidUser() {
@@ -34,6 +34,8 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem(ACTIVITY_KEY);
+    sessionStorage.removeItem("masterToken");
+    sessionStorage.removeItem("masterUnlockUntil");
     setUser(null);
   }, []);
 
@@ -55,7 +57,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!user) return;
 
-    const MAX_DELAY = 2 ** 31 - 1; 
+    const MAX_DELAY = 2 ** 31 - 1;
 
     const schedule = (delay) => {
       clearTimeout(idleTimer.current);

@@ -7,24 +7,29 @@ const images = [
   {
     url: "/resources/a1-settings.png",
     title: "System Settings",
+    description:
+      "Configure system configurations, platform settings, and customizations.",
     width: "33%",
     link: "/admin/systemSettings",
   },
   {
     url: "/resources/a1-stud.png",
     title: "Student Masterlist",
+    description: "Manage sections, students, grades, and assign teachers.",
     width: "33%",
     link: "/admin/sections",
   },
   {
     url: "/resources/a1-teach.png",
     title: "Faculty Masterlist",
+    description: "Manage faculties and view evaluation.",
     width: "30%",
     link: "/admin/facultyEvaluation",
   },
   {
     url: "/resources/a1-enroll.png",
     title: "Enrollment List",
+    description: "View enrollment form and validate enrollees",
     width: "30%",
     link: "/admin/enrollmentList",
   },
@@ -33,15 +38,20 @@ const images = [
 const ImageButton = styled(ButtonBase)(({ theme }) => ({
   position: "relative",
   height: 250,
+  overflow: "hidden",
+
   [theme.breakpoints.down("sm")]: {
     width: "100% !important",
     height: 100,
   },
-  "&:hover, &.Mui-focusVisible": {
-    zIndex: 1,
-    "& .MuiImageBackdrop-root": {
-      opacity: 0.15,
-    },
+
+  "&:hover .description-overlay": {
+    opacity: 1,
+    transform: "translateY(0)",
+  },
+
+  "&:hover .MuiImageBackdrop-root": {
+    opacity: 0.5,
   },
 }));
 
@@ -63,6 +73,20 @@ const ImageBackdrop = styled("span")({
   bottom: 0,
   backgroundColor: "rgba(75, 86, 148, 0.5)",
   transition: "opacity 0.3s ease",
+});
+
+const ImageDescription = styled("div")({
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  padding: "16px",
+  color: "#fff",
+  background:
+    "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4), transparent)",
+  opacity: 0,
+  transform: "translateY(20px)",
+  transition: "all 0.3s ease",
 });
 
 function Admin() {
@@ -104,6 +128,10 @@ function Admin() {
                 {images[0].title}
               </Typography>
             </Box>
+
+            <ImageDescription className="description-overlay">
+              <Typography variant="body2">{images[0].description}</Typography>
+            </ImageDescription>
           </ImageButton>
         </Grid>
 
@@ -141,6 +169,9 @@ function Admin() {
                       {image.title}
                     </Typography>
                   </Box>
+                  <ImageDescription className="description-overlay">
+                    <Typography variant="body2">{image.description}</Typography>
+                  </ImageDescription>
                 </ImageButton>
               </Grid>
             ))}
@@ -172,6 +203,9 @@ function Admin() {
                 {images[3].title}
               </Typography>
             </Box>
+            <ImageDescription className="description-overlay">
+              <Typography variant="body2">{images[3].description}</Typography>
+            </ImageDescription>
           </ImageButton>
         </Grid>
       </Grid>

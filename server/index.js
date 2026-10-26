@@ -1,9 +1,11 @@
   require('dotenv').config(); //Loads variables from .env
   const express = require('express'); //web framework
   const cors = require('cors'); //cross‑origin requests
+  const cookieParser = require("cookie-parser");
+  const path = require('path');
+
   const authRoutes = require('./routes/authRoutes');
   const enrollmentRoutes = require('./routes/enrollmentRoutes'); 
-  const path = require('path');
   const carouselRoutes = require('./routes/carouselRoutes');
   const adminRoutes = require('./routes/adminRoutes');
   const systemSettingsRoutes = require('./routes/systemRoutes');
@@ -12,6 +14,9 @@
   const evaluationRoutes = require('./routes/evalRoutes'); //eva;
   const facultyRoutes = require('./routes/facultyRoutes'); //faculty
   const gradeRoutes = require('./routes/gradeRoutes');
+
+  const { verifyToken, requireRole } = require('./middleware/auth');
+  const requireMasterUnlock = require('./middleware/requireMasterUnlock');
 
   const app = express(); //Creates the Express application instance.
 
@@ -33,6 +38,9 @@
 
   app.use('/api/curricula', curriculumRoutes);
   app.use('/api/subjects', subjectRoutes);
+
+  app.use('/api/system-settings', verifyToken, requireRole('Admin'), requireMasterUnlock, systemSettingsRoutes);
+  app.use('/api/curricula', verifyToken, requireRole('Admin'), requireMasterUnlock, curriculumRoutes);
 
   app.use((err, req, res, next) => {
     console.error(err.stack);
