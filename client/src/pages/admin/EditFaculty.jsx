@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button, Autocomplete, Divider } from "@mui/material";
+import {
+  Typography,
+  Box,
+  Button,
+  Autocomplete,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import TextField from "@mui/material/TextField";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../components/AppSnackbar";
-import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -44,7 +53,14 @@ export default function EditFaculty() {
     password: "",
     emergency_Name: "",
     emergency_Number: "",
+    account_type_ID: 2,
+    role: "Teacher",
   });
+
+  const [openAuthDialog, setOpenAuthDialog] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminPasswordError, setAdminPasswordError] = useState("");
+
   const snackbar = useSnackbar();
   const navigate = useNavigate();
 
@@ -107,6 +123,8 @@ export default function EditFaculty() {
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
 
+        const accountTypeId = data.account_type_ID ?? data.account_type_id ?? 2;
+
         setFormData({
           f_Name: data.f_Name || "",
           l_Name: data.l_Name || "",
@@ -123,6 +141,8 @@ export default function EditFaculty() {
           password: data.password || "",
           emergency_Name: data.emergency_Name || "",
           emergency_Number: data.emergency_Number || "",
+          account_type_ID: accountTypeId,
+          role: Number(accountTypeId) === 3 ? "Admin" : "Teacher",
         });
       } catch (err) {
         console.error(err);
@@ -131,10 +151,20 @@ export default function EditFaculty() {
     fetchFaculty();
   }, [id]);
 
-  const handleSave = async () => {
+  const handleOpenAuth = () => {
     if (Object.keys(getErrors()).length > 0) {
       setShowErrors(true);
       snackbar.warning("Please fix the highlighted fields.");
+      return;
+    }
+    setAdminPassword("");
+    setAdminPasswordError("");
+    setOpenAuthDialog(true);
+  };
+
+  const handleConfirmSave = async () => {
+    if (!adminPassword.trim()) {
+      setAdminPasswordError("Admin password is required");
       return;
     }
 
@@ -142,14 +172,25 @@ export default function EditFaculty() {
       const res = await fetch(`${API_URL}/faculty/updateFaculty/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, age }),
+        body: JSON.stringify({
+          ...formData,
+          age,
+          adminPassword,
+        }),
       });
+
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          setAdminPasswordError("Invalid admin password.");
+          return;
+        }
         throw new Error(
-          errBody.error || errBody.message || `Request failed: ${res.status}`,
+          errBody.error || errBody.message || `Request failed: ${res.status}`
         );
       }
+
+      setOpenAuthDialog(false);
       snackbar.success("Faculty information saved successfully");
       navigate("/admin/facultyEvaluation");
     } catch (err) {
@@ -471,6 +512,40 @@ export default function EditFaculty() {
                 />
               )}
             />
+
+            <Autocomplete
+              options={[
+                { label: "Teacher", id: 2 },
+                { label: "Admin", id: 3 },
+              ]}
+              getOptionLabel={(option) =>
+                typeof option === "string" ? option : option.label
+              }
+              value={
+                [
+                  { label: "Teacher", id: 2 },
+                  { label: "Admin", id: 3 },
+                ].find((opt) => opt.id === Number(formData.account_type_ID)) || null
+              }
+              onChange={(event, newValue) => {
+                setFormData({
+                  ...formData,
+                  account_type_ID: newValue ? newValue.id : 2,
+                  role: newValue ? newValue.label : "Teacher",
+                });
+              }}
+              fullWidth
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Role"
+                  fullWidth
+                  size="medium"
+                  {...fieldProps("role")}
+                />
+              )}
+            />
           </Box>
 
           <Divider variant="middle" sx={{ borderColor: "#242c54" }} />
@@ -535,12 +610,50 @@ export default function EditFaculty() {
                 transform: "scale(1.05)",
               },
             }}
-            onClick={handleSave}
+            onClick={handleOpenAuth}
           >
             Save Changes
           </Button>
         </Box>
       </Box>
+
+      <Dialog
+        open={openAuthDialog}
+        onClose={() => setOpenAuthDialog(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle sx={{ fontWeight: "bold", color: "#242C54" }}>
+          Admin Authentication Required
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Please enter your admin password to confirm saving changes.
+          </Typography>
+          <TextField
+            autoFocus
+            label="Admin Password"
+            type="password"
+            fullWidth
+            value={adminPassword}
+            onChange={(e) => setAdminPassword(e.target.value)}
+            error={Boolean(adminPasswordError)}
+            helperText={adminPasswordError}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setOpenAuthDialog(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmSave}
+            variant="contained"
+            sx={{ backgroundColor: "#242C54" }}
+          >
+            Confirm & Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

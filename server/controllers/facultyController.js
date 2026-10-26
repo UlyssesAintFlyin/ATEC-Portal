@@ -43,6 +43,7 @@ async function getFacultyById(req, res) {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+  
 
 async function updateFaculty(req, res) {
   const { id } = req.params;
@@ -61,9 +62,37 @@ async function updateFaculty(req, res) {
     emergency_Name,
     emergency_Number,
     password,
+    account_type_ID,
+    adminPassword,
   } = req.body;
 
   try {
+    if (!adminPassword) {
+      return res.status(400).json({ error: "Admin authentication required" });
+    }
+
+    // Fetch all admin accounts to verify the password against any admin
+    const [adminRows] = await pool.query(
+      "SELECT faculty_ID, password FROM faculty_table WHERE account_type_id = 3"
+    );
+
+    if (adminRows.length === 0) {
+      return res.status(401).json({ error: "No admin accounts found" });
+    }
+
+    let isAdminValid = false;
+    for (const admin of adminRows) {
+      const match = await bcrypt.compare(adminPassword, admin.password);
+      if (match) {
+        isAdminValid = true;
+        break;
+      }
+    }
+
+    if (!isAdminValid) {
+      return res.status(401).json({ error: "Invalid admin password" });
+    }
+
     const [existing] = await pool.query(
       "SELECT password FROM faculty_table WHERE faculty_ID = ?",
       [id]
@@ -99,7 +128,8 @@ async function updateFaculty(req, res) {
         status = ?, 
         emergency_Name = ?, 
         emergency_Number = ?, 
-        password = ?
+        password = ?,
+        account_type_id = ?
       WHERE faculty_ID = ?
     `;
 
@@ -118,6 +148,7 @@ async function updateFaculty(req, res) {
       emergency_Name || null,
       emergency_Number || null,
       hashedPassword,
+      account_type_ID || 2,
       id,
     ];
 
