@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken'); //for creating JWTs (secure tokens).
 const pool = require('../config/db');
+const { sendEmail } = require("../config/emailService.js"); // Adjust relative path as needed
 
 // Load Academic Year
 async function loadAcademicYear(req, res) {
@@ -385,6 +386,7 @@ async function getEnrolleeById(req, res) {
 }
 
 //Convert Enrolee to Student
+
 async function convertEnrollees(req, res) {
   console.log("Request body:", req.body);
   const { sectionId, enrolleeIds, AYS_ID } = req.body;
@@ -413,9 +415,18 @@ async function convertEnrollees(req, res) {
     const createdStudents = [];
 
     for (const enrollee of enrollees) {
-      const formattedBirthdate = enrollee.birthdate
-        ? new Date(enrollee.birthdate).toISOString().split("T")[0].replace(/-/g, "")
-        : "";
+      let formattedBirthdate = "";
+      if (enrollee.birthdate) {
+        if (typeof enrollee.birthdate === "string") {
+          formattedBirthdate = enrollee.birthdate.split("T")[0].replace(/-/g, "");
+        } else {
+          const d = new Date(enrollee.birthdate);
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          formattedBirthdate = `${year}${month}${day}`;
+        }
+      }
 
       const rawPassword = `${enrollee.l_Name.replace(/\s+/g, "").toLowerCase()}${formattedBirthdate}`;
       const hashedPassword = await bcrypt.hash(rawPassword, 10);
@@ -474,6 +485,13 @@ async function convertEnrollees(req, res) {
         [enrollee.enrollment_ID]
       );
 
+      if (enrollee.email) {
+        const emailSubject = "Student Account Credentials";
+        const emailBody = `Greetings, ${enrollee.f_Name}!\n\nYour enrollment has been validated and your student account has been created successfully.\n\nLogin Credentials:\nEmail: ${enrollee.email}\nTemporary Password: ${rawPassword}\n\nPlease log in and change your password immediately.`;
+
+        await sendEmail(enrollee.email, emailSubject, emailBody);
+      }
+
       createdStudents.push({
         id: studentId,
         name: `${enrollee.f_Name} ${enrollee.l_Name}`,
@@ -490,6 +508,10 @@ async function convertEnrollees(req, res) {
     if (connection) connection.release();
   }
 }
+
+module.exports = {
+  convertEnrollees,
+};
 
 // Load Section
 async function loadSections(req, res) {
