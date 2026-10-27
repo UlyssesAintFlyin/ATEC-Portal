@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Typography,
   Box,
@@ -12,7 +12,6 @@ import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-/* ---------- Validation rules ---------- */
 const NAME_RE = /^[A-Za-zÀ-ÿ\s.'-]+$/;
 const PH_PHONE_RE = /^(09|\+639)\d{9}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,6 +21,11 @@ const calculateAge = (birthdate) => {
   if (!birthdate) return "";
   const [y, m, d] = birthdate.split("-").map(Number);
   if (!y || !m || !d) return "";
+  
+  const formatDateLocal = (dateStr) => {
+    if (!dateStr) return "";
+    return dateStr.split("T")[0];
+  };
 
   const today = new Date();
   let age = today.getFullYear() - y;
@@ -162,14 +166,13 @@ export default function EditStudent() {
     section_ID: "",
   });
   const snackbar = useSnackbar();
+  const snackbarRef = useRef(snackbar);
+  useEffect(() => {
+    snackbarRef.current = snackbar;
+  }, [snackbar]);
 
   const errors = validate(student);
   const age = calculateAge(student.birthdate);
-
-  const formatDateLocal = (dateStr) => {
-    if (!dateStr) return "";
-    return dateStr.split("T")[0];
-  };
 
   useEffect(() => {
     const fetchSystemSettings = async () => {
@@ -222,7 +225,7 @@ export default function EditStudent() {
         });
       } catch (err) {
         console.error("Error loading student:", err);
-        snackbar.error("Failed to load student information");
+        snackbarRef.current.error("Failed to load student information");
       }
     };
 
