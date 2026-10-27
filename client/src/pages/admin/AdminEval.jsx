@@ -21,22 +21,7 @@ function useWindowWidth() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-  return width;
-}
-
-function Hover({ as: Tag = "div", style, hoverStyle, children, ...rest }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <Tag
-      style={hovered ? { ...style, ...hoverStyle } : style}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      {...rest}
-    >
-      {children}
-    </Tag>
-  );
-}
+  return width;}
 
 function makeStyles(width) {
   const w1024 = width <= 1024;
