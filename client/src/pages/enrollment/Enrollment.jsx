@@ -718,6 +718,7 @@ const handleDetailsChange = (e) => {
     maxLength,
     min,
     max,
+    placeholder,
   } = {}
 ) => (
   <div style={small ? s.formGroupSmall : s.formGroup}>
@@ -738,6 +739,7 @@ const handleDetailsChange = (e) => {
       min={min}
       max={max}
       style={s.input}
+      placeholder={placeholder}
     />
   </div>
 );
@@ -834,13 +836,13 @@ const handleDetailsChange = (e) => {
           <div style={s.studentForm}>
             <form onSubmit={handleDetailsSubmit} style={s.form}>
               <div style={s.formRow}>
-                {renderField("lastName", "Last name:")}
-                {renderField("firstName", "First name:")}
-                {renderField("middleName", "Middle name:", { required: false })}
+                {renderField("lastName", "Last name:", {placeholder: "e.g. Dela Cruz"})}
+                {renderField("firstName", "First name:", {placeholder: "e.g. Juan"})}
+                {renderField("middleName", "Middle name:", { required: false, placeholder: "e.g. Sánchez" })}
               </div>
 
               <div style={s.formRow}>
-                {renderField("age", "Age:", { type: "number", small: true })}
+                {renderField("age", "Age:", { type: "number", small: true, placeholder: "e.g. 18", min: 10, max: 100 })}
                 <div style={s.formGroupSmall}>
                   <label htmlFor="gender" style={s.label}>Gender/Sex:</label>
                   <select
@@ -850,32 +852,33 @@ const handleDetailsChange = (e) => {
                     onChange={handleDetailsChange}
                     required
                     style={s.input}
+                    placeholder="e.g. Male or Female"
                   >
                     <option value="">Select Gender/Sex</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                   </select>
                 </div>
-                {renderField("homeAddress", "Home address:")}
-                {renderField("contact", "Contact number:", { type: "tel", pattern: "[0-9]{11}", minLength: 11, maxLength: 11 })}
-                {renderField("email", "Email:", { type: "email" })}
+                {renderField("homeAddress", "Home address:", {placeholder: "e.g. 123 Main St."})}
+                {renderField("contact", "Contact number:", { type: "tel", pattern: "[0-9]{11}", minLength: 11, maxLength: 11, placeholder: "e.g. 09123456789" })}
+                {renderField("email", "Email:", { type: "email", placeholder: "e.g. juan.dela.cruz@example.com" })}
               </div>
 
               <div style={s.formRow}>
-                {renderField("birthdate", "Birthdate:", { type: "date" })}
-                {renderField("mothersName", "Mother's Maiden Name:", { required: false })}
-                {renderField("mothersContact", "Mother's Contact Number:", { type: "tel", pattern: "[0-9]{11}", required: false, minLength: 11, maxLength: 11 })}
+                {renderField("birthdate", "Birthdate:", { type: "date", placeholder: "e.g. 01-01-1990" })}
+                {renderField("mothersName", "Mother's Maiden Name:", { required: false, placeholder: "e.g. Maria Dela Cruz" })}
+                {renderField("mothersContact", "Mother's Contact Number:", { type: "tel", pattern: "[0-9]{11}", required: false, minLength: 11, maxLength: 11, placeholder: "e.g. 09123456789" })}
               </div>
 
               <div style={s.formRow}>
-                {renderField("fathersName", "Father's Name:", { required: false })}
-                {renderField("fathersContact", "Father's Contact Number:", { required: false, type: "tel", pattern: "[0-9]{11}", minLength: 11, maxLength: 11 })}
-                {renderField("prevSchool", "Previous School:")}
+                {renderField("fathersName", "Father's Name:", { required: false, placeholder: "e.g. Juan Dela Cruz" })}
+                {renderField("fathersContact", "Father's Contact Number:", { required: false, type: "tel", pattern: "[0-9]{11}", minLength: 11, maxLength: 11, placeholder: "e.g. 09123456789" })}
+                {renderField("prevSchool", "Previous School:", { placeholder: "e.g. ABC High School" })}
               </div>
 
               <div style={s.formRow}>
-                {renderField("guardiansName", "Guardian's Name:")}
-                {renderField("guardiansContact", "Guardian's Contact Number:", { type: "tel", pattern: "[0-9]{11}", minLength: 11, maxLength: 11 })}
+                {renderField("guardiansName", "Guardian's Name:", { placeholder: "e.g. Pedro Dela Cruz" })}
+                {renderField("guardiansContact", "Guardian's Contact Number:", { type: "tel", pattern: "[0-9]{11}", minLength: 11, maxLength: 11, placeholder: "e.g. 09123456789" })}
               </div>
 
               <div style={s.divider}></div>
