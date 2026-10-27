@@ -3,7 +3,6 @@ import { useAuth } from "../../context/AuthContext";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const NAVY = "#242C54";
 const HEDVIG = "'Hedvig Letters Serif', sans-serif";
 const FRAUNCES = "Fraunces, serif";
 const ARIAL = "Arial, Helvetica, sans-serif";
@@ -42,7 +41,7 @@ function makeStyles(width) {
         h2: {
             fontFamily: HEDVIG,
             fontSize: "clamp(24px, 4vw, 35px)",
-            color: NAVY,
+            color: '#242C54',
             margin: "0 0 10px",
             textShadow: "1px 1px 10px #85858549",
         },
@@ -92,7 +91,7 @@ function makeStyles(width) {
         professorH3: {
             fontFamily: HEDVIG,
             fontSize: 20,
-            color: NAVY,
+            color: '#242C54',
             textShadow: "1px 1px 10px #85858549",
             margin: "0 0 4px",
         },
@@ -110,7 +109,7 @@ function makeStyles(width) {
             display: "flex",
             flexDirection: "column",
             gap: 14,
-            backgroundColor: NAVY,
+            backgroundColor: '#242C54',
             border: ".5px solid rgb(91, 110, 163)",
             borderRadius: w640 ? 12 : 15,
             padding: w640 ? "20px 16px" : "26px 30px",
@@ -168,7 +167,7 @@ function makeStyles(width) {
             fontFamily: FRAUNCES,
             fontWeight: 500,
             fontSize: 22,
-            color: NAVY,
+            color: '#242C54',
             margin: "0 0 4px",
             paddingBottom: 8,
             borderBottom: "1px solid rgba(0, 0, 0, 0.15)",

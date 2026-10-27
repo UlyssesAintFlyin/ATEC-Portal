@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import Blockade from "../../components/Blockade";
 import { useAuth } from "../../context/AuthContext";
+import { useSnackbar } from "../../components/AppSnackbar";
+
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -388,6 +390,7 @@ export default function Evaluation() {
   const [sections, setSections] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState(null);
   const [comments, setComments] = useState("");
+  const snackbar = useSnackbar();
 
   useEffect(() => {
     fetch(`${API_URL}/system-settings`)
@@ -446,7 +449,7 @@ export default function Evaluation() {
     const answeredCount = Object.keys(answers).length;
     
     if (answeredCount < totalQuestions) {
-      alert(`Please answer all questions. (${answeredCount}/${totalQuestions} completed)`);
+      snackbar.error(`Please answer all questions. (${answeredCount}/${totalQuestions} completed)`);
       return;
     }
 
@@ -465,7 +468,7 @@ export default function Evaluation() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Evaluation submitted successfully!");
+        snackbar.success("Evaluation submitted successfully!");
         setFacultyList((prev) =>
           prev.map((f) =>
             f.faculty_ID === selectedFaculty.faculty_ID ? { ...f, evaluated: true } : f,
@@ -475,11 +478,11 @@ export default function Evaluation() {
         setAnswers({});
         setComments("");
       } else {
-        alert(data.message || "Failed to submit evaluation.");
+        snackbar.error(data.message || "Failed to submit evaluation.");
       }
     } catch (error) {
       console.error("Submit error:", error);
-      alert("Cannot connect to the server.");
+      snackbar.error("Cannot connect to the server.");
     }
     
   };

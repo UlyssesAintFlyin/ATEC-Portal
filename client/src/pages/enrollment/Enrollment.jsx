@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import Blockade from "../../components/Blockade";
+import { useSnackbar } from "../../components/AppSnackbar";
+
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -517,6 +519,8 @@ export default function Enrollment() {
   const [enrollmentOpen, setEnrollmentOpen] = useState(false);
   const [termLabel, setTermLabel] = useState("");
 
+  const snackbar = useSnackbar();
+
   useEffect(() => {
     fetch(`${API_URL}/system-settings`)
       .then((res) => res.json())
@@ -569,12 +573,12 @@ export default function Enrollment() {
 
     if (studentType === "college") {
       if (!programTerm.term || !programTerm.year || !programTerm.program) {
-        alert("Please fill out all fields: Term, Year, and Program.");
+        snackbar.error("Please fill out all fields: Term, Year, and Program.");
         return;
       }
     } else if (studentType === "seniorHigh") {
       if (!programTerm.gradeLevel || !programTerm.track || !programTerm.program) {
-        alert("Please fill out all fields: Grade Level, Track & Specialization, and Program.");
+        snackbar.error("Please fill out all fields: Grade Level, Track & Specialization, and Program.");
         return;
       }
     }
@@ -611,12 +615,12 @@ export default function Enrollment() {
       if (response.ok) {
         setEnrollmentCode(data.enrollmentCode);
         setStep(5);
+        snackbar.success("Enrollment submitted successfully!");
       } else {
-        alert(data.message || "Failed to submit enrollment.");
-      }
+        snackbar.error(data.message || "Enrollment submission failed.");}
     } catch (error) {
       console.error("Error:", error);
-      alert("Cannot connect to the server.");
+      snackbar.error("Cannot connect to the server.");
     }
   };
 

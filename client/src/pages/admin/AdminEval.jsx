@@ -268,9 +268,7 @@ export default function Evaluation() {
       <div style={st.evaluationHeader}>
         <h2 style={st.h2}>Faculty Evaluation</h2>
         <p style={st.p}>Below is the summary of the faculty member's evaluation.</p>
-        <Hover as="button" style={st.emailBtn} hoverStyle={st.emailBtnHover}>
-          Send via Email
-        </Hover>
+        
       </div>
 
       <div style={st.professorsDiv}>
