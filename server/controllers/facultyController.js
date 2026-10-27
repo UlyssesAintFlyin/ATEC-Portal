@@ -46,7 +46,7 @@ async function getFacultyById(req, res) {
   
 
 async function updateFaculty(req, res) {
-  const { id } = req.params;
+  const { id } = req.params; 
   const {
     f_Name,
     l_Name,
@@ -64,6 +64,7 @@ async function updateFaculty(req, res) {
     password,
     account_type_ID,
     adminPassword,
+    admin_ID,
   } = req.body;
 
   try {
@@ -71,23 +72,23 @@ async function updateFaculty(req, res) {
       return res.status(400).json({ error: "Admin authentication required" });
     }
 
-    // Fetch all admin accounts to verify the password against any admin
+    if (!admin_ID) {
+      return res.status(400).json({ error: "Admin session ID missing" });
+    }
+
     const [adminRows] = await pool.query(
-      "SELECT faculty_ID, password FROM faculty_table WHERE account_type_id = 3"
+      "SELECT password FROM faculty_table WHERE faculty_ID = ? AND account_type_id = 3",
+      [admin_ID]
     );
 
     if (adminRows.length === 0) {
-      return res.status(401).json({ error: "No admin accounts found" });
+      return res.status(401).json({ error: "Logged-in admin account not found or unauthorized" });
     }
 
-    let isAdminValid = false;
-    for (const admin of adminRows) {
-      const match = await bcrypt.compare(adminPassword, admin.password);
-      if (match) {
-        isAdminValid = true;
-        break;
-      }
-    }
+    const isAdminValid = await bcrypt.compare(
+      adminPassword,
+      adminRows[0].password
+    );
 
     if (!isAdminValid) {
       return res.status(401).json({ error: "Invalid admin password" });

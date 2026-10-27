@@ -29,10 +29,6 @@ export default function Sections() {
 
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Confirmation dialog for deleting the selected sections
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
   const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
 
   useEffect(() => {
@@ -81,33 +77,6 @@ export default function Sections() {
     }
   };
 
-  const requestRemoveSelected = () => {
-    if (selectedIds.length === 0) return;
-    setConfirmDeleteOpen(true);
-  };
-
-  const cancelRemoveSelected = () => {
-    if (deleting) return; // don't allow closing mid-request
-    setConfirmDeleteOpen(false);
-  };
-
-  const confirmRemoveSelected = async () => {
-    setDeleting(true);
-    try {
-      await fetch(`${API_URL}/admin/sections/deleteSections`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selectedIds }),
-      });
-      setRows(rows.filter((r) => !selectedIds.includes(r.id)));
-      setSelectedIds([]);
-      setConfirmDeleteOpen(false);
-    } catch (err) {
-      console.error("Error deleting sections:", err);
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   const columns = [
     { field: "department", headerName: "Department", flex: 1, minWidth: 120 },
@@ -237,20 +206,6 @@ export default function Sections() {
             >
               Add Section
             </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={requestRemoveSelected}
-              disabled={selectedIds.length === 0}
-              sx={{
-                fontSize: { xs: "12px", sm: "14px", md: "16px" },
-                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
-                color: "#E8EDF2",
-                backgroundColor: "#54242b",
-              }}
-            >
-              Remove Selected
-            </Button>
           </Box>
         </Box>
 
@@ -335,33 +290,6 @@ export default function Sections() {
           <Button onClick={() => setOpen(false)}>Cancel</Button>
           <Button onClick={handleAdd} variant="contained">
             Add
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Confirmation before deleting the selected sections */}
-      <Dialog open={confirmDeleteOpen} onClose={cancelRemoveSelected}>
-        <DialogTitle>
-          Delete selected section{selectedIds.length !== 1 ? "s" : ""}?
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            {`This will permanently remove ${selectedIds.length} section${
-              selectedIds.length !== 1 ? "s" : ""
-            } and can't be undone.`}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={cancelRemoveSelected} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmRemoveSelected}
-            color="error"
-            variant="contained"
-            disabled={deleting}
-          >
-            {deleting ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>

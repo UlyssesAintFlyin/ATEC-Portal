@@ -13,6 +13,7 @@ import {
 import TextField from "@mui/material/TextField";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../components/AppSnackbar";
+import { useAuth } from "../../context/AuthContext";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -36,6 +37,7 @@ const formatDate = (rawDate) => {
 };
 
 export default function EditFaculty() {
+  const { user } = useAuth();
   const { id } = useParams();
   const [formData, setFormData] = useState({
     f_Name: "",
@@ -76,7 +78,6 @@ export default function EditFaculty() {
     if (!hadBirthday) age--;
     return age;
   };
-
   const requiredFields = {
     f_Name: "First name",
     l_Name: "Surname",
@@ -161,10 +162,15 @@ export default function EditFaculty() {
     setAdminPasswordError("");
     setOpenAuthDialog(true);
   };
-
+  
   const handleConfirmSave = async () => {
     if (!adminPassword.trim()) {
       setAdminPasswordError("Admin password is required");
+      return;
+    }
+
+    if (!user?.id) {
+      snackbar.error("Current admin session not found.");
       return;
     }
 
@@ -176,6 +182,7 @@ export default function EditFaculty() {
           ...formData,
           age,
           adminPassword,
+          admin_ID: user?.id,
         }),
       });
 
@@ -518,6 +525,7 @@ export default function EditFaculty() {
                 { label: "Teacher", id: 2 },
                 { label: "Admin", id: 3 },
               ]}
+              fullWidth
               getOptionLabel={(option) =>
                 typeof option === "string" ? option : option.label
               }
@@ -534,7 +542,6 @@ export default function EditFaculty() {
                   role: newValue ? newValue.label : "Teacher",
                 });
               }}
-              fullWidth
               isOptionEqualToValue={(option, value) => option.id === value.id}
               renderInput={(params) => (
                 <TextField
@@ -584,6 +591,10 @@ export default function EditFaculty() {
               value={formData.password ?? ""}
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
+              }
+              disabled={
+                Number(formData.account_type_ID) === 3 &&
+                String(formData.faculty_ID) !== String(user?.id)
               }
             />
           </Box>
