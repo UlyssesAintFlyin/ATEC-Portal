@@ -17,15 +17,15 @@ const PH_PHONE_RE = /^(09|\+639)\d{9}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LRN_RE = /^\d{12}$/;
 
+const formatDateLocal = (dateStr) => {
+    if (!dateStr) return "";
+    return dateStr.split("T")[0];
+  };
+
 const calculateAge = (birthdate) => {
   if (!birthdate) return "";
   const [y, m, d] = birthdate.split("-").map(Number);
   if (!y || !m || !d) return "";
-  
-  const formatDateLocal = (dateStr) => {
-    if (!dateStr) return "";
-    return dateStr.split("T")[0];
-  };
 
   const today = new Date();
   let age = today.getFullYear() - y;
