@@ -543,10 +543,44 @@ export default function Enrollment() {
     setStatusError("");
   };
 
-  const handleDetailsChange = (e) => {
-    const { name, value } = e.target;
-    setStudentDetails({ ...studentDetails, [name]: value });
-  };
+  
+
+const handleDetailsChange = (e) => {
+  const { name, value } = e.target;
+
+  const contactFields = [
+    "contact",
+    "mothersContact",
+    "fathersContact",
+    "guardiansContact",
+  ];
+
+  const nameFields = [
+    "firstName",
+    "lastName",
+    "middleName",
+    "mothersName",
+    "fathersName",
+    "guardiansName",
+  ];
+
+  // Contact numbers: digits only, maximum 11
+  if (contactFields.includes(name)) {
+    if (!/^\d{0,11}$/.test(value)) return;
+  }
+  
+
+  // Names: letters and spaces only
+  if (nameFields.includes(name)) {
+    if (!/^[a-zA-Z\s]*$/.test(value)) return;
+  }
+
+  setStudentDetails((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
+
 
   const handleProgramChange = (e) => {
     const { name, value } = e.target;
@@ -672,20 +706,41 @@ export default function Enrollment() {
     `${studentDetails.firstName} ${studentDetails.middleName} ${studentDetails.lastName}`.trim();
 
   // Small helpers to keep the markup short
-  const renderField = (name, label, { type = "text", required = true, small = false } = {}) => (
-    <div style={small ? s.formGroupSmall : s.formGroup}>
-      <label htmlFor={name} style={s.label}>{label}</label>
-      <input
-        type={type}
-        id={name}
-        name={name}
-        value={studentDetails[name]}
-        onChange={handleDetailsChange}
-        required={required}
-        style={s.input}
-      />
-    </div>
-  );
+  const renderField = (
+  name,
+  label,
+  {
+    type = "text",
+    required = true,
+    small = false,
+    pattern,
+    minLength,
+    maxLength,
+    min,
+    max,
+  } = {}
+) => (
+  <div style={small ? s.formGroupSmall : s.formGroup}>
+    <label htmlFor={name} style={s.label}>
+      {label}
+    </label>
+
+    <input
+      type={type}
+      id={name}
+      name={name}
+      value={studentDetails[name]}
+      onChange={handleDetailsChange}
+      required={required}
+      pattern={pattern}
+      minLength={minLength}
+      maxLength={maxLength}
+      min={min}
+      max={max}
+      style={s.input}
+    />
+  </div>
+);
 
   const renderReadOnly = (label, value, groupStyle = s.formGroup) => (
     <div style={groupStyle}>
@@ -802,25 +857,25 @@ export default function Enrollment() {
                   </select>
                 </div>
                 {renderField("homeAddress", "Home address:")}
-                {renderField("contact", "Contact number:")}
+                {renderField("contact", "Contact number:", { type: "tel", pattern: "[0-9]{11}", minLength: 11, maxLength: 11 })}
                 {renderField("email", "Email:", { type: "email" })}
               </div>
 
               <div style={s.formRow}>
                 {renderField("birthdate", "Birthdate:", { type: "date" })}
                 {renderField("mothersName", "Mother's Maiden Name:", { required: false })}
-                {renderField("mothersContact", "Mother's Contact Number:", { required: false })}
+                {renderField("mothersContact", "Mother's Contact Number:", { type: "tel", pattern: "[0-9]{11}", required: false, minLength: 11, maxLength: 11 })}
               </div>
 
               <div style={s.formRow}>
                 {renderField("fathersName", "Father's Name:", { required: false })}
-                {renderField("fathersContact", "Father's Contact Number:", { required: false })}
+                {renderField("fathersContact", "Father's Contact Number:", { required: false, type: "tel", pattern: "[0-9]{11}", minLength: 11, maxLength: 11 })}
                 {renderField("prevSchool", "Previous School:")}
               </div>
 
               <div style={s.formRow}>
                 {renderField("guardiansName", "Guardian's Name:")}
-                {renderField("guardiansContact", "Guardian's Contact Number:")}
+                {renderField("guardiansContact", "Guardian's Contact Number:", { type: "tel", pattern: "[0-9]{11}", minLength: 11, maxLength: 11 })}
               </div>
 
               <div style={s.divider}></div>
