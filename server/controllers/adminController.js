@@ -972,7 +972,7 @@ async function getCurrentSubjectTeacher(req, res) {
 
     const [teachers] = await pool.query(
       `SELECT faculty_ID AS id, CONCAT(f_Name, ' ', l_Name) AS name
-       FROM faculty_table WHERE position = 'Teacher' AND status = 'Active'`
+       FROM faculty_table WHERE position = 'Teacher' AND status = 'Active' AND faculty_ID!=2`,
     );
 
     res.json({ currentTeacher, teacherOptions: teachers });
