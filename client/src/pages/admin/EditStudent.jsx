@@ -3,24 +3,141 @@ import {
   Typography,
   Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Autocomplete,
   Divider,
   TextField,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSnackbar } from "../../components/AppSnackbar";
 
 const API_URL = process.env.REACT_APP_API_URL;
+
+/* ---------- Validation rules ---------- */
+const NAME_RE = /^[A-Za-zÀ-ÿ\s.'-]+$/;
+const PH_PHONE_RE = /^(09|\+639)\d{9}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LRN_RE = /^\d{12}$/;
+
+const calculateAge = (birthdate) => {
+  if (!birthdate) return "";
+  const [y, m, d] = birthdate.split("-").map(Number);
+  if (!y || !m || !d) return "";
+
+  const today = new Date();
+  let age = today.getFullYear() - y;
+  const hadBirthdayThisYear =
+    today.getMonth() + 1 > m ||
+    (today.getMonth() + 1 === m && today.getDate() >= d);
+  if (!hadBirthdayThisYear) age--;
+
+  return age < 0 ? "" : age;
+};
+
+const validateName = (value, label, required) => {
+  const v = value.trim();
+  if (!v) return required ? `${label} is required` : "";
+  if (v.length < 2) return `${label} must be at least 2 characters`;
+  if (v.length > 50) return `${label} must be 50 characters or fewer`;
+  if (!NAME_RE.test(v))
+    return `${label} may only contain letters, spaces, . ' and -`;
+  return "";
+};
+
+const validatePhone = (value, label, required) => {
+  const v = value.trim();
+  if (!v) return required ? `${label} is required` : "";
+  if (!PH_PHONE_RE.test(v)) return "Use format 09XXXXXXXXX or +639XXXXXXXXX";
+  return "";
+};
+
+const validate = (s) => {
+  const e = {};
+
+  e.f_Name = validateName(s.f_Name, "First name", true);
+  e.m_Name = validateName(s.m_Name, "Middle name", false);
+  e.l_Name = validateName(s.l_Name, "Surname", true);
+
+  if (!s.birthdate) {
+    e.birthdate = "Birthdate is required";
+  } else {
+    const d = new Date(s.birthdate);
+    const age = calculateAge(s.birthdate);
+    if (Number.isNaN(d.getTime())) e.birthdate = "Invalid date";
+    else if (d > new Date()) e.birthdate = "Birthdate cannot be in the future";
+    else if (age < 10 || age > 100)
+      e.birthdate = "Student must be between 10 and 100 years old";
+  }
+
+  if (!s.address.trim()) e.address = "Home address is required";
+  else if (s.address.trim().length < 5)
+    e.address = "Address must be at least 5 characters";
+
+  if (!s.email.trim()) e.email = "Email address is required";
+  else if (!EMAIL_RE.test(s.email.trim()))
+    e.email = "Enter a valid email (e.g. name@example.com)";
+  e.contact_Number = validatePhone(s.contact_Number, "Contact number", true);
+
+  const pairs = [
+    ["father_Name", "father_Contact", "Father's"],
+    ["mother_Name", "mother_Contact", "Mother's"],
+    ["guardian_Name", "guardian_Contact", "Guardian's"],
+  ];
+  let hasCompletePair = false;
+  pairs.forEach(([nameKey, contactKey, label]) => {
+    const hasName = s[nameKey].trim() !== "";
+    const hasContact = s[contactKey].trim() !== "";
+
+    e[nameKey] = validateName(s[nameKey], `${label} name`, false);
+    e[contactKey] = validatePhone(s[contactKey], `${label} contact`, false);
+
+    if (hasName && !hasContact && !e[contactKey])
+      e[contactKey] = `${label} contact number is required`;
+    if (hasContact && !hasName && !e[nameKey])
+      e[nameKey] = `${label} name is required`;
+
+    if (hasName && hasContact && !e[nameKey] && !e[contactKey])
+      hasCompletePair = true;
+  });
+  if (!hasCompletePair) {
+    pairs.forEach(([nameKey]) => {
+      if (!e[nameKey]) e[nameKey] = "Provide at least one parent or guardian";
+    });
+  }
+
+  if (!s.section_ID) e.section_ID = "Year level & section is required";
+
+  if (!s.lrn.trim()) e.lrn = "LRN is required";
+  else if (!LRN_RE.test(s.lrn.trim())) e.lrn = "LRN must be exactly 12 digits";
+
+  if (!s.password) e.password = "Password is required";
+  else if (s.password.length < 8)
+    e.password = "Password must be at least 8 characters";
+
+  Object.keys(e).forEach((k) => !e[k] && delete e[k]);
+  return e;
+};
+
+const rowSx = {
+  display: "flex",
+  flexDirection: { xs: "column", md: "row" },
+  gap: 4,
+  margin: "0 20px",
+};
+const sectionTitleSx = {
+  color: "#242C54",
+  fontWeight: "bold",
+  fontSize: "30px",
+  ml: "20px",
+};
+const dividerSx = { borderColor: "#242c54" };
 
 export default function EditStudent() {
   const { studentId } = useParams();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
   const [currentAYS_ID, setCurrentAYS_ID] = useState("");
   const [sections, setSections] = useState([]);
+  const [touched, setTouched] = useState({});
+  const [saving, setSaving] = useState(false);
   const [student, setStudent] = useState({
     f_Name: "",
     m_Name: "",
@@ -44,6 +161,10 @@ export default function EditStudent() {
     student_ID: "",
     section_ID: "",
   });
+  const snackbar = useSnackbar();
+
+  const errors = validate(student);
+  const age = calculateAge(student.birthdate);
 
   const formatDateLocal = (dateStr) => {
     if (!dateStr) return "";
@@ -72,7 +193,7 @@ export default function EditStudent() {
     const fetchStudent = async () => {
       try {
         const res = await fetch(
-          `${API_URL}/admin/students/${studentId}?AYS_ID=${currentAYS_ID}`
+          `${API_URL}/admin/students/${studentId}?AYS_ID=${currentAYS_ID}`,
         );
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
@@ -84,7 +205,6 @@ export default function EditStudent() {
           birthdate: formatDateLocal(data.birthdate),
           gender: data.gender || "",
           email: data.email || "",
-          age: data.age || "",
           address: data.address || "",
           contact_Number: data.contact_Number || "",
           father_Name: data.father_Name || "",
@@ -102,6 +222,7 @@ export default function EditStudent() {
         });
       } catch (err) {
         console.error("Error loading student:", err);
+        snackbar.error("Failed to load student information");
       }
     };
 
@@ -112,7 +233,7 @@ export default function EditStudent() {
     if (!student.department || !currentAYS_ID) return;
 
     fetch(
-      `${API_URL}/admin/sections/byDepartment?department=${student.department}&AYS_ID=${currentAYS_ID}`
+      `${API_URL}/admin/sections/byDepartment?department=${student.department}&AYS_ID=${currentAYS_ID}`,
     )
       .then((res) => res.json())
       .then((data) => setSections(data))
@@ -124,11 +245,49 @@ export default function EditStudent() {
     setStudent((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+  };
+
+  // Props shared by every TextField: value, handlers, error + helper text
+  const fieldProps = (name, hint) => {
+    const showError = !!(touched[name] && errors[name]);
+    return {
+      name,
+      value: student[name],
+      onChange: handleChange,
+      onBlur: handleBlur,
+      error: showError,
+      helperText: showError ? errors[name] : hint || " ", // " " keeps layout from jumping
+      fullWidth: true,
+    };
+  };
+
   const handleSave = async () => {
+    // Mark every field as touched so all errors show up
+    const allTouched = Object.keys(student).reduce(
+      (acc, k) => ({ ...acc, [k]: true }),
+      {},
+    );
+    setTouched(allTouched);
+
+    if (Object.keys(errors).length > 0) {
+      snackbar.error("Please fix the highlighted fields before saving");
+      return;
+    }
+
+    setSaving(true);
     try {
       const payload = {
         ...student,
-        age: student.age === "" || student.age === null ? null : parseInt(student.age, 10),
+        f_Name: student.f_Name.trim(),
+        m_Name: student.m_Name.trim(),
+        l_Name: student.l_Name.trim(),
+        email: student.email.trim(),
+        address: student.address.trim(),
+        lrn: student.lrn.trim(),
+        age,                                 
         birthdate: formatDateLocal(student.birthdate),
         AYS_ID: currentAYS_ID,
       };
@@ -140,11 +299,31 @@ export default function EditStudent() {
       });
 
       if (!res.ok) throw new Error(`Save failed: ${res.status}`);
-      setOpen(true);
+      snackbar.success("Student information saved successfully");
+
+      // Go back to the (selected) section page that lists this student
+      const targetSection = sections.find(
+        (sec) => sec.section_ID === student.section_ID,
+      );
+      if (targetSection) {
+        navigate(`/admin/sections/${targetSection.section_Name}`, {
+          state: {
+            gradeLevel: targetSection.gradeLevel,
+            section_ID: targetSection.section_ID,
+          },
+        });
+      } else {
+        navigate(-1);
+      }
     } catch (err) {
       console.error("Error saving student:", err);
+      snackbar.error(err.message || "Failed to save student information");
+    } finally {
+      setSaving(false);
     }
   };
+
+  const sectionError = !!(touched.section_ID && errors.section_ID);
 
   return (
     <Box
@@ -204,252 +383,112 @@ export default function EditStudent() {
         >
           <Typography
             variant="h6"
-            sx={{
-              color: "#242C54",
-              fontWeight: "bold",
-              fontSize: "30px",
-              margin: "10px 20px -15px",
-            }}
+            sx={{ ...sectionTitleSx, margin: "10px 20px -15px" }}
           >
             Personal Information
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 4,
-              margin: "0 20px",
-            }}
-          >
-            <TextField
-              label="First Name"
-              name="f_Name"
-              value={student.f_Name}
-              onChange={handleChange}
-              fullWidth
-            />
+
+          <Box sx={rowSx}>
+            <TextField label="First Name" required {...fieldProps("f_Name")} />
             <TextField
               label="Middle Name"
-              name="m_Name"
-              value={student.m_Name}
-              onChange={handleChange}
-              fullWidth
+              {...fieldProps("m_Name", "Optional")}
             />
-            <TextField
-              label="Surname"
-              name="l_Name"
-              value={student.l_Name}
-              onChange={handleChange}
-              fullWidth
-            />
+            <TextField label="Surname" required {...fieldProps("l_Name")} />
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 4,
-              margin: "0 20px",
-            }}
-          >
+          <Box sx={rowSx}>
             <TextField
               label="Age"
-              name="age"
-              type="number"
-              value={student.age}
-              onChange={handleChange}
+              value={age}
+              InputProps={{ readOnly: true }}
+              helperText="Calculated from birthdate"
               fullWidth
             />
-            <TextField
-              label="Gender"
-              name="gender"
-              value={student.gender}
-              onChange={handleChange}
-              fullWidth
-            />
+            <TextField label="Gender" required {...fieldProps("gender")} />
             <TextField
               label="Birthdate"
-              name="birthdate"
               type="date"
+              required
               InputLabelProps={{ shrink: true }}
-              value={student.birthdate}
-              onChange={handleChange}
-              fullWidth
+              inputProps={{ max: new Date().toISOString().split("T")[0] }}
+              {...fieldProps("birthdate")}
             />
           </Box>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 4,
-              margin: "0 20px",
-            }}
-          >
+
+          <Box sx={{ ...rowSx, flexDirection: "row" }}>
             <TextField
               label="Home Address"
-              name="address"
-              value={student.address}
-              onChange={handleChange}
-              fullWidth
+              required
+              {...fieldProps("address")}
             />
           </Box>
 
-          <Divider
-            variant="middle"
-            sx={{
-              borderColor: "#242c54",
-            }} />
+          <Divider variant="middle" sx={dividerSx} />
 
-          <Typography
-            variant="h6"
-            sx={{
-              color: "#242C54",
-              fontWeight: "bold",
-              fontSize: "30px",
-              ml: "20px",
-            }}
-          >
+          <Typography variant="h6" sx={sectionTitleSx}>
             Contact Information
           </Typography>
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 4,
-              margin: "0 20px",
-            }}
-          >
+          <Box sx={rowSx}>
             <TextField
               label="Email Address"
-              name="email"
-              value={student.email}
-              onChange={handleChange}
-              fullWidth
+              type="email"
+              required
+              {...fieldProps("email", "e.g. name@example.com")}
             />
             <TextField
               label="Contact Number"
-              name="contact_Number"
-              value={student.contact_Number}
-              onChange={handleChange}
-              fullWidth
+              required
+              inputProps={{ inputMode: "tel", maxLength: 13 }}
+              {...fieldProps("contact_Number", "e.g. 09XXXXXXXXX")}
             />
           </Box>
 
-          <Divider
-            variant="middle"
-            sx={{
-              borderColor: "#242c54",
-            }} />
+          <Divider variant="middle" sx={dividerSx} />
 
-          <Typography
-            variant="h6"
-            sx={{
-              color: "#242C54",
-              fontWeight: "bold",
-              fontSize: "30px",
-              ml: "20px",
-            }}
-          >
+          <Typography variant="h6" sx={sectionTitleSx}>
             Family Information
           </Typography>
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 4,
-              margin: "0 20px",
-            }}
-          >
-            <TextField
-              label="Father's Name"
-              name="father_Name"
-              value={student.father_Name}
-              onChange={handleChange}
-              fullWidth
-            />
+          <Box sx={rowSx}>
+            <TextField label="Father's Name" {...fieldProps("father_Name")} />
             <TextField
               label="Father's Contact Number"
-              name="father_Contact"
-              value={student.father_Contact}
-              onChange={handleChange}
-              fullWidth
+              inputProps={{ inputMode: "tel", maxLength: 13 }}
+              {...fieldProps("father_Contact", "e.g. 09XXXXXXXXX")}
             />
           </Box>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 4,
-              margin: "0 20px",
-            }}
-          >
+          <Box sx={rowSx}>
             <TextField
               label="Mother's Maiden Name"
-              name="mother_Name"
-              value={student.mother_Name}
-              onChange={handleChange}
-              fullWidth
+              {...fieldProps("mother_Name")}
             />
             <TextField
               label="Mother's Contact Number"
-              name="mother_Contact"
-              value={student.mother_Contact}
-              onChange={handleChange}
-              fullWidth
+              inputProps={{ inputMode: "tel", maxLength: 13 }}
+              {...fieldProps("mother_Contact", "e.g. 09XXXXXXXXX")}
             />
           </Box>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 4,
-              margin: "0 20px",
-            }}
-          >
+          <Box sx={rowSx}>
             <TextField
               label="Guardian's Name"
-              name="guardian_Name"
-              value={student.guardian_Name}
-              onChange={handleChange}
-              fullWidth
+              {...fieldProps("guardian_Name")}
             />
             <TextField
               label="Guardian's Contact Number"
-              name="guardian_Contact"
-              value={student.guardian_Contact}
-              onChange={handleChange}
-              fullWidth
+              inputProps={{ inputMode: "tel", maxLength: 13 }}
+              {...fieldProps("guardian_Contact", "e.g. 09XXXXXXXXX")}
             />
           </Box>
 
-          <Divider
-            variant="middle"
-            sx={{
-              borderColor: "#242c54",
-            }} />
+          <Divider variant="middle" sx={dividerSx} />
 
-          <Typography
-            variant="h6"
-            sx={{
-              color: "#242C54",
-              fontWeight: "bold",
-              fontSize: "30px",
-              ml: "20px",
-            }}
-          >
+          <Typography variant="h6" sx={sectionTitleSx}>
             Program Information
           </Typography>
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 4,
-              margin: "0 20px",
-            }}
-          >
+          <Box sx={rowSx}>
             <TextField
               label="Department"
               name="department"
@@ -479,63 +518,47 @@ export default function EditStudent() {
                 option.section_ID === value.section_ID
               }
               onChange={(e, value) => {
-                if (value) {
-                  setStudent((prev) => ({
-                    ...prev,
-                    section_ID: value.section_ID,
-                  }));
-                }
+                setStudent((prev) => ({
+                  ...prev,
+                  section_ID: value ? value.section_ID : "",
+                }));
+                setTouched((prev) => ({ ...prev, section_ID: true }));
               }}
+              onBlur={() =>
+                setTouched((prev) => ({ ...prev, section_ID: true }))
+              }
               fullWidth
               sx={{ flex: 1 }}
               renderInput={(params) => (
                 <TextField
                   {...params}
                   label="Year Level & Section"
+                  required
+                  error={sectionError}
+                  helperText={sectionError ? errors.section_ID : " "}
                   fullWidth
                 />
               )}
             />
           </Box>
 
-          <Divider variant="middle"
-            sx={{
-              borderColor: "#242c54",
-            }} />
-          <Typography
-            variant="h6"
-            sx={{
-              color: "#242C54",
-              fontWeight: "bold",
-              fontSize: "30px",
-              ml: "20px",
-            }}
-          >
+          <Divider variant="middle" sx={dividerSx} />
+
+          <Typography variant="h6" sx={sectionTitleSx}>
             Account Configuration
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 4,
-              margin: "0 20px",
-              mb: "40px",
-            }}
-          >
+          <Box sx={{ ...rowSx, mb: "40px" }}>
             <TextField
               label="Learner's Reference Number"
-              name="lrn"
-              value={student.lrn}
-              onChange={handleChange}
-              fullWidth
+              required
+              inputProps={{ inputMode: "numeric", maxLength: 12 }}
+              {...fieldProps("lrn", "12-digit LRN")}
             />
             <TextField
               label="Password"
-              name="password"
-              value={student.password}
-              onChange={handleChange}
-              fullWidth
               type="password"
+              required
+              {...fieldProps("password", "At least 8 characters")}
             />
           </Box>
         </Box>
@@ -562,6 +585,7 @@ export default function EditStudent() {
             },
           }}
           onClick={() => navigate(-1)}
+          disabled={saving}
         >
           Cancel
         </Button>
@@ -575,29 +599,13 @@ export default function EditStudent() {
             "&:hover": {
               backgroundColor: "#4f5d9e",
             },
+            "&.Mui-disabled": { color: "#E8EDF2", opacity: 0.6 },
           }}
           onClick={handleSave}
+          disabled={saving}
         >
-          Save Changes
+          {saving ? "Saving..." : "Save Changes"}
         </Button>
-
-        <Dialog open={open} onClose={() => setOpen(false)}>
-          <DialogTitle>Success</DialogTitle>
-          <DialogContent>
-            <Typography>
-              Student information has been successfully changed.
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => setOpen(false)}
-              variant="contained"
-              color="primary"
-            >
-              OK
-            </Button>
-          </DialogActions>
-        </Dialog>
       </Box>
     </Box>
   );
