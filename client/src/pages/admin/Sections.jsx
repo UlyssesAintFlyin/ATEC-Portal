@@ -45,6 +45,8 @@ export default function Sections() {
   }, []);
 
   useEffect(() => {
+    if (!currentAYS_ID) return;
+
     const fetchSections = async () => {
       try {
         const res = await fetch(
@@ -56,27 +58,29 @@ export default function Sections() {
         console.error("Error loading sections:", err);
       }
     };
+
     fetchSections();
-  });
+  }, [currentAYS_ID]);
+
   const handleAdd = async () => {
     try {
       const res = await fetch(`${API_URL}/admin/sections/addSection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSection),
+        body: JSON.stringify({
+          ...newSection,
+          AYS_ID: currentAYS_ID,
+        }),
       });
       const created = await res.json();
       setRows([...rows, created]); // append new section
       setOpen(false);
       setNewSection({ gradeLevel: "", sectionName: "", department: "" });
-      snackbar.success(
-        `${newSection.sectionName} was successfully added!`,
-      );
+      snackbar.success(`${newSection.sectionName} was successfully added!`);
     } catch (err) {
       snackbar.error(err.message || "Error creating section:");
     }
   };
-
 
   const columns = [
     { field: "department", headerName: "Department", flex: 1, minWidth: 120 },
@@ -206,6 +210,31 @@ export default function Sections() {
             >
               Add Section
             </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#272454",
+              }}
+            >
+              Edit Section
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate(`/admin/sections/irregularList`)}
+              sx={{
+                fontSize: { xs: "12px", sm: "14px", md: "16px" },
+                padding: { xs: "4px 8px", sm: "6px 12px", md: "8px 16px" },
+                color: "#E8EDF2",
+                backgroundColor: "#544b24",
+              }}
+            >
+              Handle Irregular
+            </Button>
           </Box>
         </Box>
 
@@ -219,7 +248,6 @@ export default function Sections() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            
           }}
         >
           {/*Table Component*/}

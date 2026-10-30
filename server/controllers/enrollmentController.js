@@ -2,165 +2,183 @@ const pool = require('../config/db');
 const ExcelJS = require('exceljs');
 
 const generateEnrollmentCode = async () => {
-    const currentYear = new Date().getFullYear();
-    let code;
-    let exists = true;
+  const currentYear = new Date().getFullYear();
+  let code;
+  let exists = true;
 
-    while (exists) {
-        const randomNum = Math.floor(Math.random() * 100000);
-        const padded = String(randomNum).padStart(5, '0');
-        code = `ATEC-${currentYear}-${padded}`;
+  while (exists) {
+    const randomNum = Math.floor(Math.random() * 100000);
+    const padded = String(randomNum).padStart(5, '0');
+    code = `ATEC-${currentYear}-${padded}`;
 
-        const [rows] = await pool.query(
-            'SELECT enrollment_ID FROM enrollment_table WHERE enrollment_code = ?',
-            [code]
-        );
-        exists = rows.length > 0;
-    }
+    const [rows] = await pool.query(
+      'SELECT enrollment_ID FROM enrollment_table WHERE enrollment_code = ?',
+      [code]
+    );
+    exists = rows.length > 0;
+  }
 
-    return code;
+  return code;
 };
 
 const createEnrollment = async (req, res) => {
-    try {
-        const { studentDetails, studentType, programTerm } = req.body;
+  try {
+    const { studentDetails, studentType, programTerm } = req.body;
 
-        if (!studentDetails.birthdate || isNaN(Date.parse(studentDetails.birthdate))) {
-            return res.status(400).json({ message: 'Invalid or missing birthdate.' });
-        }
-        if (!studentDetails.email || !studentDetails.firstName || !studentDetails.lastName) {
-            return res.status(400).json({ message: 'Missing required fields.' });
-        }
-        if (studentType === 'college' && !programTerm.term) {
-            return res.status(400).json({ message: 'Please select a term.' });
-        } 
-        if (studentType === 'seniorHigh' && !programTerm.gradeLevel) {
-            return res.status(400).json({ message: 'Please select a grade level.' });
-        }
-        if (studentType === 'seniorHigh' && !programTerm.program) {
-            return res.status(400).json({ message: 'Please select a program.' });
-        }
+    if (!studentDetails.birthdate || isNaN(Date.parse(studentDetails.birthdate))) {
+      return res.status(400).json({ message: 'Invalid or missing birthdate.' });
+    }
+    if (!studentDetails.email || !studentDetails.firstName || !studentDetails.lastName) {
+      return res.status(400).json({ message: 'Missing required fields.' });
+    }
+    if (studentType === 'college' && !programTerm.term) {
+      return res.status(400).json({ message: 'Please select a term.' });
+    }
+    if (studentType === 'seniorHigh' && !programTerm.gradeLevel) {
+      return res.status(400).json({ message: 'Please select a grade level.' });
+    }
+    if (studentType === 'seniorHigh' && !programTerm.program) {
+      return res.status(400).json({ message: 'Please select a program.' });
+    }
+    if (!studentDetails.lrn || !LRN_RE.test(studentDetails.lrn)) {
+      return res.status(400).json({
+        message: 'LRN must be exactly 12 digits.'
+      });
+    }
 
-        // Pull the currently active AYS_ID from system settings,
-        // set by the admin via setAY/setSemester
-        const [settingsRows] = await pool.query(
-            `SELECT enrollment_AYS_ID FROM system_settings_table WHERE system_settings_ID = 1`
-        );
+    const [existingLrn] = await pool.query(
+      'SELECT enrollment_ID FROM enrollment_table WHERE lrn = ?',
+      [studentDetails.lrn]
+    );
 
-        const AYS_ID = settingsRows.length > 0 ? settingsRows[0].enrollment_AYS_ID : null;
+    if (existingLrn.length > 0) {
+      return res.status(400).json({
+        message: 'LRN already exists.'
+      });
+    }
 
-        if (!AYS_ID) {
-            return res.status(400).json({ message: 'Enrollment period is not currently configured. Please contact the registrar.' });
-        }
+    // Pull the currently active AYS_ID from system settings,
+    // set by the admin via setAY/setSemester
+    const [settingsRows] = await pool.query(
+      `SELECT enrollment_AYS_ID FROM system_settings_table WHERE system_settings_ID = 1`
+    );
 
-        const sql = `
+    const AYS_ID = settingsRows.length > 0 ? settingsRows[0].enrollment_AYS_ID : null;
+
+    if (!AYS_ID) {
+      return res.status(400).json({ message: 'Enrollment period is not currently configured. Please contact the registrar.' });
+    }
+
+    const sql = `
             INSERT INTO enrollment_table
             (f_Name, m_Name, l_Name, gender, age, contact_Number, email, address,
              father_Name, father_Contact, mother_Name, mother_Contact,
              guardian_Name, guardian_Contact,
              birthdate, transferring_from, AYS_ID,
-             student_type, term, year_level, grade_level, track, program)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             student_type, term, year_level, grade_level, track, program, lrn)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const values = [
-            studentDetails.firstName,
-            studentDetails.middleName,
-            studentDetails.lastName,
-            studentDetails.gender,
-            studentDetails.age || null,
-            studentDetails.contact,
-            studentDetails.email,
-            studentDetails.homeAddress,
-            studentDetails.fathersName,
-            studentDetails.fathersContact,
-            studentDetails.mothersName,
-            studentDetails.mothersContact,
-            studentDetails.guardiansName,
-            studentDetails.guardiansContact,
-            studentDetails.birthdate,
-            studentDetails.prevSchool,
-            AYS_ID,
-            studentType,
-            studentType === 'college' ? programTerm.term : null,
-            studentType === 'college' ? programTerm.year : null,
-            studentType === 'seniorHigh' ? programTerm.gradeLevel : null,
-            studentType === 'seniorHigh' ? programTerm.track : null,
-            programTerm.program || null
-        ];
+    const values = [
+      studentDetails.firstName,
+      studentDetails.middleName,
+      studentDetails.lastName,
+      studentDetails.gender,
+      studentDetails.age || null,
+      studentDetails.contact,
+      studentDetails.email,
+      studentDetails.homeAddress,
+      studentDetails.fathersName,
+      studentDetails.fathersContact,
+      studentDetails.mothersName,
+      studentDetails.mothersContact,
+      studentDetails.guardiansName,
+      studentDetails.guardiansContact,
+      studentDetails.birthdate,
+      studentDetails.prevSchool,
+      AYS_ID,
+      studentType,
+      studentType === 'college' ? programTerm.term : null,
+      studentType === 'college' ? programTerm.year : null,
+      studentType === 'seniorHigh' ? programTerm.gradeLevel : null,
+      studentType === 'seniorHigh' ? programTerm.track : null,
+      programTerm.program || null,
+      studentDetails.lrn
+    ];
 
-        const [result] = await pool.query(sql, values);
+    const [result] = await pool.query(sql, values);
 
-        const enrollmentCode = await generateEnrollmentCode();
+    const enrollmentCode = await generateEnrollmentCode();
 
-        await pool.query(
-            'UPDATE enrollment_table SET enrollment_code = ? WHERE enrollment_ID = ?',
-            [enrollmentCode, result.insertId]
-        );
+    await pool.query(
+      'UPDATE enrollment_table SET enrollment_code = ? WHERE enrollment_ID = ?',
+      [enrollmentCode, result.insertId]
+    );
 
-        res.status(201).json({
-            message: 'Enrollment submitted successfully!',
-            enrollmentId: result.insertId,
-            enrollmentCode: enrollmentCode
-        });
+    res.status(201).json({
+      message: 'Enrollment submitted successfully!',
+      enrollmentId: result.insertId,
+      enrollmentCode: enrollmentCode
+    });
 
-    } catch (error) {
-        console.error('Enrollment error:', error);
-        res.status(500).json({
-            message: 'Failed to save enrollment',
-            error: error.message
-        });
-    }
+  } catch (error) {
+    console.error('Enrollment error:', error);
+    res.status(500).json({
+      message: 'Failed to save enrollment',
+      error: error.message
+    });
+  }
 };
 
 const getEnrollmentStatus = async (req, res) => {
-    try {
-        const { code } = req.params;
+  try {
+    const { code } = req.params;
 
-        const [rows] = await pool.query(
-            'SELECT enrollment_code, f_Name, l_Name, status, created_at FROM enrollment_table WHERE enrollment_code = ?',
-            [code]
-        );
+    const [rows] = await pool.query(
+      'SELECT enrollment_code, f_Name, l_Name, status, created_at FROM enrollment_table WHERE enrollment_code = ?',
+      [code]
+    );
 
-        if (rows.length === 0) {
-            return res.status(404).json({ message: 'No enrollment found with that code.' });
-        }
-
-        res.json({ enrollment: rows[0] });
-
-    } catch (error) {
-        console.error('Status lookup error:', error);
-        res.status(500).json({ message: 'Failed to check status', error: error.message });
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'No enrollment found with that code.' });
     }
+
+    res.json({ enrollment: rows[0] });
+
+  } catch (error) {
+    console.error('Status lookup error:', error);
+    res.status(500).json({ message: 'Failed to check status', error: error.message });
+  }
 };
 
 const GENDERS = ['Male', 'Female'];
 const STUDENT_TYPES = ['seniorHigh', 'college'];
 const TERMS = ['1st Semester', '2nd Semester'];
-const IMPORTED_ACCOUNT_TYPE_ID = null; 
+const IMPORTED_ACCOUNT_TYPE_ID = null;
 
 const COLUMNS = [
-  { header: 'First Name',        field: 'f_Name',            required: true,  width: 18 },
-  { header: 'Middle Name',       field: 'm_Name',            width: 18 },
-  { header: 'Last Name',         field: 'l_Name',            required: true,  width: 18 },
-  { header: 'Gender',            field: 'gender',            width: 12, list: GENDERS },
-  { header: 'Birthdate',         field: 'birthdate',         width: 14, date: true },
-  { header: 'Contact Number',    field: 'contact_Number',    required: true,  width: 18, text: true },
-  { header: 'Email',             field: 'email',             required: true,  width: 28 },
-  { header: 'Address',           field: 'address',           required: true,  width: 36 },
-  { header: 'Father Name',       field: 'father_Name',       width: 22 },
-  { header: 'Father Contact',    field: 'father_Contact',    width: 18, text: true },
-  { header: 'Mother Name',       field: 'mother_Name',       width: 22 },
-  { header: 'Mother Contact',    field: 'mother_Contact',    width: 18, text: true },
-  { header: 'Guardian Name',     field: 'guardian_Name',     width: 22 },
-  { header: 'Guardian Contact',  field: 'guardian_Contact',  width: 18, text: true },
-  { header: 'Student Type',      field: 'student_type',      required: true,  width: 16, list: STUDENT_TYPES },
-  { header: 'Grade Level',       field: 'Grade_level',       width: 14 },
-  { header: 'Year Level',        field: 'year_level',        width: 14 },
-  { header: 'Track',             field: 'track',             width: 18 },
-  { header: 'Program',           field: 'program',           width: 24 },
-  { header: 'Term',              field: 'term',              width: 14, list: TERMS },
+  { header: 'First Name', field: 'f_Name', required: true, width: 18 },
+  { header: 'Middle Name', field: 'm_Name', width: 18 },
+  { header: 'Last Name', field: 'l_Name', required: true, width: 18 },
+  { header: 'Gender', field: 'gender', width: 12, list: GENDERS },
+  { header: 'Birthdate', field: 'birthdate', width: 14, date: true },
+  { header: 'Contact Number', field: 'contact_Number', required: true, width: 18, text: true },
+  { header: 'Email', field: 'email', required: true, width: 28 },
+  { header: 'Address', field: 'address', required: true, width: 36 },
+  { header: 'Father Name', field: 'father_Name', width: 22 },
+  { header: 'Father Contact', field: 'father_Contact', width: 18, text: true },
+  { header: 'Mother Name', field: 'mother_Name', width: 22 },
+  { header: 'Mother Contact', field: 'mother_Contact', width: 18, text: true },
+  { header: 'Guardian Name', field: 'guardian_Name', width: 22 },
+  { header: 'Guardian Contact', field: 'guardian_Contact', width: 18, text: true },
+  { header: 'Student Type', field: 'student_type', required: true, width: 16, list: STUDENT_TYPES },
+  { header: 'Grade Level', field: 'Grade_level', width: 14 },
+  { header: 'Year Level', field: 'year_level', width: 14 },
+  { header: 'Track', field: 'track', width: 18 },
+  { header: 'Program', field: 'program', width: 24 },
+  { header: 'Term', field: 'term', width: 14, list: TERMS },
   { header: 'Transferring From', field: 'transferring_from', width: 26 },
+  { header: 'LRN', field: 'lrn', required: true, width: 18, text: true },
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -203,6 +221,8 @@ function computeAge(isoDate) {
   return age;
 }
 
+const LRN_RE = /^\d{12}$/;
+
 async function getEnrolleeTemplate(req, res) {
   try {
     const workbook = new ExcelJS.Workbook();
@@ -215,14 +235,14 @@ async function getEnrolleeTemplate(req, res) {
     }));
     sheet.getRow(1).font = { bold: true };
 
-    
+
     COLUMNS.forEach((c, i) => {
       const col = sheet.getColumn(i + 1);
       if (c.text) col.numFmt = '@';
       if (c.date) col.numFmt = 'yyyy-mm-dd';
     });
 
-   
+
     for (let r = 2; r <= 500; r++) {
       COLUMNS.forEach((c, i) => {
         if (!c.list) return;
@@ -247,7 +267,6 @@ async function getEnrolleeTemplate(req, res) {
   }
 }
 
-
 async function importEnrollees(req, res) {
   const { ayId } = req.body;
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
@@ -263,7 +282,6 @@ async function importEnrollees(req, res) {
     const sheet = workbook.worksheets[0];
     if (!sheet) return res.status(400).json({ message: 'File has no worksheet' });
 
-   
     const colIndex = {};
     sheet.getRow(1).eachCell((cell, col) => {
       const h = cellText(cell).replace(/\s*\*$/, '').toLowerCase();
@@ -276,13 +294,22 @@ async function importEnrollees(req, res) {
       });
     }
 
-    
+
     const [existing] = await conn.query(
       `SELECT LOWER(email) AS email FROM enrollment_table
        WHERE AYS_ID = ? AND status <> 'Rejected'`,
       [aysId]
     );
     const seenEmails = new Set(existing.map((e) => e.email));
+
+    const [existingLrns] = await conn.query(
+      `SELECT lrn FROM enrollment_table
+   WHERE AYS_ID = ? AND status <> 'Rejected'`,
+      [aysId]
+    );
+    const seenLrns = new Set(
+      existingLrns.map(r => String(r.lrn))
+    );
 
     const errors = [];
     const records = [];
@@ -296,7 +323,7 @@ async function importEnrollees(req, res) {
         data[c.field] = idx ? cellText(row.getCell(idx)) : '';
       });
 
-      
+
       if (Object.values(data).every((v) => v === '')) return;
 
       const rowErrors = [];
@@ -317,11 +344,21 @@ async function importEnrollees(req, res) {
         rowErrors.push(`email ${data.email} already has an enrollment for this term (or appears twice in the file)`);
       }
 
+      if (!LRN_RE.test(data.lrn)) {
+        rowErrors.push('LRN must be exactly 12 digits');
+      }
+
+      if (seenLrns.has(data.lrn)) {
+        rowErrors.push(`LRN ${data.lrn} already exists`);
+      }
+
       if (rowErrors.length) {
         errors.push(`Row ${rowNumber}: ${rowErrors.join('; ')}`);
         return;
       }
+
       seenEmails.add(emailKey);
+      seenLrns.add(data.lrn);
 
       const orNull = (v) => (v === '' ? null : v);
       records.push([
@@ -332,7 +369,7 @@ async function importEnrollees(req, res) {
         orNull(data.guardian_Name), orNull(data.guardian_Contact),
         bd.value, orNull(data.transferring_from), IMPORTED_ACCOUNT_TYPE_ID, aysId,
         orNull(data.Grade_level), data.student_type, orNull(data.term),
-        orNull(data.year_level), orNull(data.track), orNull(data.program)
+        orNull(data.year_level), orNull(data.track), orNull(data.program), data.lrn
       ]);
     });
 
@@ -350,7 +387,7 @@ async function importEnrollees(req, res) {
          father_Name, father_Contact, mother_Name, mother_Contact,
          guardian_Name, guardian_Contact, birthdate, transferring_from,
          account_type_ID, AYS_ID, Grade_level, student_type, term,
-         year_level, track, program)
+         year_level, track, program, lrn)
        VALUES ?`,
       [records]
     );

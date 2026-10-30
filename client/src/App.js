@@ -30,6 +30,7 @@ import EnrolleeQueue from './pages/admin/EnrolleeQueue';
 import FacultyReport from './pages/evaluation/FacultyReportPublic'
 import SectionSubject from './pages/admin/SectionSubject'
 import ForgotPassword from './pages/sign_in/ForgotPassword';
+import IrregularList from './pages/admin/IrregularList';
 import { Link } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
@@ -88,6 +89,7 @@ function App() {
                   <Route path="facultyEvaluation/editFaculty/:id" element={<EditFaculty />} />
                   <Route path="facultyEvaluation/evaluation/:id" element={<AdminEval />} />
                   <Route path="sections" element={<Sections />} />
+                  <Route path="sections/irregularList" element={<IrregularList />} />
                   <Route path="sections/:sectionName" element={<SelectedSection />} />
                   <Route path="sections/:sectionName/SectionSubject" element={<SectionSubject />} />
                   <Route path="sections/:sectionName/addStudent" element={<EnrolleeQueue />} />

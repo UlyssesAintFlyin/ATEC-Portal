@@ -388,10 +388,14 @@ async function getEnrolleeById(req, res) {
 //Convert Enrolee to Student
 
 async function convertEnrollees(req, res) {
-  console.log("Request body:", req.body);
   const { sectionId, enrolleeIds, AYS_ID } = req.body;
-  console.log("Section ID:", sectionId, "Enrollee IDs:", enrolleeIds, "AYS_ID:", AYS_ID);
+
+  if (!sectionId || !AYS_ID || !Array.isArray(enrolleeIds) || enrolleeIds.length === 0) {
+    return res.status(400).json({ error: "sectionId, AYS_ID and at least one enrollee are required" });
+  }
+
   const connection = await pool.getConnection();
+  const pendingEmails = [];
   try {
     await connection.beginTransaction();
 
@@ -399,6 +403,34 @@ async function convertEnrollees(req, res) {
       `SELECT * FROM enrollment_table WHERE enrollment_ID IN (?) AND status = 'Validated'`,
       [enrolleeIds]
     );
+    if (enrollees.length === 0) {
+      await connection.rollback();
+      return res.status(400).json({ error: "No validated enrollees found for the given IDs" });
+    }
+
+    // student_year_record_table.program is NOT NULL; fail early with a readable message
+    const noProgram = enrollees.filter((e) => !e.program);
+
+    const noLrn = enrollees.filter(
+      (e) => !e.lrn || !/^\d{12}$/.test(String(e.lrn))
+    );
+
+    if (noLrn.length > 0) {
+      await connection.rollback();
+      return res.status(400).json({
+        error: `Invalid LRN for: ${noLrn
+          .map((e) => `${e.f_Name} ${e.l_Name}`)
+          .join(", ")}`,
+      });
+    }
+
+    if (noProgram.length > 0) {
+      await connection.rollback();
+      return res.status(400).json({
+        error: `Missing program for: ${noProgram.map((e) => `${e.f_Name} ${e.l_Name}`).join(", ")}`,
+      });
+    }
+
     const [sectionRows] = await connection.query(
       `SELECT syr.section_record_ID, sec.department
        FROM section_year_record_table syr
@@ -432,10 +464,10 @@ async function convertEnrollees(req, res) {
       const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
       const [studentResult] = await connection.query(
-        `INSERT INTO student_table 
-         (f_Name, m_Name, l_Name, password, gender, contact_Number, email, address, 
-          father_Name, father_Contact, mother_Name, mother_Contact, guardian_Name, guardian_Contact, 
-          birthdate, age, lrn, account_type_ID) 
+        `INSERT INTO student_table
+         (f_Name, m_Name, l_Name, password, gender, contact_Number, email, address,
+          father_Name, father_Contact, mother_Name, mother_Contact, guardian_Name, guardian_Contact,
+          birthdate, age, lrn, account_type_ID)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         [
           enrollee.f_Name,
@@ -469,49 +501,62 @@ async function convertEnrollees(req, res) {
 
       await connection.query(
         `INSERT INTO student_year_record_table
-         (student_ID, section_record_ID, program, department, specialization)
-         VALUES (?, ?, ?, ?, ?)`,
+           (student_ID, section_record_ID, AYS_ID, classification, program, department, specialization)
+         VALUES (?, ?, ?, 'Regular', ?, ?, ?)`,
         [
           studentId,
           section_record_ID,
-          enrollee.program || null,
+          AYS_ID,
+          enrollee.program,
           normalizedDepartment,
-          enrollee.specialization,
+          enrollee.specialization ?? null,
         ]
       );
 
-      await connection.query(
-        `DELETE FROM enrollment_table WHERE enrollment_ID = ?`,
-        [enrollee.enrollment_ID]
-      );
+      await connection.query(`DELETE FROM enrollment_table WHERE enrollment_ID = ?`, [
+        enrollee.enrollment_ID,
+      ]);
 
       if (enrollee.email) {
-        const emailSubject = "Student Account Credentials";
-        const emailBody = `Greetings, ${enrollee.f_Name}!\n\nYour enrollment has been validated and your student account has been created successfully.\n\nLogin Credentials:\nEmail: ${enrollee.email}\nTemporary Password: ${rawPassword}\n\nPlease log in and change your password immediately.`;
-
-        await sendEmail(enrollee.email, emailSubject, emailBody);
+        pendingEmails.push({
+          to: enrollee.email,
+          subject: "Student Account Credentials",
+          body: `Greetings, ${enrollee.f_Name}!\n\nYour enrollment has been validated and your student account has been created successfully.\n\nLogin Credentials:\nEmail: ${enrollee.email}\nTemporary Password: ${rawPassword}\n\nPlease log in and change your password immediately.`,
+        });
       }
 
-      createdStudents.push({
-        id: studentId,
-        name: `${enrollee.f_Name} ${enrollee.l_Name}`,
-      });
+      createdStudents.push({ id: studentId, name: `${enrollee.f_Name} ${enrollee.l_Name}` });
     }
 
     await connection.commit();
-    res.json({ success: true, students: createdStudents });
+
+    // Send emails only AFTER the commit, so nobody receives credentials for an
+    // account that was rolled back. A failed email must not undo the conversion.
+    let emailFailures = 0;
+    for (const mail of pendingEmails) {
+      try {
+        await sendEmail(mail.to, mail.subject, mail.body);
+      } catch (mailErr) {
+        emailFailures++;
+        console.error(`Failed to email ${mail.to}:`, mailErr);
+      }
+    }
+
+    res.json({ success: true, students: createdStudents, emailFailures });
   } catch (err) {
     console.error("Error converting enrollees:", err);
-    if (connection) await connection.rollback();
+    try { await connection.rollback(); } catch (_) { /* connection already gone */ }
+
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        error: "A student with the same email or LRN already exists. No enrollees were converted.",
+      });
+    }
     res.status(500).json({ error: "Failed to convert enrollees" });
   } finally {
-    if (connection) connection.release();
+    connection.release();
   }
 }
-
-module.exports = {
-  convertEnrollees,
-};
 
 // Load Section
 async function loadSections(req, res) {
@@ -542,9 +587,9 @@ async function initializeSectionYearRecords(req, res) {
       CROSS JOIN academic_year_semester_table ays
     `);
 
-    res.status(200).json({ 
-      message: 'Section records initialized successfully across all academic year semesters.', 
-      newRecordsAdded: result.affectedRows 
+    res.status(200).json({
+      message: 'Section records initialized successfully across all academic year semesters.',
+      newRecordsAdded: result.affectedRows
     });
   } catch (err) {
     console.error("Error initializing section year records:", err);
@@ -555,30 +600,57 @@ async function initializeSectionYearRecords(req, res) {
 
 // Create Section
 async function createSection(req, res) {
+  const connection = await pool.getConnection();
+
   try {
     const { sectionName, gradeLevel, department } = req.body;
 
     if (!sectionName || !gradeLevel || !department) {
-      return res.status(400).json({ error: "All fields are required" });
+      return res.status(400).json({
+        error: "All fields are required",
+      });
     }
 
-    const [result] = await pool.query(
-      `INSERT INTO section_table (section_Name, gradeLevel, department) 
+    await connection.beginTransaction();
+
+    const [result] = await connection.query(
+      `INSERT INTO section_table
+       (section_Name, gradeLevel, department)
        VALUES (?, ?, ?)`,
       [sectionName, gradeLevel, department]
     );
 
+    const sectionId = result.insertId;
+
+    await connection.query(
+      `INSERT INTO section_year_record_table
+       (section_ID, AYS_ID)
+       SELECT ?, ays.AYS_ID
+       FROM academic_year_semester_table ays`,
+      [sectionId]
+    );
+
+    await connection.commit();
+
     res.status(201).json({
-      id: result.insertId,
+      id: sectionId,
       sectionName,
       gradeLevel,
       department,
     });
   } catch (err) {
+    await connection.rollback();
+
     console.error("Error creating section:", err);
-    res.status(500).json({ error: "Failed to create section" });
+
+    res.status(500).json({
+      error: "Failed to create section",
+    });
+  } finally {
+    connection.release();
   }
 }
+
 
 // Delete Section
 async function deleteSections(req, res) {
@@ -645,31 +717,33 @@ async function loadStudentsBySection(req, res) {
 }
 
 
-//getStudent Info by ID
 async function getStudentById(req, res) {
   try {
     const { AYS_ID } = req.query;
     const { id } = req.params;
 
+    if (!AYS_ID) return res.status(400).json({ error: "AYS_ID is required" });
+
+    // password is intentionally NOT selected: the hash should never leave the server.
+    // updateStudentById already keeps the current password when the field is blank.
     const [rows] = await pool.query(
-      `SELECT 
-        s.f_Name, s.m_Name, s.l_Name, s.gender, s.contact_Number, s.email, s.address,
-        s.father_Name, s.father_Contact, s.mother_Name, s.mother_Contact,
-        s.guardian_Name, s.guardian_Contact,
-        s.birthdate, s.age, s.lrn, s.password,
-        syr.department, syr.program,
-        sec.section_Name, sec.gradeLevel, sec.section_ID,
-        syrt.AYS_ID
+      `SELECT
+         s.f_Name, s.m_Name, s.l_Name, s.gender, s.contact_Number, s.email, s.address,
+         s.father_Name, s.father_Contact, s.mother_Name, s.mother_Contact,
+         s.guardian_Name, s.guardian_Contact,
+         s.birthdate, s.age, s.lrn,
+         syr.department, syr.program, syr.classification, syr.year_level,
+         sec.section_Name, sec.gradeLevel, sec.section_ID,
+         syr.AYS_ID
        FROM student_table s
-       JOIN student_year_record_table syr 
-         ON s.student_ID = syr.student_ID
-       JOIN section_year_record_table syrt 
-         ON syr.section_record_ID = syrt.section_record_ID
-       JOIN section_table sec 
-         ON syrt.section_ID = sec.section_ID
-       WHERE s.student_ID = ? 
-         AND syrt.AYS_ID = ?`,
-      [id, AYS_ID]
+       JOIN student_year_record_table syr
+         ON syr.student_ID = s.student_ID AND syr.AYS_ID = ?
+       LEFT JOIN section_year_record_table syrt
+         ON syrt.section_record_ID = syr.section_record_ID
+       LEFT JOIN section_table sec
+         ON sec.section_ID = syrt.section_ID
+       WHERE s.student_ID = ?`,
+      [AYS_ID, id]
     );
 
     if (rows.length === 0) {
@@ -685,52 +759,81 @@ async function getStudentById(req, res) {
 
 
 async function updateStudentById(req, res) {
-  try {
-    const { id } = req.params;
-    const {
-      AYS_ID,
-      f_Name,
-      m_Name,
-      l_Name,
-      gender,
-      contact_Number,
-      email,
-      address,
-      father_Name,
-      father_Contact,
-      mother_Name,
-      mother_Contact,
-      guardian_Name,
-      guardian_Contact,
-      birthdate,
-      age,
-      lrn,
-      password,
-      department,
-      program,
-      section_ID,
-    } = req.body;
+  const { id } = req.params;
+  const {
+    AYS_ID,
+    f_Name,
+    m_Name,
+    l_Name,
+    gender,
+    contact_Number,
+    email,
+    address,
+    father_Name,
+    father_Contact,
+    mother_Name,
+    mother_Contact,
+    guardian_Name,
+    guardian_Contact,
+    birthdate,
+    age,
+    lrn,
+    password,
+    department,
+    program,
+    section_ID,
+  } = req.body;
 
-    const [existing] = await pool.query(
+  if (!AYS_ID) return res.status(400).json({ error: "AYS_ID is required" });
+
+  const connection = await pool.getConnection();
+  try {
+    const [existing] = await connection.query(
       "SELECT password FROM student_table WHERE student_ID = ?",
       [id]
     );
-
     if (existing.length === 0) {
       return res.status(404).json({ error: "Student not found" });
     }
 
-    let hashedPassword = existing[0].password;
-
-    if (password && password.trim() !== "") {
-      if (!password.startsWith("$2b$") && !password.startsWith("$2a$")) {
-        hashedPassword = await bcrypt.hash(password.trim(), 10);
-      } else {
-        hashedPassword = password;
-      }
+    const [[termRecord]] = await connection.query(
+      `SELECT stud_record_ID, classification
+       FROM student_year_record_table
+       WHERE student_ID = ? AND AYS_ID = ?`,
+      [id, AYS_ID]
+    );
+    if (!termRecord) {
+      return res.status(404).json({ error: "This student has no record in that term" });
     }
 
-    await pool.query(
+    // Validate everything BEFORE writing anything
+    let section_record_ID = null;
+    const isRegular = termRecord.classification === "Regular";
+    if (isRegular) {
+      if (!section_ID) return res.status(400).json({ error: "section_ID is required" });
+      const [sectionRows] = await connection.query(
+        `SELECT section_record_ID
+         FROM section_year_record_table
+         WHERE section_ID = ? AND AYS_ID = ?`,
+        [section_ID, AYS_ID]
+      );
+      if (sectionRows.length === 0) {
+        return res.status(400).json({ error: "Invalid section/year combination" });
+      }
+      section_record_ID = sectionRows[0].section_record_ID;
+    }
+
+    let hashedPassword = existing[0].password;
+    if (password && password.trim() !== "") {
+      hashedPassword =
+        password.startsWith("$2b$") || password.startsWith("$2a$")
+          ? password
+          : await bcrypt.hash(password.trim(), 10);
+    }
+
+    await connection.beginTransaction();
+
+    await connection.query(
       `UPDATE student_table
        SET f_Name = ?, m_Name = ?, l_Name = ?, gender = ?, contact_Number = ?, email = ?, address = ?,
            father_Name = ?, father_Contact = ?, mother_Name = ?, mother_Contact = ?,
@@ -758,30 +861,35 @@ async function updateStudentById(req, res) {
       ]
     );
 
-    const [sectionRows] = await pool.query(
-      `SELECT section_record_ID 
-       FROM section_year_record_table 
-       WHERE section_ID = ? AND AYS_ID = ?`,
-      [section_ID, AYS_ID]
-    );
-
-    if (sectionRows.length === 0) {
-      return res.status(400).json({ error: "Invalid section/year combination" });
+    // Only this term's record. Irregular students have no section, so theirs is never touched.
+    if (isRegular) {
+      await connection.query(
+        `UPDATE student_year_record_table
+         SET department = ?, program = ?, section_record_ID = ?
+         WHERE stud_record_ID = ?`,
+        [department, program, section_record_ID, termRecord.stud_record_ID]
+      );
+    } else {
+      await connection.query(
+        `UPDATE student_year_record_table
+         SET department = ?, program = ?
+         WHERE stud_record_ID = ?`,
+        [department, program, termRecord.stud_record_ID]
+      );
     }
 
-    const section_record_ID = sectionRows[0].section_record_ID;
-
-    await pool.query(
-      `UPDATE student_year_record_table
-       SET department = ?, program = ?, section_record_ID = ?
-       WHERE student_ID = ?`,
-      [department, program, section_record_ID, id]
-    );
-
+    await connection.commit();
     return res.json({ success: true, message: "Student updated successfully" });
   } catch (err) {
     console.error("Error updating student:", err.sqlMessage || err);
+    try { await connection.rollback(); } catch (_) { /* no open transaction */ }
+
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ error: "That email or LRN is already used by another student" });
+    }
     return res.status(500).json({ error: "Failed to update student" });
+  } finally {
+    connection.release();
   }
 }
 
@@ -1065,102 +1173,130 @@ async function getAYSOptions(req, res) {
 }
 
 async function transferSection(req, res) {
+  const { sourceSectionId, sourceAYS_ID, targetSectionId, targetAYS_ID } = req.body;
+
+  if (!sourceSectionId || !sourceAYS_ID || !targetSectionId || !targetAYS_ID) {
+    return res.status(400).json({ error: "Missing required parameters" });
+  }
+  if (String(sourceAYS_ID) === String(targetAYS_ID)) {
+    return res.status(400).json({ error: "Cannot transfer to the same Academic Year/Semester" });
+  }
+
+  const connection = await pool.getConnection();
   try {
-    const {
-      sourceSectionId,
-      sourceAYS_ID,
-      targetSectionId,
-      targetAYS_ID
-    } = req.body;
+    await connection.beginTransaction();
 
-    if (!sourceSectionId || !sourceAYS_ID || !targetSectionId || !targetAYS_ID) {
-      return res.status(400).json({ error: "Missing required parameters" });
-    }
-
-    if (String(sourceAYS_ID) === String(targetAYS_ID)) {
-      return res.status(400).json({ error: "Cannot transfer to the same Academic Year/Semester" });
-    }
-
-    const [[source]] = await pool.query(
-      `SELECT *
+    const [[source]] = await connection.query(
+      `SELECT section_record_ID, faculty_ID
        FROM section_year_record_table
-       WHERE section_ID = ?
-       AND AYS_ID = ?`,
+       WHERE section_ID = ? AND AYS_ID = ?`,
       [sourceSectionId, sourceAYS_ID]
     );
-
     if (!source) {
+      await connection.rollback();
       return res.status(404).json({ error: "Source section record not found" });
     }
 
-    const [[target]] = await pool.query(
+    // Reuse the target record if it exists. A new one is created WITHOUT a curriculum:
+    // curricula are per year level + semester, so the admin picks the right one on the
+    // section's "Configure Instructors" page instead of the system guessing.
+    const [[existingTarget]] = await connection.query(
       `SELECT section_record_ID
        FROM section_year_record_table
-       WHERE section_ID = ?
-       AND AYS_ID = ?`,
+       WHERE section_ID = ? AND AYS_ID = ?`,
       [targetSectionId, targetAYS_ID]
     );
 
-    let targetSectionRecordId = target?.section_record_ID;
-
-    if (!targetSectionRecordId) {
-      const [result] = await pool.query(
-        `INSERT INTO section_year_record_table
-        (section_ID, AYS_ID, curriculum_record_ID, faculty_ID)
-        VALUES (?, ?, ?, ?)`,
-        [
-          targetSectionId,
-          targetAYS_ID,
-          source.curriculum_record_ID,
-          source.faculty_ID
-        ]
+    let targetSectionRecordId;
+    if (existingTarget) {
+      targetSectionRecordId = existingTarget.section_record_ID;
+    } else {
+      const [created] = await connection.query(
+        `INSERT INTO section_year_record_table (section_ID, AYS_ID, faculty_ID)
+         VALUES (?, ?, ?)`,
+        [targetSectionId, targetAYS_ID, source.faculty_ID]
       );
-
-      targetSectionRecordId = result.insertId;
+      targetSectionRecordId = created.insertId;
     }
 
-    await pool.query(
+    // How many students are eligible, so we can report how many were skipped
+    const [[{ eligible }]] = await connection.query(
+      `SELECT COUNT(*) AS eligible
+       FROM student_year_record_table syr
+       JOIN student_table st ON st.student_ID = syr.student_ID
+       WHERE syr.section_record_ID = ?
+         AND st.status = 'Enrolled'
+         AND syr.classification = 'Regular'`,
+      [source.section_record_ID]
+    );
+
+    // Regular, enrolled students only. Irregulars have no section; they are re-loaded each term.
+    const [studentResult] = await connection.query(
       `INSERT INTO student_year_record_table
-        (
-          student_ID,
-          section_record_ID,
-          program,
-          department,
-          specialization
-        )
-        SELECT student_ID, ?, program, department, specialization
-        FROM student_year_record_table
-        WHERE section_record_ID = ?`,
-      [
-        targetSectionRecordId,
-        source.section_record_ID
-      ]
+         (student_ID, section_record_ID, AYS_ID, classification, program, department, specialization)
+       SELECT syr.student_ID, ?, ?, 'Regular', syr.program, syr.department, syr.specialization
+       FROM student_year_record_table syr
+       JOIN student_table st ON st.student_ID = syr.student_ID
+       WHERE syr.section_record_ID = ?
+         AND st.status = 'Enrolled'
+         AND syr.classification = 'Regular'
+         AND NOT EXISTS (
+           SELECT 1 FROM student_year_record_table existing
+           WHERE existing.student_ID = syr.student_ID AND existing.AYS_ID = ?
+         )`,
+      [targetSectionRecordId, targetAYS_ID, source.section_record_ID, targetAYS_ID]
     );
 
-    await pool.query(
-      `INSERT INTO faculty_year_record_table
-        (
-          advisory,
-          faculty_ID,
-          section_record_ID,
-          subject_ID
-        )
-        SELECT advisory, faculty_ID, ?,
-        subject_ID
-        FROM faculty_year_record_table
-        WHERE section_record_ID = ?`,
-      [
-        targetSectionRecordId,
-        source.section_record_ID
-      ]
+    // Copy teacher assignments only for subjects that belong to the TARGET section's
+    // curriculum, and never overwrite a subject that already has a teacher there.
+    // If the target has no curriculum yet, nothing is copied (assign teachers after
+    // choosing the curriculum).
+    const [toCopy] = await connection.query(
+      `SELECT fyr.advisory, fyr.faculty_ID, fyr.subject_ID
+       FROM faculty_year_record_table fyr
+       WHERE fyr.section_record_ID = ?
+         AND fyr.subject_ID IN (
+           SELECT stc.subject_ID
+           FROM section_year_record_table tgt
+           JOIN curriculum_year_record_table cyr
+             ON cyr.curriculum_record_ID = tgt.curriculum_record_ID
+           JOIN subject_to_curriculum_table stc
+             ON stc.curriculum_ID = cyr.curriculum_ID
+           WHERE tgt.section_record_ID = ?
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM faculty_year_record_table ex
+           WHERE ex.section_record_ID = ? AND ex.subject_ID = fyr.subject_ID
+         )`,
+      [source.section_record_ID, targetSectionRecordId, targetSectionRecordId]
     );
 
-    return res.sendStatus(200);
+    if (toCopy.length > 0) {
+      await connection.query(
+        `INSERT INTO faculty_year_record_table (advisory, faculty_ID, section_record_ID, subject_ID)
+         VALUES ?`,
+        [toCopy.map((r) => [r.advisory, r.faculty_ID, targetSectionRecordId, r.subject_ID])]
+      );
+    }
+
+    await connection.commit();
+
+    return res.status(200).json({
+      success: true,
+      transferredStudents: studentResult.affectedRows,
+      skippedStudents: eligible - studentResult.affectedRows, // already had a record in the target term
+      copiedTeacherAssignments: toCopy.length,
+      targetSectionRecordId,
+    });
   } catch (err) {
     console.error("Error transferring section:", err);
-    return res.sendStatus(500);
+    try { await connection.rollback(); } catch (_) { /* connection already gone */ }
+    return res.status(500).json({ error: "Failed to transfer section" });
+  } finally {
+    connection.release();
   }
 }
+
 
 async function dropStudents(req, res) {
   try {
@@ -1264,7 +1400,8 @@ module.exports = {
   assignTeacherToSubject,
   getAYSOptions,
   getSectionOptions,
-  transferSection, 
+  transferSection,
   dropStudents,
-  changePassword
+  changePassword,
+  convertEnrollees
 };

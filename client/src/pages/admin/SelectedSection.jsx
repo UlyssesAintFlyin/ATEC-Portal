@@ -33,6 +33,9 @@ export default function SelectedSection() {
   const [targetAYS, setTargetAYS] = useState(null);
   const snackbar = useSnackbar();
 
+  const [openIrregularDialog, setOpenIrregularDialog] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+
   useEffect(() => {
     const fetchSystemSettings = async () => {
       try {
@@ -71,6 +74,37 @@ export default function SelectedSection() {
       setRows([]);
     }
   }, [sectionId, currentAYS_ID]);
+
+  const handleMarkIrregular = async () => {
+    if (!selectedStudent) return;
+
+    try {
+      const res = await fetch(
+        `${API_URL}/admin/irregular/${selectedStudent.id}/classification`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ AYS_ID: currentAYS_ID }),
+        },
+      );
+
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) throw new Error(body.error || "Failed");
+
+      setRows((prev) => prev.filter((r) => r.id !== selectedStudent.id));
+
+      snackbar.success("Student marked irregular");
+
+      setOpenIrregularDialog(false);
+      setSelectedStudent(null);
+    } catch (err) {
+      snackbar.error(err.message);
+
+      setOpenIrregularDialog(false);
+      setSelectedStudent(null);
+    }
+  };
 
   const columns = [
     {
@@ -132,6 +166,18 @@ export default function SelectedSection() {
           >
             View
           </Button>
+          {params.row.department?.toLowerCase() === "college" && (
+            <Button
+              color="warning"
+              variant="contained"
+              onClick={() => {
+                setSelectedStudent(params.row);
+                setOpenIrregularDialog(true);
+              }}
+            >
+              Irregular
+            </Button>
+          )}
         </>
       ),
     },
@@ -186,9 +232,7 @@ export default function SelectedSection() {
         }),
       });
 
-      snackbar.success(
-        `Student(s) successfully transferred!`,
-      );
+      snackbar.success(`Student(s) successfully transferred!`);
 
       setOpenTransfer(false);
     } catch (err) {
@@ -473,6 +517,46 @@ export default function SelectedSection() {
             onClick={handleTransfer}
           >
             Transfer
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openIrregularDialog}
+        onClose={() => {
+          setOpenIrregularDialog(false);
+          setSelectedStudent(null);
+        }}
+      >
+        <DialogTitle>Mark Student as Irregular</DialogTitle>
+
+        <DialogContent>
+          <Typography>
+            Are you sure you want to mark{" "}
+            <strong>{selectedStudent?.studentName}</strong> as irregular?
+          </Typography>
+
+          <Typography sx={{ mt: 2 }} color="text.secondary">
+            He/She will be removed from the current section and be 
+            considered as an irregular student.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setOpenIrregularDialog(false);
+              setSelectedStudent(null);
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            color="warning"
+            variant="contained"
+            onClick={handleMarkIrregular}
+          >
+            Mark Irregular
           </Button>
         </DialogActions>
       </Dialog>

@@ -14,6 +14,7 @@
   const evaluationRoutes = require('./routes/evalRoutes'); //eva;
   const facultyRoutes = require('./routes/facultyRoutes'); //faculty
   const gradeRoutes = require('./routes/gradeRoutes');
+  const irregularRoutes = require('./routes/irregularRoutes');
 
   const { verifyToken, requireRole } = require('./middleware/auth');
   const requireMasterUnlock = require('./middleware/requireMasterUnlock');
@@ -41,6 +42,8 @@
 
   app.use('/api/system-settings', verifyToken, requireRole('Admin'), requireMasterUnlock, systemSettingsRoutes);
   app.use('/api/curricula', verifyToken, requireRole('Admin'), requireMasterUnlock, curriculumRoutes);
+
+  app.use('/api/admin/irregular', irregularRoutes);
 
   app.use((err, req, res, next) => {
     console.error(err.stack);
