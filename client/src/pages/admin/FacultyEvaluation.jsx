@@ -126,6 +126,24 @@ export default function FacultyEvaluation() {
     { field: "gender", headerName: "Gender", flex: 0.5, minWidth: 100 },
     { field: "position", headerName: "Position", flex: 0.5, minWidth: 120 },
     { field: "status", headerName: "Status", flex: 0.5, minWidth: 120 },
+    { field: "let_passer", headerName: "Let Passer", flex: 0.5, minWidth: 120 },
+    {
+      field: "dateHired",
+      headerName: "Date Hired",
+      flex: 1,
+      minWidth: 120,
+      hide: true,
+      valueFormatter: (params) => {
+        const val = params.value;
+        if (!val) return "Not Specified";
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return "Not Specified";
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+    },
     {
       field: "action",
       headerName: "Action",
@@ -194,7 +212,7 @@ export default function FacultyEvaluation() {
             alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
-            marginBottom: {xs:"10px", sm:"15px", md:"30px"},
+            marginBottom: { xs: "10px", sm: "15px", md: "30px" },
           }}
         >
           <Box
@@ -273,7 +291,7 @@ export default function FacultyEvaluation() {
             rows={rows}
             columns={columns}
             fileName="faculty-masterlist"
-            printFields={["facultyName", "position", "status"]}
+            printFields={["facultyName", "position", "status", "let_passer", "dateHired"]}
           />
         </Box>
       </Box>

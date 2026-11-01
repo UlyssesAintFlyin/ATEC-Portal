@@ -10,7 +10,7 @@ import {
   TextField,
   Autocomplete,
 } from "@mui/material";
-import { Table } from "../../components/Table";
+import { StandardTable } from "../../components/StandardTable";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useSnackbar } from "../../components/AppSnackbar";
 
@@ -21,7 +21,7 @@ export default function SelectedSection() {
   const { sectionName } = useParams();
   const location = useLocation();
   const gradeLevel = location.state?.gradeLevel;
-  const sectionId = location.state?.section_ID; // passed from Sections.jsx
+  const sectionId = location.state?.section_ID;
   const [rows, setRows] = useState([]);
   const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
   const [openTransfer, setOpenTransfer] = useState(false);
@@ -281,7 +281,6 @@ export default function SelectedSection() {
           height: "auto",
         }}
       >
-        {/* Header with Add and Remove Button */}
         <Box
           sx={{
             display: "flex",
@@ -387,7 +386,6 @@ export default function SelectedSection() {
           </Box>
         </Box>
 
-        {/* Table */}
         <Box
           sx={{
             marginLeft: { xs: "20px", md: "50px" },
@@ -395,9 +393,11 @@ export default function SelectedSection() {
             height: { xs: "600px", md: "500px" },
           }}
         >
-          <Table
+          <StandardTable
             rows={rows}
             columns={columns}
+            fileName={`student-masterlist-${sectionName}`}
+            printFields={["studentName", "age", "gender", "program"]}
             checkboxSelection
             disableRowSelectionOnClick
             onSelectionModelChange={(newSelection) => {
@@ -500,7 +500,7 @@ export default function SelectedSection() {
               option.AYS_ID === value.AYS_ID
             }
             getOptionLabel={(option) =>
-              option ? `${option.AY_Name} • ${option.semester_name}` : ""
+              option ? `${option.AY_Name} ${option.semester_name}` : ""
             }
             renderInput={(params) => (
               <TextField {...params} label="Academic Year & Semester" />
@@ -562,4 +562,4 @@ export default function SelectedSection() {
       </Dialog>
     </Box>
   );
-}
+} 
