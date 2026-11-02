@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../components/AppSnackbar";
+import { useBilling, peso } from "../enrollment/Enrollment";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -134,6 +135,13 @@ const sectionTitleSx = {
   ml: "20px",
 };
 const dividerSx = { borderColor: "#242c54" };
+const billingRowSx = {
+  display: "flex",
+  justifyContent: "space-between",
+  py: 1,
+  borderBottom: "1px solid #c9d3e0",
+  color: "#242C54",
+};
 
 export default function EditStudent() {
   const { studentId } = useParams();
@@ -173,6 +181,8 @@ export default function EditStudent() {
 
   const errors = validate(student);
   const age = calculateAge(student.birthdate);
+  const selectedSection = sections.find((sec) => sec.section_ID === student.section_ID);
+  const billing = useBilling(selectedSection?.gradeLevel);
 
   useEffect(() => {
     const fetchSystemSettings = async () => {
@@ -546,6 +556,43 @@ export default function EditStudent() {
           </Box>
 
           <Divider variant="middle" sx={dividerSx} />
+
+          <Divider variant="middle" sx={dividerSx} />
+
+            <Typography variant="h6" sx={sectionTitleSx}>
+              Billing Information
+            </Typography>
+
+            <Box sx={{ ...rowSx, flexDirection: "column", gap: 0 }}>
+              {billing.fees.length === 0 ? (
+                <Typography>Billing for this level is not set yet.</Typography>
+              ) : (
+                <>
+                  {billing.fees.map((f) => (
+                    <Box key={f.label} sx={billingRowSx}>
+                      <Typography>{f.label}</Typography>
+                      <Typography>{peso(f.amount)}</Typography>
+                    </Box>
+                  ))}
+                  <Box sx={billingRowSx}>
+                    <Typography fontWeight="bold">Total fees</Typography>
+                    <Typography fontWeight="bold">{peso(billing.totalFees)}</Typography>
+                  </Box>
+                  <Box sx={billingRowSx}>
+                    <Typography>
+                      Covered by {billing.fundedBy} ({billing.coveragePercent}%)
+                    </Typography>
+                    <Typography>- {peso(billing.amountCovered)}</Typography>
+                  </Box>
+                  <Box sx={{ ...billingRowSx, borderBottom: "none" }}>
+                    <Typography fontWeight="bold">Amount due</Typography>
+                    <Typography fontWeight="bold">{peso(billing.amountDue)}</Typography>
+                  </Box>
+                </>
+              )}
+            </Box>
+
+            <Divider variant="middle" sx={dividerSx} />
 
           <Typography variant="h6" sx={sectionTitleSx}>
             Account Configuration

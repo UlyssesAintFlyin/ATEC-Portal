@@ -32,6 +32,7 @@ const SHS_TRACKS = {
 };
 
 const EMPTY_DETAILS = {
+  lrn: "",
   lastName: "",
   firstName: "",
   middleName: "",
@@ -48,6 +49,7 @@ const EMPTY_DETAILS = {
   prevSchool: "",
   guardiansName: "",
   guardiansContact: "",
+  
 };
 
 const EMPTY_PROGRAM = {
@@ -57,6 +59,45 @@ const EMPTY_PROGRAM = {
   track: "",
   program: "",
 };
+
+export const EMPTY_BILLING = { fundedBy: "", coveragePercent: 0, fees: [] };
+
+export const peso = (n) =>
+  `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+
+export function useBilling(level) {
+  const [billing, setBilling] = useState(EMPTY_BILLING);
+
+  useEffect(() => {
+    if (!level) {
+      setBilling(EMPTY_BILLING);
+      return;
+    }
+    let cancelled = false;
+    fetch(`${API_URL}/system-settings/billing?level=${encodeURIComponent(level)}`)
+  .then((res) => res.json())
+      .then((d) => {
+        if (cancelled) return;
+        setBilling({
+          fundedBy: d.fundedBy || "",
+          coveragePercent: d.coveragePercent ?? 0,
+          fees: d.fees || [],
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setBilling(EMPTY_BILLING);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [level]);
+
+  const totalFees = billing.fees.reduce((sum, f) => sum + f.amount, 0);
+  const amountCovered = (totalFees * billing.coveragePercent) / 100;
+  const amountDue = totalFees - amountCovered;
+
+  return { ...billing, totalFees, amountCovered, amountDue };
+}
 
 // Replaces the @media queries
 function useWindowWidth() {
@@ -495,6 +536,29 @@ function makeStyles(width) {
       color: NAVY,
       margin: "4px 0",
     },
+    billingBox: {
+  backgroundColor: LIGHT_BG,
+  borderRadius: 10,
+  padding: w480 ? 16 : 20,
+  marginTop: 10,
+  marginBottom: 20,
+},
+billingRow: {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 12,
+  padding: "8px 0",
+  borderBottom: "1px solid rgb(210, 210, 210)",
+  fontFamily: QUATTRO,
+  fontSize: w480 ? 13 : 14,
+  color: NAVY,
+},
+billingNote: {
+  fontFamily: QUATTRO,
+  fontSize: 13,
+  color: NAVY,
+  margin: "0 0 20px 0",
+},
   };
 }
 
@@ -545,6 +609,8 @@ export default function Enrollment() {
 
   
 
+  
+
 const handleDetailsChange = (e) => {
   const { name, value } = e.target;
 
@@ -563,6 +629,11 @@ const handleDetailsChange = (e) => {
     "fathersName",
     "guardiansName",
   ];
+
+  // LRN: digits only, maximum 12
+  if (name === "lrn") {
+    if (!/^\d{0,12}$/.test(value)) return;
+  }
 
   // Contact numbers: digits only, maximum 11
   if (contactFields.includes(name)) {
@@ -684,9 +755,14 @@ const handleDetailsChange = (e) => {
     }
   };
 
+  const billingLevel =
+  studentType === "seniorHigh" ? programTerm.gradeLevel : programTerm.year;
+  const billing = useBilling(billingLevel);
+
   if (settingsLoading) {
     return null;
   }
+  
 
   if (!enrollmentOpen) {
     return (
@@ -786,14 +862,14 @@ const handleDetailsChange = (e) => {
           </p>
         </div>
         {step !== 1 && step !== 5 && (
-          <div style={s.rightTop}>
-            <p style={stepStyle(2)}>1</p>
-            <div style={s.load}></div>
-            <p style={stepStyle(3)}>2</p>
-            <div style={s.load}></div>
-            <p style={stepStyle(4)}>3</p>
-          </div>
-        )}
+            <div style={s.rightTop}>
+              <p style={stepStyle(2)}>1</p>
+              <div style={s.load}></div>
+              <p style={stepStyle(3)}>2</p>
+              <div style={s.load}></div>
+              <p style={stepStyle(4)}>3</p>
+            </div>
+          )}
       </div>
 
       {step === 1 && (
@@ -839,6 +915,14 @@ const handleDetailsChange = (e) => {
                 {renderField("lastName", "Last name:", {placeholder: "e.g. Dela Cruz"})}
                 {renderField("firstName", "First name:", {placeholder: "e.g. Juan"})}
                 {renderField("middleName", "Middle name:", { required: false, placeholder: "e.g. Sánchez" })}
+              </div>
+              <div style={s.formRow}>
+                {renderField("lrn", "LRN (Learner Reference Number):", {
+                  pattern: "[0-9]{12}",
+                  minLength: 12,
+                  maxLength: 12,
+                  placeholder: "e.g. 123456789012",
+                })}
               </div>
 
               <div style={s.formRow}>
@@ -924,7 +1008,6 @@ const handleDetailsChange = (e) => {
                         <option value="1st Year">1st Year</option>
                         <option value="2nd Year">2nd Year</option>
                         <option value="3rd Year">3rd Year</option>
-                        <option value="4th Year">4th Year</option>
                       </>
                     ))
                   : renderSelect("gradeLevel", "Grade Level", programTerm.gradeLevel, (
@@ -997,6 +1080,8 @@ const handleDetailsChange = (e) => {
         </div>
       )}
 
+    
+
       {step === 4 && (
         <div style={s.child}>
           <p style={s.stepLabel}>Step 3 of 3</p>
@@ -1007,6 +1092,7 @@ const handleDetailsChange = (e) => {
               <div style={s.reviewGrid}>
                 <div style={s.reviewLeft}>
                   {renderReadOnly("Full name", fullName, s.formGroupWide)}
+                  {renderReadOnly("LRN", studentDetails.lrn, s.formGroupWide)}
                   <div style={s.formRow}>
                     {renderReadOnly("Age", studentDetails.age, s.formGroupSmall)}
                     {renderReadOnly("Gender", studentDetails.gender, s.formGroupSmall)}
@@ -1014,13 +1100,14 @@ const handleDetailsChange = (e) => {
                   </div>
                   {renderReadOnly("Home address", studentDetails.homeAddress, s.formGroupWide)}
                   {renderReadOnly("Email address", studentDetails.email, s.formGroupWide)}
-                  {renderReadOnly("Guardian's Name", studentDetails.guardiansName, s.formGroupWide)}
-                  {renderReadOnly("Guardian's Contact", studentDetails.guardiansContact, s.formGroupWide)}
+                  
                 </div>
 
                 <div style={s.reviewDivider}></div>
 
                 <div style={s.reviewRight}>
+                  {renderReadOnly("Guardian's Name", studentDetails.guardiansName, s.formGroupWide)}
+                  {renderReadOnly("Guardian's Contact", studentDetails.guardiansContact, s.formGroupWide)}
                   {studentType === "college" &&
                     renderReadOnly("Term", programTerm.term)}
                   {renderReadOnly(
@@ -1034,7 +1121,43 @@ const handleDetailsChange = (e) => {
               </div>
 
               <div style={s.divider}></div>
+                    <h6 style={{ ...s.childH6, fontSize: 20, marginTop: 24 }}>
+  Billing and Payment
+</h6>
 
+{billing.fees.length === 0 ? (
+  <p style={s.billingNote}>Billing for this level is not set yet.</p>
+) : (
+  <>
+    <div style={s.billingBox}>
+      {billing.fees.map((f) => (
+        <div key={f.label} style={s.billingRow}>
+          <span>{f.label}</span>
+          <span>{peso(f.amount)}</span>
+        </div>
+      ))}
+      <div style={{ ...s.billingRow, fontWeight: 700 }}>
+        <span>Total fees</span>
+        <span>{peso(billing.totalFees)}</span>
+      </div>
+      <div style={s.billingRow}>
+        <span>
+          Covered by {billing.fundedBy} ({billing.coveragePercent}%)
+        </span>
+        <span>- {peso(billing.amountCovered)}</span>
+      </div>
+      <div style={{ ...s.billingRow, borderBottom: "none", fontWeight: 700 }}>
+        <span>Amount due</span>
+        <span>{peso(billing.amountDue)}</span>
+      </div>
+    </div>
+    <p style={s.billingNote}>
+      {billing.amountDue === 0
+        ? `Your fees are covered by ${billing.fundedBy}. You do not need to pay anything to enroll.`
+        : `Part of your fees is covered by ${billing.fundedBy}. You still need to pay the amount due.`}
+    </p>
+  </>
+)}
               <div style={s.btnRow}>
                 <button type="button" style={s.backBtn} onClick={() => handleBack(3)}>
                   Back
@@ -1045,7 +1168,9 @@ const handleDetailsChange = (e) => {
               </div>
             </form>
           </div>
+        
         </div>
+        
       )}
 
       {step === 5 && (
@@ -1066,6 +1191,8 @@ const handleDetailsChange = (e) => {
           </button>
         </div>
       )}
+
+      
 
       {showStatusModal && (
         <div style={s.modalOverlay} onClick={handleCloseStatusModal}>
