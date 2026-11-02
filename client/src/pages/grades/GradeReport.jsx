@@ -11,6 +11,8 @@ function GradeReport() {
 
   const [sectionName, setSectionName] = useState("---");
   const studentName = user?.name ?? "---";
+  // Adjust this to however your app identifies college students
+const isCollege = /college/i.test(user?.department ?? "");
 
   const [aysOptions, setAysOptions] = useState([]);
   const [selectedAYS, setSelectedAYS] = useState(null);
@@ -19,26 +21,52 @@ function GradeReport() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  //Array for table column
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
-    {
-      field: "subjectName",
-      headerName: "Subject Name",
-      flex: 1,
-      minWidth: 160,
-    },
-    { field: "instructor", headerName: "Instructor", flex: 1, minWidth: 140 },
-    {
-      field: "grade",
-      headerName: "Final Grade",
-      type: "number",
-      flex: 0.7,
-      minWidth: 110,
-      headerAlign: "center",
-      align: "center",
-    },
-  ];
+  { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
+  { field: "subjectName", headerName: "Subject Name", flex: 1, minWidth: 160 },
+  { field: "instructor", headerName: "Instructor", flex: 1, minWidth: 140 },
+  {
+    field: "grade",
+    headerName: "Final Grade",
+    flex: 0.7,
+    minWidth: 110,
+    headerAlign: "center",
+    align: "center",
+  },
+  ...(isCollege
+    ? [
+        {
+          field: "percent",
+          headerName: "Percentage",
+          type: "number",
+          flex: 0.7,
+          minWidth: 110,
+          headerAlign: "center",
+          align: "center",
+        },
+      ]
+    : []),
+];
+
+  // [minimum percentage, college grade]
+const COLLEGE_SCALE = [
+  [98, "1.0"],
+  [95, "1.25"],
+  [92, "1.50"],
+  [89, "1.75"],
+  [86, "2.0"],
+  [83, "2.25"],
+  [80, "2.50"],
+  [78, "2.75"],
+  [75, "3.0"],
+];
+
+const toCollegeGrade = (percent) => {
+  const p = Math.round(Number(percent));
+  if (Number.isNaN(p)) return "—";
+  const match = COLLEGE_SCALE.find(([min]) => p >= min);
+  return match ? match[1] : "5.0"; // below 75
+};
 
   // Load AYS options for this student
   useEffect(() => {
@@ -86,12 +114,23 @@ function GradeReport() {
 
   const handleAYSChange = (newValue) => setSelectedAYS(newValue);
 
-  const finalGrade =
-    rows.length > 0
-      ? (
-          rows.reduce((sum, r) => sum + Number(r.grade), 0) / rows.length
-        ).toFixed(1)
-      : null;
+  const tableRows = rows.map((r) =>
+  isCollege
+    ? { ...r, percent: Number(r.grade), grade: toCollegeGrade(r.grade) }
+    : r,
+);
+
+const averagePercent =
+  rows.length > 0
+    ? rows.reduce((sum, r) => sum + Number(r.grade), 0) / rows.length
+    : null;
+
+const finalGrade =
+  averagePercent === null
+    ? null
+    : isCollege
+      ? toCollegeGrade(averagePercent)
+      : averagePercent.toFixed(1);
 
   return (
     <Box
@@ -199,7 +238,13 @@ function GradeReport() {
               >
                 {finalGrade ?? "—"}
               </Typography>
-              <Typography variant="body2">over 100</Typography>
+              {isCollege ? (
+                averagePercent !== null && (
+                  <Typography variant="body2">({averagePercent.toFixed(1)}%)</Typography>
+                )
+              ) : (
+                <Typography variant="body2"></Typography>
+              )}
             </Box>
           </Box>
 
@@ -238,10 +283,14 @@ function GradeReport() {
           )}
           {/*Table Component*/}
           <StandardTable
-            rows={rows}
+            rows={tableRows}
             columns={columns}
             fileName="grade-report"
-            printFields={["subjectName", "instructor", "grade"]}
+            printFields={
+              isCollege
+                ? ["subjectName", "instructor", "grade", "percent"]
+                : ["subjectName", "instructor", "grade"]
+            }
             loading={loading}
           />
         </Box>
