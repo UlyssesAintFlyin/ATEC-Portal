@@ -10,6 +10,8 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../components/AppSnackbar";
 import { useBilling, peso } from "../enrollment/Enrollment";
+import { pdf } from "@react-pdf/renderer";
+import StudentPrintDocument from "../../components/StudentDocument";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -150,6 +152,7 @@ export default function EditStudent() {
   const [sections, setSections] = useState([]);
   const [touched, setTouched] = useState({});
   const [saving, setSaving] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [student, setStudent] = useState({
     f_Name: "",
     m_Name: "",
@@ -276,6 +279,41 @@ export default function EditStudent() {
       fullWidth: true,
     };
   };
+  const handlePrint = async () => {
+  setPrinting(true);
+  try {
+    const blob = await pdf(
+      <StudentPrintDocument
+        student={student}
+        age={age}
+        section={selectedSection}
+        billing={billing}
+      />,
+    ).toBlob();
+
+    const url = URL.createObjectURL(blob);
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText =
+      "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    iframe.src = url;
+    iframe.onload = () => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    };
+    document.body.appendChild(iframe);
+
+    // clean up after the print dialog has had time to open
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      URL.revokeObjectURL(url);
+    }, 60000);
+  } catch (err) {
+    console.error("Error generating PDF:", err);
+    snackbar.error("Failed to generate printable document");
+  } finally {
+    setPrinting(false);
+  }
+};
 
   const handleSave = async () => {
     // Mark every field as touched so all errors show up
@@ -380,6 +418,24 @@ export default function EditStudent() {
           >
             Student's Information
           </Typography>
+
+          <Button
+          sx={{
+            fontSize: { xs: "12px", sm: "15px", md: "15px" },
+            color: "#E8EDF2",
+            bgcolor: "#242C54",
+            border: "1px solid #242C54",
+            borderRadius: "5px",
+            boxShadow: '10px',
+            mr: { xs: "20px", sm: "30px", md: "50px" },
+            width: { xs: "150px", sm: "200px", md: "150px" },
+            "&:hover": { backgroundColor: "#1b293d", color: "#dbdff0", border: "1px solid #242C54" },
+          }}
+          onClick={handlePrint}
+          disabled={saving || printing}
+        >
+          {printing ? "Preparing..." : "Print"}
+        </Button>
         </Box>
 
         <Box
@@ -639,6 +695,7 @@ export default function EditStudent() {
         >
           Cancel
         </Button>
+        
         <Button
           sx={{
             fontSize: { xs: "12px", sm: "15px", md: "17px" },
