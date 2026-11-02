@@ -4,6 +4,8 @@ import {
   GridToolbarContainer,
   GridToolbarExport,
   GridToolbarQuickFilter,
+  useGridApiRef,
+  gridFilteredSortedRowIdsSelector,
 } from "@mui/x-data-grid";
 import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
@@ -19,7 +21,7 @@ const defaultPageStyle = `
   .MuiDataGrid-columnHeaders { background-color: #f3f9ff !important; }
 `;
 
-function ExportToolbar({ fileName, printFields, pageStyle, rows, columns }) {
+function ExportToolbar({ fileName, printFields, pageStyle, rows, columns, apiRef }) {
   const handleExportPDF = () => {
     const doc = new jsPDF("landscape", "mm", "a4");
 
@@ -28,12 +30,23 @@ function ExportToolbar({ fileName, printFields, pageStyle, rows, columns }) {
       : columns.filter((col) => col.field !== "action");
 
     const tableHeaders = activeColumns.map((col) => col.headerName);
-    const tableData = rows.map((row) =>
-      activeColumns.map((col) => {
-        let val = row[col.field];
-        if (col.field === "let_passer") {
-          return val === "Yes" || val === 1 ? "Yes" : "No";
+
+    let currentRows = rows;
+    try {
+      if (apiRef?.current?.state) {
+        const sortedFilteredIds = gridFilteredSortedRowIdsSelector(apiRef.current.state);
+        if (sortedFilteredIds && sortedFilteredIds.length > 0) {
+          const rowMap = new Map(rows.map((r) => [r.id, r]));
+          currentRows = sortedFilteredIds.map((id) => rowMap.get(id)).filter(Boolean);
         }
+      }
+    } catch (err) {
+      console.warn("Falling back to default row order due to uninitialized apiRef state:", err);
+    }
+
+    const tableData = currentRows.map((row) =>
+      activeColumns.map((col) => {
+        const val = row[col.field];
         return val !== undefined && val !== null ? String(val) : "";
       })
     );
@@ -129,22 +142,32 @@ export const StandardTable = ({
   rowsPerPageOptions = [5, 10, 20],
   height = 540,
   showToolbar = true,
+  checkboxSelection = false,
+  disableRowSelectionOnClick = true,
+  onSelectionModelChange,
+  selectionModel,
 }) => {
+  const apiRef = useGridApiRef();
+
   return (
     <Paper sx={{ width: "100%" }}>
       <div style={{ display: "flex", flexDirection: "column", height }}>
         <DataGrid
+          apiRef={apiRef}
           rows={rows}
           columns={columns}
           pageSize={pageSize}
           rowsPerPageOptions={rowsPerPageOptions}
-          disableColumnFilter
+          disableColumnFilter={false}
           disableColumnSelector
           disableDensitySelector
-          disableSelectionOnClick
+          disableSelectionOnClick={disableRowSelectionOnClick}
+          checkboxSelection={checkboxSelection}
+          onSelectionModelChange={onSelectionModelChange}
+          selectionModel={selectionModel}
           components={showToolbar ? { Toolbar: ExportToolbar } : {}}
           componentsProps={{
-            toolbar: { fileName, printFields, pageStyle, rows, columns },
+            toolbar: { fileName, printFields, pageStyle, rows, columns, apiRef },
           }}
           sx={{ border: 0 }}
         />

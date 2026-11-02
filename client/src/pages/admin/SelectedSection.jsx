@@ -9,6 +9,8 @@ import {
   DialogActions,
   TextField,
   Autocomplete,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { StandardTable } from "../../components/StandardTable";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -25,6 +27,7 @@ export default function SelectedSection() {
   const [rows, setRows] = useState([]);
   const [currentAYS_ID, setCurrentAYS_ID] = useState(null);
   const [openTransfer, setOpenTransfer] = useState(false);
+  const [showGradesInPrint, setShowGradesInPrint] = useState(true);
 
   const [sectionOptions, setSectionOptions] = useState([]);
   const [aysOptions, setAYSOptions] = useState([]);
@@ -61,7 +64,37 @@ export default function SelectedSection() {
         );
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
-        setRows(data);
+        const mappedData = data.map((st) => {
+          const avg =
+            st.averageGrade !== null &&
+            st.averageGrade !== undefined &&
+            st.averageGrade !== "" &&
+            !isNaN(Number(st.averageGrade))
+              ? Number(st.averageGrade)
+              : null;
+
+          const isHonor = avg !== null && avg >= 90;
+
+          return {
+            ...st,
+            numericAvg: avg,
+            computedAvg: avg !== null ? avg.toFixed(2) : "-",
+            honorStatus: isHonor ? "With Honors" : "N/A",
+          };
+        });
+        mappedData.sort((a, b) => {
+          if (a.numericAvg === null && b.numericAvg === null) return 0;
+          if (a.numericAvg === null) return 1;
+          if (b.numericAvg === null) return -1;
+          return b.numericAvg - a.numericAvg;
+        });
+
+        const rankedData = mappedData.map((st, index) => ({
+          ...st,
+          rank: st.numericAvg !== null ? index + 1 : "-",
+        }));
+
+        setRows(rankedData);
       } catch (err) {
         console.error("Error loading students:", err);
         setRows([]);
@@ -106,7 +139,18 @@ export default function SelectedSection() {
     }
   };
 
+  const isCollegeSection = rows.some(
+    (r) => r.department?.toLowerCase() === "college"
+  );
+
   const columns = [
+    {
+      field: "rank",
+      headerName: "Rank",
+      type: "number",
+      flex: 0.5,
+      minWidth: 70,
+    },
     {
       field: "studentName",
       headerName: "Student Name",
@@ -123,10 +167,27 @@ export default function SelectedSection() {
     { field: "gender", headerName: "Gender", flex: 0.5, minWidth: 80 },
     { field: "program", headerName: "Program", flex: 0.5, minWidth: 100 },
     {
+      field: "computedAvg",
+      headerName: isCollegeSection ? "GWA" : "Average Grade",
+      flex: 0.5,
+      minWidth: 80,
+    },
+
+    ...(!isCollegeSection
+      ? [
+          {
+            field: "honorStatus",
+            headerName: "Honor Status",
+            flex: 0.8,
+            minWidth: 120,
+          },
+        ]
+      : []),
+    {
       field: "action",
       headerName: "Action",
-      flex: 1,
-      minWidth: 100,
+      flex: 1.2,
+      minWidth: 120,
       renderCell: (params) => (
         <>
           <Button
@@ -240,8 +301,9 @@ export default function SelectedSection() {
       snackbar.error(err.message || "Failed to transfer students");
     }
   };
+
   const [selectedIds, setSelectedIds] = useState([]);
-  console.log(selectedIds);
+
   const handleRemoveSelected = async () => {
     try {
       await fetch(`${API_URL}/admin/students/drop`, {
@@ -260,6 +322,12 @@ export default function SelectedSection() {
       console.error("Error dropping students:", err);
     }
   };
+
+  const activePrintFields = showGradesInPrint
+    ? isCollegeSection
+      ? ["rank", "studentName", "age", "gender", "program", "computedAvg"]
+      : ["rank", "studentName", "age", "gender", "program", "computedAvg", "honorStatus"]
+    : ["studentName", "age", "gender", "program"];
 
   return (
     <Box
@@ -289,7 +357,7 @@ export default function SelectedSection() {
             alignItems: { xs: "center", md: "flex-end" },
             width: "100%",
             marginTop: "20px",
-            marginBottom: "30px",
+            marginBottom: "20px",
           }}
         >
           <Box
@@ -328,7 +396,7 @@ export default function SelectedSection() {
               alignItems: "center",
               flexDirection: "row",
               flexWrap: "wrap",
-              maxWidth: { xs: "300px", md: "500px" },
+              maxWidth: { xs: "300px", md: "600px" },
               gap: 2,
               marginTop: { xs: "10px", md: "0" },
               marginRight: { xs: "20px", sm: "30px", md: "50px" },
@@ -388,6 +456,30 @@ export default function SelectedSection() {
 
         <Box
           sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            mx: { xs: "20px", md: "50px" },
+            mb: 1,
+          }}
+        >
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showGradesInPrint}
+                onChange={(e) => setShowGradesInPrint(e.target.checked)}
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: "#242c54" }}>
+                Include Rank & {isCollegeSection ? "GWA" : "Average Grade"} in PDF Export
+              </Typography>
+            }
+          />
+        </Box>
+
+        <Box
+          sx={{
             marginLeft: { xs: "20px", md: "50px" },
             marginRight: { xs: "20px", md: "50px" },
             height: { xs: "600px", md: "500px" },
@@ -396,8 +488,12 @@ export default function SelectedSection() {
           <StandardTable
             rows={rows}
             columns={columns}
-            fileName={`student-masterlist-${sectionName}`}
-            printFields={["studentName", "age", "gender", "program"]}
+            fileName={
+              showGradesInPrint
+                ? `ranked-list-${sectionName}`
+                : `student-masterlist-${sectionName}`
+            }
+            printFields={activePrintFields}
             checkboxSelection
             disableRowSelectionOnClick
             onSelectionModelChange={(newSelection) => {
@@ -520,6 +616,7 @@ export default function SelectedSection() {
           </Button>
         </DialogActions>
       </Dialog>
+      
       <Dialog
         open={openIrregularDialog}
         onClose={() => {
@@ -562,4 +659,4 @@ export default function SelectedSection() {
       </Dialog>
     </Box>
   );
-} 
+}

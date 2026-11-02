@@ -696,15 +696,20 @@ async function loadStudentsBySection(req, res) {
               syr.program,
               syr.specialization,
               syr.department,
-              syrt.AYS_ID
+              syrt.AYS_ID,
+              AVG(g.grade_value) AS averageGrade
        FROM student_year_record_table syr
        JOIN student_table s 
          ON syr.student_ID = s.student_ID
        JOIN section_year_record_table syrt 
          ON syr.section_record_ID = syrt.section_record_ID
+       LEFT JOIN grade_table g 
+         ON g.section_record_ID = syr.section_record_ID 
+        AND g.student_ID = s.student_ID
        WHERE syrt.section_ID = ? 
          AND syrt.AYS_ID = ?
          AND s.status = "Enrolled"
+       GROUP BY s.student_ID, syr.stud_record_ID, syrt.section_record_ID
        ORDER BY s.l_Name ASC`,
       [sectionId, AYS_ID]
     );
@@ -714,6 +719,7 @@ async function loadStudentsBySection(req, res) {
     console.error("Error loading students:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to load students" });
   }
+  
 }
 
 
