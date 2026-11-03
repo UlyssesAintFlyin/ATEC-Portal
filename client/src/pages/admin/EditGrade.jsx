@@ -10,6 +10,8 @@ function EditGrade() {
   const location = useLocation();
   const sectionName = location.state?.sectionName;
   const studentName = location.state?.studentName;
+  const [department, setDepartment] = useState(location.state?.department ?? "");
+  const isCollege = /college/i.test(department);
 
   const [aysOptions, setAysOptions] = useState([]);
   const [selectedAYS, setSelectedAYS] = useState(null);
@@ -19,24 +21,50 @@ function EditGrade() {
   const [error, setError] = useState(null);
 
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
-    {
-      field: "subjectName",
-      headerName: "Subject Name",
-      flex: 1,
-      minWidth: 160,
-    },
-    { field: "instructor", headerName: "Instructor", flex: 1, minWidth: 140 },
-    {
-      field: "grade",
-      headerName: "Final Grade",
-      type: "number",
-      flex: 0.7,
-      minWidth: 110,
-      headerAlign: "center",
-      align: "center",
-    },
-  ];
+  { field: "id", headerName: "ID", flex: 0.5, minWidth: 60 },
+  { field: "subjectName", headerName: "Subject Name", flex: 1, minWidth: 160 },
+  { field: "instructor", headerName: "Instructor", flex: 1, minWidth: 140 },
+  {
+    field: "grade",
+    headerName: "Final Grade",
+    flex: 0.7,
+    minWidth: 110,
+    headerAlign: "center",
+    align: "center",
+  },
+  ...(isCollege
+    ? [
+        {
+          field: "percent",
+          headerName: "Percentage",
+          type: "number",
+          flex: 0.7,
+          minWidth: 110,
+          headerAlign: "center",
+          align: "center",
+        },
+      ]
+    : []),
+];
+  // [minimum percentage, college grade]
+const COLLEGE_SCALE = [
+  [98, "1.0"],
+  [95, "1.25"],
+  [92, "1.50"],
+  [89, "1.75"],
+  [86, "2.0"],
+  [83, "2.25"],
+  [80, "2.50"],
+  [78, "2.75"],
+  [75, "3.0"],
+];
+
+const toCollegeGrade = (percent) => {
+  const p = Math.round(Number(percent));
+  if (Number.isNaN(p)) return "—";
+  const match = COLLEGE_SCALE.find(([min]) => p >= min);
+  return match ? match[1] : "5.0";
+};
 
   useEffect(() => {
     if (!studentId) return;
@@ -69,6 +97,7 @@ function EditGrade() {
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
         setRows(data.report);
+        if (data.department) setDepartment(data.department);
         setError(null);
       } catch (err) {
         console.error(err);
@@ -82,12 +111,23 @@ function EditGrade() {
 
   const handleAYSChange = (newValue) => setSelectedAYS(newValue);
 
-  const finalGrade =
+  const tableRows = rows.map((r) =>
+    isCollege
+      ? { ...r, percent: Number(r.grade), grade: toCollegeGrade(r.grade) }
+      : r,
+  );
+
+  const averagePercent =
     rows.length > 0
-      ? (
-          rows.reduce((sum, r) => sum + Number(r.grade), 0) / rows.length
-        ).toFixed(1)
+      ? rows.reduce((sum, r) => sum + Number(r.grade), 0) / rows.length
       : null;
+
+  const finalGrade =
+    averagePercent === null
+      ? null
+      : isCollege
+        ? toCollegeGrade(averagePercent)
+        : averagePercent.toFixed(1);
 
   return (
     <Box
@@ -140,6 +180,7 @@ function EditGrade() {
             }}
           >
             {studentName ?? "—"}
+            
           </Typography>
           <Typography
             variant="body1"
@@ -194,7 +235,13 @@ function EditGrade() {
               >
                 {finalGrade ?? "—"}
               </Typography>
-              <Typography variant="body2">over 100</Typography>
+              {isCollege ? (
+                averagePercent !== null && (
+                  <Typography variant="body2">({averagePercent.toFixed(1)}%)</Typography>
+                )
+              ) : (
+                <Typography variant="body2"></Typography>
+              )}
             </Box>
           </Box>
 
@@ -228,10 +275,14 @@ function EditGrade() {
             </Alert>
           )}
           <StandardTable
-            rows={rows}
+            rows={tableRows}
             columns={columns}
             fileName="grade-report"
-            printFields={["subjectName", "instructor", "grade"]}
+            printFields={
+              isCollege
+                ? ["subjectName", "instructor", "grade", "percent"]
+                : ["subjectName", "instructor", "grade"]
+            }
             loading={loading}
           />
         </Box>

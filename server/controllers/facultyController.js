@@ -4,10 +4,10 @@ const crypto = require('crypto');
 
 // GET all faculties
 async function getAllFaculties(req, res) {
-      try {
+  try {
     const [rows] = await pool.query(
       `SELECT faculty_ID AS id,
-              CONCAT(
+            CONCAT(
          l_Name, ', ',
          f_Name, ' ',
          CASE 
@@ -19,16 +19,18 @@ async function getAllFaculties(req, res) {
             age,
             gender,
             position,
-            status
+            status,
+            let_passer,
+            DATE_FORMAT(date_hired, '%Y-%m-%d') AS dateHired
        FROM faculty_table`
     );
 
     res.json(rows);
   } catch (err) {
     console.error("Error loading faculty:", err.sqlMessage || err);
-    res.status(500).json({ error: "Failed to load sections" });
+    res.status(500).json({ error: "Failed to load faculty" });
   }
-};
+}
 
 async function getFacultyById(req, res) {
     const { id } = req.params;
@@ -37,13 +39,23 @@ async function getFacultyById(req, res) {
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Faculty not found' });
         }
-        res.json(rows[0]);
+        
+        // Ensure certificates parsed safely if stored as a JSON string in MySQL
+        const facultyData = rows[0];
+        if (facultyData.certificates && typeof facultyData.certificates === 'string') {
+            try {
+                facultyData.certificates = JSON.parse(facultyData.certificates);
+            } catch (e) {
+                facultyData.certificates = [];
+            }
+        }
+
+        res.json(facultyData);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-  
 
 async function updateFaculty(req, res) {
   const { id } = req.params; 
@@ -65,6 +77,10 @@ async function updateFaculty(req, res) {
     account_type_ID,
     adminPassword,
     admin_ID,
+    letPasser,
+    dateHired,
+    pastJobs,
+    certificates,
   } = req.body;
 
   try {
@@ -113,6 +129,9 @@ async function updateFaculty(req, res) {
       }
     }
 
+    // Prepare certificates for JSON column storage
+    const certificatesJson = certificates ? JSON.stringify(certificates) : null;
+
     const query = `
       UPDATE faculty_table 
       SET 
@@ -130,7 +149,11 @@ async function updateFaculty(req, res) {
         emergency_Name = ?, 
         emergency_Number = ?, 
         password = ?,
-        account_type_id = ?
+        account_type_id = ?,
+        let_passer = ?,
+        date_hired = ?,
+        past_jobs = ?,
+        certificates = ?
       WHERE faculty_ID = ?
     `;
 
@@ -150,6 +173,10 @@ async function updateFaculty(req, res) {
       emergency_Number || null,
       hashedPassword,
       account_type_ID || 2,
+      letPasser || 'No',
+      dateHired || null,
+      pastJobs || null,
+      certificatesJson,
       id,
     ];
 

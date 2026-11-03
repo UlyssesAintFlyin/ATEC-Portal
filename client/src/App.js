@@ -37,6 +37,7 @@ import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 import { SnackbarProvider } from './components/AppSnackbar';
 import { MasterPasswordRoute } from "./components/MasterPasswordRoute";
+import BillingConfig from './pages/admin/BillingConfig';
 
 function LayoutWithHeader() {
   return (
@@ -99,6 +100,7 @@ function App() {
                     <Route path="systemSettings" element={<SystemSettings />} />
                     <Route path="systemSettings/termConfig" element={<TermConfig />} />
                     <Route path="systemSettings/curriculumConfig" element={<CurriculumConfig />} />
+                    <Route path="systemSettings/billingConfig" element={<BillingConfig />} />
                     <Route path="systemSettings/curriculumConfig/curriculum/:id" element={<CurriculumSubjects />} />
                     <Route path="systemSettings/curriculumConfig/curriculum/:id/addSubject" element={<AddSubject />} />
                     <Route path="systemSettings/carouselConfig" element={<CarouselConfig />} />

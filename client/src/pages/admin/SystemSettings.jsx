@@ -294,6 +294,7 @@ export default function SystemSettings() {
             gap: { xs: "20px", md: "20px" },
             mr: { xs: "20px", sm: "30px", md: "50px" },
             ml: { xs: "20px", sm: "30px", md: "50px" },
+            flexWrap: "wrap",
           }}
         >
           {/* Left button */}
@@ -350,6 +351,21 @@ export default function SystemSettings() {
             onClick={() => navigate(`./carouselConfig`)}
           >
             Configure Carousel
+          </Button>
+
+          <Button
+            sx={{
+              fontSize: { xs: "12px", sm: "15px", md: "17px" },
+              color: "#E8EDF2",
+              backgroundColor: "#242C54",
+              borderRadius: "5px",
+              height: { xs: "40px", sm: "50px", md: "60px" },
+              width: { xs: "150px", sm: "200px", md: "250px" },
+              "&:hover": { backgroundColor: "#4f5d9e", transform: "scale(1.05)" },
+            }}
+            onClick={() => navigate(`./billingConfig`)}
+          >
+            Configure Billing
           </Button>
         </Box>
       </Box>

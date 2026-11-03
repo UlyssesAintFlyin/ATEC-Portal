@@ -696,15 +696,20 @@ async function loadStudentsBySection(req, res) {
               syr.program,
               syr.specialization,
               syr.department,
-              syrt.AYS_ID
+              syrt.AYS_ID,
+              AVG(g.grade_value) AS averageGrade
        FROM student_year_record_table syr
        JOIN student_table s 
          ON syr.student_ID = s.student_ID
        JOIN section_year_record_table syrt 
          ON syr.section_record_ID = syrt.section_record_ID
+       LEFT JOIN grade_table g 
+         ON g.section_record_ID = syr.section_record_ID 
+        AND g.student_ID = s.student_ID
        WHERE syrt.section_ID = ? 
          AND syrt.AYS_ID = ?
          AND s.status = "Enrolled"
+       GROUP BY s.student_ID, syr.stud_record_ID, syrt.section_record_ID
        ORDER BY s.l_Name ASC`,
       [sectionId, AYS_ID]
     );
@@ -714,6 +719,7 @@ async function loadStudentsBySection(req, res) {
     console.error("Error loading students:", err.sqlMessage || err);
     res.status(500).json({ error: "Failed to load students" });
   }
+  
 }
 
 
@@ -1364,6 +1370,71 @@ async function changePassword(req, res) {
   }
 }
 
+const getBilling = async (req, res) => {
+  try {
+    const { level } = req.query;
+    const [cfgRows] = await pool.query(
+      'SELECT funded_by, coverage_percent FROM billing_level_table WHERE level = ?',
+      [level]
+    );
+    const [fees] = await pool.query(
+      'SELECT fee_name AS label, amount FROM billing_fee_table WHERE level = ? ORDER BY fee_ID',
+      [level]
+    );
+    const cfg = cfgRows[0];
+    res.json({
+      fundedBy: cfg ? cfg.funded_by : '',
+      coveragePercent: cfg ? Number(cfg.coverage_percent) : 100,
+      fees: fees.map((f) => ({ label: f.label, amount: Number(f.amount) })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to load billing' });
+  }
+};
+
+const saveBilling = async (req, res) => {
+  const { level } = req.params;
+  const { fundedBy, coveragePercent, fees } = req.body;
+
+  if (!fundedBy || !Array.isArray(fees)) {
+    return res.status(400).json({ message: 'Invalid billing data' });
+  }
+  const pct = Number(coveragePercent);
+  if (Number.isNaN(pct) || pct < 0 || pct > 100) {
+    return res.status(400).json({ message: 'Coverage must be 0 to 100' });
+  }
+  if (fees.some((f) => !f.label || !f.label.trim() || Number.isNaN(Number(f.amount)) || Number(f.amount) < 0)) {
+    return res.status(400).json({ message: 'Each fee needs a name and a valid amount' });
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query('DELETE FROM billing_fee_table WHERE level = ?', [level]);
+    if (fees.length) {
+      await conn.query(
+        'INSERT INTO billing_fee_table (level, fee_name, amount) VALUES ?',
+        [fees.map((f) => [level, f.label.trim(), Number(f.amount)])]
+      );
+    }
+    await conn.query(
+      `INSERT INTO billing_level_table (level, funded_by, coverage_percent)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE funded_by = VALUES(funded_by), coverage_percent = VALUES(coverage_percent)`,
+      [level, fundedBy, pct]
+    );
+    await conn.commit();
+    res.json({ message: 'Billing saved' });
+  } catch (err) {
+    await conn.rollback();
+    console.error(err);
+    res.status(500).json({ message: 'Failed to save billing' });
+  } finally {
+    conn.release();
+  }
+};
+
 
 
 // Export functions
@@ -1403,5 +1474,7 @@ module.exports = {
   transferSection,
   dropStudents,
   changePassword,
-  convertEnrollees
+  convertEnrollees,
+  getBilling,
+  saveBilling,
 };

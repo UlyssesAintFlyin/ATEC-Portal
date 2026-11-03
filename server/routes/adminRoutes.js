@@ -34,7 +34,9 @@ const {
   getSectionOptions,
   transferSection,
   dropStudents,
-  changePassword
+  changePassword,
+  getBilling,
+  saveBilling
 
 } = require('../controllers/adminController');
 
@@ -74,6 +76,8 @@ router.get('/academicYearSemester/options', getAYSOptions);
 router.post('/sections/transferSection', transferSection);
 router.put('/students/drop', dropStudents);
 router.post('/changePassword', changePassword); //this pulls in the changePassword function
+router.get('/billing', getBilling);
+router.put('/billing/:level', saveBilling);
 
 //calls adminController during an API request   
 

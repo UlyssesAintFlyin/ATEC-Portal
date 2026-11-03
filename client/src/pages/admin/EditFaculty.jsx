@@ -9,24 +9,28 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Grid,
+  IconButton,
+  Card,
+  CardMedia,
+  CardContent,
 } from "@mui/material";
 import TextField from "@mui/material/TextField";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../components/AppSnackbar";
 import { useAuth } from "../../context/AuthContext";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-// Helper function to safely convert ISO date strings to YYYY-MM-DD without timezone shifts
 const formatDate = (rawDate) => {
   if (!rawDate) return "";
 
-  // If already a simple YYYY-MM-DD string, return it as-is
   if (typeof rawDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
     return rawDate;
   }
 
-  // Parse ISO timestamps using local date getters
   const d = new Date(rawDate);
   if (isNaN(d.getTime())) return "";
 
@@ -57,6 +61,10 @@ export default function EditFaculty() {
     emergency_Number: "",
     account_type_ID: 2,
     role: "Teacher",
+    letPasser: "No",
+    pastJobs: "",
+    dateHired: "",
+    certificates: [],
   });
 
   const [openAuthDialog, setOpenAuthDialog] = useState(false);
@@ -78,6 +86,7 @@ export default function EditFaculty() {
     if (!hadBirthday) age--;
     return age;
   };
+
   const requiredFields = {
     f_Name: "First name",
     l_Name: "Surname",
@@ -126,6 +135,12 @@ export default function EditFaculty() {
 
         const accountTypeId = data.account_type_ID ?? data.account_type_id ?? 2;
 
+        const rawLetPasser = data.letPasser ?? data.let_passer;
+        const normalizedLetPasser =
+          rawLetPasser === "Yes" || rawLetPasser === 1 || rawLetPasser === true
+            ? "Yes"
+            : "No";
+
         setFormData({
           f_Name: data.f_Name || "",
           l_Name: data.l_Name || "",
@@ -144,6 +159,10 @@ export default function EditFaculty() {
           emergency_Number: data.emergency_Number || "",
           account_type_ID: accountTypeId,
           role: Number(accountTypeId) === 3 ? "Admin" : "Teacher",
+          letPasser: normalizedLetPasser,
+          pastJobs: data.pastJobs || "",
+          dateHired: formatDate(data.dateHired),
+          certificates: data.certificates || [],
         });
       } catch (err) {
         console.error(err);
@@ -151,6 +170,26 @@ export default function EditFaculty() {
     };
     fetchFaculty();
   }, [id]);
+
+  const handleCertificateUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const newCertificates = files.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+      file,
+    }));
+    setFormData((prev) => ({
+      ...prev,
+      certificates: [...prev.certificates, ...newCertificates],
+    }));
+  };
+
+  const handleRemoveCertificate = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      certificates: prev.certificates.filter((_, i) => i !== index),
+    }));
+  };
 
   const handleOpenAuth = () => {
     if (Object.keys(getErrors()).length > 0) {
@@ -162,7 +201,7 @@ export default function EditFaculty() {
     setAdminPasswordError("");
     setOpenAuthDialog(true);
   };
-  
+
   const handleConfirmSave = async () => {
     if (!adminPassword.trim()) {
       setAdminPasswordError("Admin password is required");
@@ -463,7 +502,7 @@ export default function EditFaculty() {
               ml: "20px",
             }}
           >
-            Affiliation Status
+            Credentials & Affiliation Status
           </Typography>
 
           <Box
@@ -553,6 +592,119 @@ export default function EditFaculty() {
                 />
               )}
             />
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 4,
+              margin: "0 20px",
+            }}
+          >
+            <Autocomplete
+              options={["Yes", "No"]}
+              fullWidth
+              value={formData.letPasser || "No"}
+              onChange={(event, newValue) =>
+                setFormData({ ...formData, letPasser: newValue || "No" })
+              }
+              isOptionEqualToValue={(option, value) => option === value}
+              renderInput={(params) => (
+                <TextField {...params} label="LET Passer" fullWidth />
+              )}
+            />
+
+            <TextField
+              label="Date Hired"
+              type="date"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={formData.dateHired ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, dateHired: e.target.value })
+              }
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              gap: 4,
+              margin: "0 20px",
+            }}
+          >
+            <TextField
+              label="Past Jobs / Teaching Experience"
+              fullWidth
+              multiline
+              rows={3}
+              placeholder="e.g. High School Teacher at ABC Academy (2018-2021)"
+              value={formData.pastJobs ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, pastJobs: e.target.value })
+              }
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              margin: "0 20px",
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#242C54" }}>
+              Certificates
+            </Typography>
+
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<CloudUploadIcon />}
+              sx={{ width: "fit-content", borderColor: "#242C54", color: "#242C54" }}
+            >
+              Upload Certificates
+              <input
+                type="file"
+                hidden
+                multiple
+                accept="image/*,.pdf"
+                onChange={handleCertificateUpload}
+              />
+            </Button>
+
+            {formData.certificates.length > 0 && (
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                {formData.certificates.map((cert, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Card sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 1 }}>
+                      {cert.url && cert.url.startsWith("blob:") ? (
+                        <CardMedia
+                          component="img"
+                          sx={{ width: 60, height: 60, borderRadius: "4px", objectFit: "cover" }}
+                          image={cert.url}
+                          alt={cert.name}
+                        />
+                      ) : null}
+                      <CardContent sx={{ flex: 1, py: 0 }}>
+                        <Typography variant="body2" noWrap sx={{ maxWidth: "150px" }}>
+                          {cert.name || `Certificate ${index + 1}`}
+                        </Typography>
+                      </CardContent>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleRemoveCertificate(index)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
           </Box>
 
           <Divider variant="middle" sx={{ borderColor: "#242c54" }} />
