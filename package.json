@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@react-pdf/renderer": "^4.9.0",
     "bcrypt": "^6.0.0",
     "express-rate-limit": "^8.7.1",
     "jsonwebtoken": "^9.0.3",
