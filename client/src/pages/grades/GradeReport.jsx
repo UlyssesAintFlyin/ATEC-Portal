@@ -12,8 +12,7 @@ function GradeReport() {
   const [sectionName, setSectionName] = useState("---");
   const studentName = user?.name ?? "---";
   // Adjust this to however your app identifies college students
-const isCollege = /college/i.test(user?.department ?? "");
-
+  const [isCollege, setIsCollege] = useState(false);
   const [aysOptions, setAysOptions] = useState([]);
   const [selectedAYS, setSelectedAYS] = useState(null);
 
@@ -101,6 +100,7 @@ const toCollegeGrade = (percent) => {
         const data = await res.json();
         setRows(data.report);
         setSectionName(data.sectionName);
+        setIsCollege(data.department === "College");
         setError(null);
       } catch (err) {
         console.error(err);

@@ -84,8 +84,7 @@ function makeStyles(width) {
     p: {
       fontFamily: "sans-serif",
       fontSize: "clamp(13px, 2vw, 15px)",
-      color: "#bbbaba",
-      textShadow: "1px 1px 10px #85858549",
+      color: "#5e5e5e",
       margin: 0,
     },
 
@@ -195,7 +194,6 @@ function makeStyles(width) {
       fontFamily: FRAUNCES,
       fontSize: 40,
       color: "#1b1c33",
-      textShadow: "1px 1px 10px #ffffff49",
       fontWeight: 500,
       letterSpacing: "0.5px",
       margin: "0 0 8px",
@@ -204,8 +202,7 @@ function makeStyles(width) {
     formP: {
       fontFamily: ARIAL,
       fontSize: 14,
-      color: "rgb(39, 38, 38)",
-      textShadow: "2px 2px 10px rgb(243, 243, 243)",
+      color: "rgb(15, 15, 15)",
       letterSpacing: "0.5px",
       margin: 0,
       animation: "textIn 1s ease forwards",

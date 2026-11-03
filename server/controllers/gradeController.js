@@ -325,13 +325,14 @@ async function getStudCurriculumRecord(req, res) {
 // All grades the student earned in the term, across every section they took classes in
 async function getStudentGradeReport(req, res) {
   const { studentId, aysId } = req.query;
+  
   if (!studentId || !aysId) {
     return res.status(400).json({ message: 'studentId and aysId are required' });
   }
 
   try {
     const [[termRecord]] = await pool.query(
-      `SELECT syr.classification, sec.section_Name
+      `SELECT syr.classification, syr.department, sec.section_Name
        FROM student_year_record_table syr
        LEFT JOIN section_year_record_table sec_yr ON syr.section_record_ID = sec_yr.section_record_ID
        LEFT JOIN section_table sec ON sec_yr.section_ID = sec.section_ID
@@ -340,7 +341,7 @@ async function getStudentGradeReport(req, res) {
     );
 
     if (!termRecord) {
-      return res.json({ report: [], sectionName: '—' });
+      return res.json({ report: [], sectionName: '—', department: null });
     }
 
     const [rows] = await pool.query(
@@ -380,7 +381,12 @@ async function getStudentGradeReport(req, res) {
     const sectionName =
       termRecord.classification === 'Irregular' ? 'Irregular' : termRecord.section_Name ?? '—';
 
-    res.json({ report, sectionName, classification: termRecord.classification });
+    res.json({
+      report,
+      sectionName,
+      classification: termRecord.classification,
+      department: termRecord.department,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch grade report' });
