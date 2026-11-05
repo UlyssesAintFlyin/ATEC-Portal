@@ -21,6 +21,8 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../components/AppSnackbar";
 import { useAuth } from "../../context/AuthContext";
+import { pdf } from "@react-pdf/renderer";
+import FacultyPrintDocument from "../../components/FacultyDocument";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -70,6 +72,7 @@ export default function EditFaculty() {
   const [openAuthDialog, setOpenAuthDialog] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [adminPasswordError, setAdminPasswordError] = useState("");
+  const [printing, setPrinting] = useState(false);
 
   const snackbar = useSnackbar();
   const navigate = useNavigate();
@@ -232,7 +235,7 @@ export default function EditFaculty() {
           return;
         }
         throw new Error(
-          errBody.error || errBody.message || `Request failed: ${res.status}`
+          errBody.error || errBody.message || `Request failed: ${res.status}`,
         );
       }
 
@@ -242,6 +245,36 @@ export default function EditFaculty() {
     } catch (err) {
       console.error(err);
       snackbar.error(err.message || "Failed to save faculty information");
+    }
+  };
+
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      const blob = await pdf(
+        <FacultyPrintDocument faculty={formData} age={age} />,
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText =
+        "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+      iframe.src = url;
+      iframe.onload = () => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      };
+      document.body.appendChild(iframe);
+
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        URL.revokeObjectURL(url);
+      }, 60000);
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      snackbar.error("Failed to generate printable document");
+    } finally {
+      setPrinting(false);
     }
   };
 
@@ -287,6 +320,23 @@ export default function EditFaculty() {
           >
             Faculty Member's Information
           </Typography>
+
+          <Button
+            sx={{
+              fontSize: { xs: "12px", sm: "15px", md: "15px" },
+              color: "#E8EDF2",
+              bgcolor: "#242C54",
+              border: "1px solid #242C54",
+              borderRadius: "5px",
+              mr: { xs: "20px", sm: "30px", md: "50px" },
+              width: { xs: "150px", sm: "200px", md: "150px" },
+              "&:hover": { backgroundColor: "#1b293d", color: "#dbdff0" },
+            }}
+            onClick={handlePrint}
+            disabled={printing}
+          >
+            {printing ? "Preparing..." : "Print"}
+          </Button> 
         </Box>
 
         <Box
@@ -572,7 +622,8 @@ export default function EditFaculty() {
                 [
                   { label: "Teacher", id: 2 },
                   { label: "Admin", id: 3 },
-                ].find((opt) => opt.id === Number(formData.account_type_ID)) || null
+                ].find((opt) => opt.id === Number(formData.account_type_ID)) ||
+                null
               }
               onChange={(event, newValue) => {
                 setFormData({
@@ -656,7 +707,10 @@ export default function EditFaculty() {
               margin: "0 20px",
             }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#242C54" }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: "bold", color: "#242C54" }}
+            >
               Certificates
             </Typography>
 
@@ -664,7 +718,11 @@ export default function EditFaculty() {
               variant="outlined"
               component="label"
               startIcon={<CloudUploadIcon />}
-              sx={{ width: "fit-content", borderColor: "#242C54", color: "#242C54" }}
+              sx={{
+                width: "fit-content",
+                borderColor: "#242C54",
+                color: "#242C54",
+              }}
             >
               Upload Certificates
               <input
@@ -680,17 +738,33 @@ export default function EditFaculty() {
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 {formData.certificates.map((cert, index) => (
                   <Grid item xs={12} sm={6} md={4} key={index}>
-                    <Card sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 1 }}>
+                    <Card
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        p: 1,
+                      }}
+                    >
                       {cert.url && cert.url.startsWith("blob:") ? (
                         <CardMedia
                           component="img"
-                          sx={{ width: 60, height: 60, borderRadius: "4px", objectFit: "cover" }}
+                          sx={{
+                            width: 60,
+                            height: 60,
+                            borderRadius: "4px",
+                            objectFit: "cover",
+                          }}
                           image={cert.url}
                           alt={cert.name}
                         />
                       ) : null}
                       <CardContent sx={{ flex: 1, py: 0 }}>
-                        <Typography variant="body2" noWrap sx={{ maxWidth: "150px" }}>
+                        <Typography
+                          variant="body2"
+                          noWrap
+                          sx={{ maxWidth: "150px" }}
+                        >
                           {cert.name || `Certificate ${index + 1}`}
                         </Typography>
                       </CardContent>

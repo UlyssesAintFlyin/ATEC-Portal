@@ -113,12 +113,11 @@ const validate = (s) => {
 
   if (!s.section_ID) e.section_ID = "Year level & section is required";
 
+  if (s.password && s.password.length < 8)
+  e.password = "Password must be at least 8 characters";
+
   if (!s.lrn.trim()) e.lrn = "LRN is required";
   else if (!LRN_RE.test(s.lrn.trim())) e.lrn = "LRN must be exactly 12 digits";
-
-  if (!s.password) e.password = "Password is required";
-  else if (s.password.length < 8)
-    e.password = "Password must be at least 8 characters";
 
   Object.keys(e).forEach((k) => !e[k] && delete e[k]);
   return e;
@@ -232,7 +231,7 @@ export default function EditStudent() {
           department: data.department || "",
           program: data.program || "",
           lrn: data.lrn || "",
-          password: data.password || "",
+          password: "",
           student_ID: data.student_ID || "",
           section_ID: data.section_ID || "",
         });
@@ -343,6 +342,8 @@ export default function EditStudent() {
         AYS_ID: currentAYS_ID,
       };
 
+      if (!payload.password) delete payload.password;
+
       const res = await fetch(`${API_URL}/admin/students/${studentId}/update`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -352,7 +353,6 @@ export default function EditStudent() {
       if (!res.ok) throw new Error(`Save failed: ${res.status}`);
       snackbar.success("Student information saved successfully");
 
-      // Go back to the (selected) section page that lists this student
       const targetSection = sections.find(
         (sec) => sec.section_ID === student.section_ID,
       );
@@ -613,8 +613,6 @@ export default function EditStudent() {
 
           <Divider variant="middle" sx={dividerSx} />
 
-          <Divider variant="middle" sx={dividerSx} />
-
             <Typography variant="h6" sx={sectionTitleSx}>
               Billing Information
             </Typography>
@@ -663,8 +661,7 @@ export default function EditStudent() {
             <TextField
               label="Password"
               type="password"
-              required
-              {...fieldProps("password", "At least 8 characters")}
+              {...fieldProps("password", "Leave blank to keep current password")}
             />
           </Box>
         </Box>
